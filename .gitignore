@@ -1,0 +1,7 @@
+backend/target
+.idea
+.DS_Store
+backend/.bsp
+backend/project/project
+backend/project/target
+*.sw*
