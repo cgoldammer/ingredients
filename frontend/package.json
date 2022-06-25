@@ -1,0 +1,93 @@
+{
+  "name": "cocktail_app",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "devLocal": "NODE_ENV=devLocal webpack-dev-server --config ./webpack.dev.js --mode development",
+    "devServer": "NODE_ENV=devServer webpack-dev-server --config ./webpack.dev.js --mode development",
+    "devDocker": "NODE_ENV=devDocker webpack-dev-server --config ./webpack.dev.js --mode development",
+    "build": "webpack --config webpack.prod.js",
+    "test": "jest",
+    "prepare": "cd .. && husky install",
+    "prettier": "prettier --write .",
+    "eslint": "eslint . --ext .js --ext .jsx"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/reactTests/__mocks__/fileMock.js",
+      "\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
+    },
+    "verbose": true,
+    "testURL": "http://localhost/",
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/jsdomSetup.js"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/node_modules/",
+      "<rootDir>/legacy_notes_and_workbook/",
+      "<rootDir>/client/src/stylesheets/"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/preset-react": "^7.14.5",
+    "@wojtekmaj/enzyme-adapter-react-17": "0.6.3",
+    "enzyme": "^3.11.0",
+    "eslint": "^8.2.0",
+    "eslint-plugin-react": "^7.27.0",
+    "jest": "^27.2.5",
+    "react-hot-loader": "^4.13.0",
+    "webpack-dev-server": "^4.3.1"
+  },
+  "dependencies": {
+    "@babel/preset-env": "^7.15.8",
+    "@emotion/react": "^11.6.0",
+    "@emotion/styled": "^11.3.0",
+    "@material-ui/styles": "^4.11.4",
+    "@mswjs/data": "^0.5.0",
+    "@mui/material": "^5.2.1",
+    "@reduxjs/toolkit": "^1.6.2",
+    "babel-loader": "^8.2.3",
+    "bootstrap": "^5.1.1",
+    "css-loader": "6.4.0",
+    "es2015": "0.0.0",
+    "eslint-config-prettier": "^8.3.0",
+    "faker": "^4.1.0",
+    "husky": "^7.0.4",
+    "immutable": "^3.8.2",
+    "jsdom": "^18.1.0",
+    "mock-socket": "^9.0.3",
+    "msw": "^0.34.0",
+    "prettier": "^2.4.1",
+    "react": "^17.0.2",
+    "react-bootstrap": "2.0.0-rc.1",
+    "react-dom": "^17.0.2",
+    "react-redux": "^7.2.6",
+    "react-router": "6.1.1",
+    "react-router-dom": "6.1.1",
+    "react-scripts": "^5.0.0",
+    "react-table": "^7.7.0",
+    "seedrandom": "^3.0.5",
+    "stockfish": "^8.0.0",
+    "style-loader": "3.3.0",
+    "styled-components": "^5.3.1",
+    "txtgen": "^2.2.4",
+    "v8-compile-cache": "^2.3.0",
+    "webpack": "^5.58.2",
+    "webpack-cli": "4.9.0",
+    "webpack-merge": "^5.8.0",
+    "webworker": "^0.8.4",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.3",
+    "react-refresh": "^0.11.0",
+    "eslint-plugin-react-hooks": "^4.3.0",
+    "@mui/x-data-grid": "^5.2.1",
+    "@mui/icons-material": "^5.2.5",
+    "dotenv": "^16.0.0"
+  },
+  "msw": {
+    "workerDirectory": "serve_content"
+  }
+}
