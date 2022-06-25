@@ -4,6 +4,7 @@ import { nanoid } from "@reduxjs/toolkit";
 import faker from "faker";
 import seedrandom from "seedrandom";
 import { setRandom } from "txtgen";
+import {getRange} from "../helpers"
 
 
 // Add an extra delay to all endpoints, so loading spinners show up.
@@ -63,7 +64,7 @@ const createIngredientData = () => {
 
 const createFullRecipeData = (ingredients) => {
     return {
-        uuid: fake.random.uuid(),
+        uuid: faker.random.uuid(),
         name: faker.commerce.productAdjective(),
         ingredients: ingredients
     }
@@ -83,17 +84,18 @@ const serializeIngredient = (ingredient) => {
 
 for (let i=0; i<NUM_RECIPES; i++){
     const ingredients = getRange(NUM_INGREDIENTS_PER_RECIPE).map(_ => db.ingredient.create(createIngredientData()))
-    const recipe = db.ingredient.create(createFullRecipeData(ingredients))
+    const recipe = db.fullRecipe.create(createFullRecipeData(ingredients))
+    console.log("Ingredients created: " + ingredients.length)
 }
 
 export const handlers = [
-  rest.get("fakeApi/ingredients", (req, res, ctx) => {
+  rest.get("/fakeApi/ingredients", (req, res, ctx) => {
     const ingredients = db.ingredient.getAll().map(serializeIngredient);
-    return res(ctx.delay(ARTIFICIAL_DELAY_MS), cts.json(ingredients))
+    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredients))
     }),
-    rest.get("fakeApi/recipes", (req, res, ctx) => {
+    rest.get("/fakeApi/recipes", (req, res, ctx) => {
     const recipes = db.recipe.getAll().map(serializeRecipe);
-    return res(ctx.delay(ARTIFICIAL_DELAY_MS), cts.json(recipes))
+    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(recipes))
 }),
 ]
 

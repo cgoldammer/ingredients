@@ -8,14 +8,15 @@ import { boxFormat, boxImgFormat } from "../../helpers";
 
 export function IngredientsView() {
   let navigate = useNavigate();
-  const ingredients = useGetIngredientsQuery();
+  const { data = [] } = useGetIngredientsQuery();
 
   // TODO: A weird hack - I found that `useNavigate` produces
   // react hook error
   // `rendered more hook than during previous render`
   // when used in loops, but I really don't know why
   // So creating it once and passing to the child components
-  const ingredientsDisplayed = ingredients.map((f) => {
+  const ingredientsDisplayed = data.map((f) => {
+    console.log("Ingredients:" + data.length)
     let f2 = { navigate: navigate, ...f };
     return f2;
   });
@@ -34,7 +35,7 @@ function IngredientView(props) {
   return (
     <Box key={uuid} sx={{ ...boxFormat, height: 180 }}>
       <Box sx={{ display: "grid", gridTemplateRows: "repeat(8, 1fr)" }}>
-        <Typography variant="h4">Ingredient: {number}</Typography>
+        <Typography variant="h4">Ingredient: {name}</Typography>
       </Box>
     </Box>
   );

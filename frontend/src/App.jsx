@@ -15,7 +15,6 @@ export function App() {
   return (
     <ThemeProvider theme={theme}>
       <Box>
-        <TopMenu />
         <Box sx={{ my: 2 }}>
           <Routes>
             <Route path="/" element={<IngredientsView />} />
