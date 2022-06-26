@@ -90,7 +90,7 @@ for (let i=0; i<NUM_RECIPES; i++){
 
 export const handlers = [
   rest.get("/fakeApi/ingredients", (req, res, ctx) => {
-    const ingredients = db.ingredient.getAll().map(serializeIngredient);
+    const ingredients = {'ingredients': db.ingredient.getAll().map(serializeIngredient)};
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredients))
     }),
     rest.get("/fakeApi/recipes", (req, res, ctx) => {

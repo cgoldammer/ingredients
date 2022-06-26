@@ -41,6 +41,8 @@ implicit val encRR: Encoder[RecipeResults] = deriveEncoder
 implicit val decRR2: EntityDecoder[IO, RecipeResults] = jsonOf[IO, RecipeResults]
 
 
+import org.http4s.server.middleware._
+
 val jsonApp = HttpRoutes.of[IO] {
   case GET -> Root / "ingredients"  =>
       for {
@@ -58,5 +60,5 @@ val server: Resource[IO, org.http4s.server.Server] = EmberServerBuilder
   .default[IO]
   .withHost(ipv4"0.0.0.0")
   .withPort(port"8080")
-  .withHttpApp(jsonApp)
+  .withHttpApp(CORS.policy.withAllowOriginAll(jsonApp))
   .build

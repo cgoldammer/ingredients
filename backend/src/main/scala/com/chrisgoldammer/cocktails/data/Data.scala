@@ -13,9 +13,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 def getUuid() = randomUUID().toString
 
+val defaultPort = "temp"
+val connString = sys.env.get("POSTGRESPORT").getOrElse(defaultPort)
+// "jdbc:postgresql://0.0.0.0:" + postgresPort + "/ingredients
+
 val xa = Transactor.fromDriverManager[IO](
   "org.postgresql.Driver",     // driver classname
-  "jdbc:postgresql:world",     // connect URL (driver-specific)
+  connString,
   "postgres",                  // user
   ""                           // password
 )
@@ -204,3 +208,24 @@ def getIngredientsData(): Array[MIngredientData] = {
 }
 
 def getIngredients(): Array[Ingredient] = getIngredientsData().map(getMIngredientFromData).map(_.element)
+
+def setup(): Unit = {
+  val ingredientNames = Array("Bourbon", "Dry Vermouth", "Campari", "Sugar", "Bitters")
+  val recipeNames = Map(
+    "Boulevardier" -> Array("Bourbon", "Dry Vermouth", "Campari"),
+    "Old Fashioned" -> Array("Bourbon", "Sugar", "Bitters")
+  )
+  val sdSimple = SetupData(ingredientNames=ingredientNames, recipeNames=recipeNames)
+
+  dropTables()
+  createTables()
+  insertFromSetupData(sdSimple)
+}
+
+object CallMe {
+  def main(args: Array[String]): Unit = {
+    println("Setup starting")
+    setup()
+    println("Setup complete")
+  }
+}

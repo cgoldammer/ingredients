@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  snap:
+    build:
+      context: .
+      dockerfile: Dockerfile-scala-last-step
+    depends_on: 
+      - postgres2
+    ports:
+      - "8300:8080"
+
+    command: bash -c "export POSTGRESPORT=jdbc:postgresql://postgres2:5432/ingredients; sbt 'runMain com.chrisgoldammer.cocktails.data.CallMe'; sbt 'runMain com.chrisgoldammer.cocktails.Main'"
+
+  postgres2:
+    build: 
+      context: .
+      dockerfile: Dockerfile-postgres
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: postgres
+      POSTGRES_DB: ingredients
+    ports:
+      - "5433:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile-app
+    ports:
+      - "8082:8082"
+    command: npm run devDocker
+    working_dir: /frontend
+    depends_on:
+      - postgres
+      - snap

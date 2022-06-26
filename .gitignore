@@ -5,3 +5,8 @@ backend/.bsp
 backend/project/project
 backend/project/target
 *.sw*
+
+frontend/node_modules/
+frontend/serve_content/prod
+frontend/package-lock.json
+temp

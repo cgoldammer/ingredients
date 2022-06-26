@@ -12,7 +12,7 @@ export const apiSlice = createApi({
       query: () => "/ingredients",
       providesTags: (result = []) => [
         "Ingredient",
-        ...result.map(({ id }) => ({ type: "Ingredient", id })),
+        ...result.ingredients.map(({ id }) => ({ type: "Ingredient", id })),
       ],
     }),
   }),

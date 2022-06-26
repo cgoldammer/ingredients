@@ -1,21 +1,21 @@
-import { useParams } from "react-router-dom";
+
 import React from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { useGetIngredientsQuery } from "../api/apiSlice";
 import { Box, Typography } from "@mui/material";
-import { boxFormat, boxImgFormat } from "../../helpers";
+import { boxFormat } from "../../helpers";
 
 export function IngredientsView() {
   let navigate = useNavigate();
-  const { data = [] } = useGetIngredientsQuery();
+  const { data = {ingredients: []} } = useGetIngredientsQuery();
 
   // TODO: A weird hack - I found that `useNavigate` produces
   // react hook error
   // `rendered more hook than during previous render`
   // when used in loops, but I really don't know why
   // So creating it once and passing to the child components
-  const ingredientsDisplayed = data.map((f) => {
+  const ingredientsDisplayed = data.ingredients.map((f) => {
     console.log("Ingredients:" + data.length)
     let f2 = { navigate: navigate, ...f };
     return f2;
