@@ -17,6 +17,8 @@ import org.http4s.ember.server.*
 import org.http4s.circe.jsonEncoder
 import com.comcast.ip4s.{ipv4, port}
 
+import org.http4s.headers.Origin
+
 
 case class RecipeResults(recipes: Array[MRecipeData])
 case class IngredientResult(ingredients: Array[Ingredient])
@@ -56,9 +58,16 @@ val jsonApp = HttpRoutes.of[IO] {
   } yield resp
 }.orNotFound
 
+val allowedOrigin = Origin.Host(Uri.Scheme.http, Uri.RegName("localhost"), Some(8082))
+
+val withMiddleWare = CORS.policy
+   .withAllowOriginHost(Set(allowedOrigin))
+   .withAllowCredentials(false)
+   .apply(jsonApp)
+
 val server: Resource[IO, org.http4s.server.Server] = EmberServerBuilder
   .default[IO]
   .withHost(ipv4"0.0.0.0")
   .withPort(port"8080")
-  .withHttpApp(CORS.policy.withAllowOriginAll(jsonApp))
+  .withHttpApp(withMiddleWare)
   .build
