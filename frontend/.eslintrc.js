@@ -29,5 +29,6 @@ module.exports = {
     test: true,
     describe: true,
     expect: true,
+    process: true,
   },
 };

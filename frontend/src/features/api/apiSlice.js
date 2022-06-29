@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const url = process.env.BACKENDURL;
-console.log("Backend: " + url)
+console.log("Backend: " + url);
 
 export const apiSlice = createApi({
   reducerPath: "api",
@@ -18,6 +18,4 @@ export const apiSlice = createApi({
   }),
 });
 
-export const {
-  useGetIngredientsQuery
-} = apiSlice;
+export const { useGetIngredientsQuery } = apiSlice;

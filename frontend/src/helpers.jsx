@@ -29,4 +29,4 @@ export const theme = createTheme({
   },
 });
 
-export const getRange = max => Array.from(Array(max), (n, index) => index)
+export const getRange = (max) => Array.from(Array(max), (n, index) => index);
