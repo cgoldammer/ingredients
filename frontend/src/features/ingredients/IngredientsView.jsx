@@ -9,6 +9,9 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import Chip from "@mui/material/Chip";
+import { useSelector, useDispatch } from "react-redux";
+import {setIngredients} from '../../reducers'
+
 
 function getStyles(name, personName, theme) {
   return {
@@ -34,16 +37,16 @@ export function IngredientsView() {
   const { data } = useGetIngredientsQuery() || {};
   const { ingredients = [] } = data || {};
   const theme = useTheme();
-  const [name, setName] = React.useState([]);
-
+  const dispatch = useDispatch();
+  const ingredientsSelected = useSelector((state) => state.ingredientsSelected);
+  console.log("SE")
+  console.log(ingredientsSelected)
   const handleChange = (event) => {
     const {
       target: { value },
     } = event;
-    setName(
-      // On autofill we get a stringified value.
-      typeof value === "string" ? value.split(",") : value
-    );
+    console.log(value)
+    dispatch(setIngredients(value))
   };
 
   return (
@@ -54,12 +57,12 @@ export function IngredientsView() {
           labelId="demo-multiple-chip-label"
           id="demo-multiple-chip"
           multiple
-          value={name}
+          value={ingredientsSelected.values}
           onChange={handleChange}
           input={<OutlinedInput id="select-multiple-chip" label="Chip" />}
           renderValue={(selected) => (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-              {selected.map((value) => (
+              {ingredientsSelected.values.map((value) => (
                 <Chip key={value} label={value} />
               ))}
             </Box>
@@ -68,7 +71,7 @@ export function IngredientsView() {
         >
           {ingredients.map((ingredient) => (
             <MenuItem
-              key={ingredient.name}
+              key={ingredient.uuid}
               value={ingredient.name}
               style={getStyles(name, name, theme)}
             >
