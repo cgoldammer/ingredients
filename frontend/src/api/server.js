@@ -92,8 +92,10 @@ export const handlers = [
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredients));
   }),
-  rest.get("/fakeApi/recipes", (req, res, ctx) => {
-    const recipes = db.recipe.getAll().map(serializeFullRecipe);
+  rest.post("/fakeApi/recipesPossible", (req, res, ctx) => {
+    const recipes = {
+      recipes: db.fullRecipe.getAll().map(serializeFullRecipe)
+    };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(recipes));
   }),
 ];

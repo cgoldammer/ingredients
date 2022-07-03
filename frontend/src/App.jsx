@@ -2,6 +2,8 @@ import React from "react";
 
 import { IngredientsView } from "./features/ingredients/IngredientsView";
 
+import { RecipesView } from "./features/recipes/RecipesView";
+
 import { ThemeProvider, Box } from "@mui/material";
 
 import { Route, Routes } from "react-router-dom";
@@ -15,7 +17,11 @@ export function App() {
       <Box>
         <Box sx={{ my: 2 }}>
           <Routes>
-            <Route path="/" element={<IngredientsView />} />
+            <Route path="/" element={<div>
+              <IngredientsView />
+              <RecipesView />
+            </div>} />
+
           </Routes>
         </Box>
       </Box>

@@ -1,7 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { useSelector, useDispatch } from "react-redux";
+
 
 const url = process.env.BACKENDURL;
 console.log("Backend: " + url);
+
 
 export const apiSlice = createApi({
   reducerPath: "api",
@@ -15,7 +18,19 @@ export const apiSlice = createApi({
         ...result.ingredients.map(({ id }) => ({ type: "Ingredient", id })),
       ],
     }),
+    getRecipesPossible: builder.query({
+      query: (user) => ({
+        url: "/recipesPossible",
+        method: 'POST',
+        body: user // Body is automatically converted to json with the correct headers
+      }),
+      // query: () => "/recipesPossible",
+      providesTags: (result = []) => [
+        "Recipe",
+        ...result.recipes.map(({ id }) => ({ type: "Recipe", id })),
+      ],
+    })
   }),
 });
 
-export const { useGetIngredientsQuery } = apiSlice;
+export const { useGetIngredientsQuery, useGetRecipesPossibleQuery } = apiSlice;
