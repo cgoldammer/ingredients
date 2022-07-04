@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  snap:
+  scala:
     build:
       context: .
       dockerfile: Dockerfile-scala-last-step
@@ -9,7 +9,6 @@ services:
       - postgres2
     ports:
       - "8300:8080"
-
     command: bash -c "export POSTGRESPORT=jdbc:postgresql://postgres2:5432/ingredients; sbt 'runMain com.chrisgoldammer.cocktails.data.CallMe'; sbt 'runMain com.chrisgoldammer.cocktails.Main'"
 
   postgres2:
@@ -32,5 +31,5 @@ services:
     command: npm run devDocker
     working_dir: /frontend
     depends_on:
-      - postgres
-      - snap
+      - postgres2
+      - scala

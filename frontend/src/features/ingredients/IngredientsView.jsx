@@ -67,7 +67,7 @@ export function IngredientsView() {
           renderValue={() => (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
               {ingredientsSelected.values.map((value) => (
-                <Chip key={value} label={value} />
+                <Chip key={value.uuid} label={value.name} />
               ))}
             </Box>
           )}
@@ -76,7 +76,7 @@ export function IngredientsView() {
           {ingredients.map((ingredient) => (
             <MenuItem
               key={ingredient.uuid}
-              value={ingredient.name}
+              value={ingredient}
               style={getStyles(name, name, theme)}
             >
               {ingredient.name}

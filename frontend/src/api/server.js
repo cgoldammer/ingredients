@@ -1,9 +1,9 @@
-import { rest, setupWorker } from "msw";
-import { factory, manyOf, primaryKey } from "@mswjs/data";
+import {rest, setupWorker} from "msw";
+import {factory, manyOf, primaryKey} from "@mswjs/data";
 import faker from "faker";
 import seedrandom from "seedrandom";
-import { setRandom } from "txtgen";
-import { getRange } from "../helpers";
+import {setRandom} from "txtgen";
+import {getRange} from "../helpers";
 
 // Add an extra delay to all endpoints, so loading spinners show up.
 const ARTIFICIAL_DELAY_MS = 1;
@@ -91,6 +91,12 @@ export const handlers = [
       ingredients: db.ingredient.getAll().map(serializeIngredient),
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredients));
+  }),
+  rest.get("/fakeApi/recipes", (req, res, ctx) => {
+    const recipes = {
+      recipes: db.fullRecipe.getAll().map(serializeFullRecipe),
+    };
+    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(recipes));
   }),
   rest.post("/fakeApi/recipesPossible", (req, res, ctx) => {
     const recipes = {

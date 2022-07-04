@@ -1,29 +1,20 @@
 import React from "react";
-import { useGetIngredientsQuery, useGetRecipesPossibleQuery } from "../api/apiSlice";
-import { Box } from "@mui/material";
+import {useGetRecipesQuery} from "../api/apiSlice";
+import {useSelector} from "react-redux";
+import {RecipeView} from './RecipeView'
 
-import { useTheme } from "@mui/material/styles";
-import OutlinedInput from "@mui/material/OutlinedInput";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
-import Chip from "@mui/material/Chip";
-import { useSelector, useDispatch } from "react-redux";
+const baseResult = {'recipes': []}
 
 
 export function RecipesView() {
-  var { data } = useGetIngredientsQuery() || {};
-  var { ingredients = [] } = data || {};
-  var { data } = useGetRecipesPossibleQuery(ingredients.map(i => i.uuid)) || {};
-  var { recipes = [] } = data || {};
-  const divs = recipes.map((r) =>
-    <div key={r.uuid}> {r.name} </div>
-  )
+  var {data} = useGetRecipesQuery() || baseResult;
+  var {recipes = []} = data || {};
+  const divs = recipes.map(RecipeView);
   return (
-    <div><div>Recipes Possible</div>
+    <div>
+      <div>All Recipes</div>
       <div>
-        { divs }
+        {divs}
       </div>
     </div>
   );

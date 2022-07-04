@@ -18,7 +18,7 @@ const app = (
 );
 
 worker.start();
-store.dispatch(apiSlice.endpoints.getIngredients.initiate());
+//store.dispatch(apiSlice.endpoints.getIngredients.initiate());
 //store.dispatch(apiSlice.endpoints.getRecipesPossible.initiate());
 
 ReactDOM.render(app, document.getElementById("app"));

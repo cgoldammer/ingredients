@@ -5,12 +5,12 @@ import recipesReducer, { setRecipes } from "./recipeReducer";
 
 const listenerMiddleware = createListenerMiddleware()
 
-listenerMiddleware.startListening({
-  actionCreator: setIngredients,
-  effect: async (action, listenerApi) => {
-    listenerApi.dispatch(apiSlice.endpoints.getRecipesPossible.initiate(action.payload))
-  },
-})
+// listenerMiddleware.startListening({
+//   actionCreator: setIngredients,
+//   effect: async (action, listenerApi) => {
+//     listenerApi.dispatch(apiSlice.endpoints.getRecipesPossible.initiate(action.payload))
+//   },
+// })
 
 
 // listenerMiddleware.startListening({
