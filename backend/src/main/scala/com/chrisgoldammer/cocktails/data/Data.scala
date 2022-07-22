@@ -59,7 +59,8 @@ val createTags =
   sql"""
 CREATE TABLE tags (
 id SERIAL,
-name VARCHAR NOT NULL UNIQUE
+name VARCHAR NOT NULL UNIQUE,
+PRIMARY KEY(id)
 )
 """.stripMargin
 
@@ -70,7 +71,9 @@ id SERIAL,
 ingredient_id INT,
 tag_id INT,
 CONSTRAINT fk_it_i FOREIGN KEY(ingredient_id) REFERENCES ingredients(id),
-CONSTRAINT fk_it_t FOREIGN KEY(tag_id) REFERENCES tags(id)
+CONSTRAINT fk_it_t FOREIGN KEY(tag_id) REFERENCES tags(id),
+PRIMARY KEY(id)
+)
 """.stripMargin
 
 case class MElement[T](id: Int, element: T)
@@ -128,7 +131,7 @@ def insertTag(name: String): ConnectionIO[MTag] = {
 
 
 def insertIngredientTag(ingredientId: Int, tagId: Int): ConnectionIO[MIngredientTag] = {
-  sql"INSERT INTO ingredient_tags (ingredient_id, tag_id) values ($ingredientId, $tagId)".update.withUniqueGeneratedKeys("id", "name")
+  sql"INSERT INTO ingredient_tags (ingredient_id, tag_id) values ($ingredientId, $tagId)".update.withUniqueGeneratedKeys("id", "ingredient_id", "tag_id")
 }
 
 def insertIngredient(name: String): ConnectionIO[MIngredient] = {
@@ -203,6 +206,7 @@ def insertFromSetupData(sd: SetupData): Unit = {
   val mTags =
     for (tagName <- tagNames.distinct)
       yield insertTag(tagName).transact(xa).unsafeRunSync()
+
 
   val mIngredients =
     for (ingredient <- sd.ingredientData)
@@ -319,7 +323,7 @@ def setup(): Unit = {
 
   dropTables()
   createTables()
-  //insertFromSetupData(sdSimple)
+  insertFromSetupData(sdSimple)
 }
 
 object CallMe {
