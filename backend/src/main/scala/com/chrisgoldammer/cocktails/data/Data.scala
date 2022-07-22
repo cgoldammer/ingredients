@@ -55,6 +55,23 @@ CONSTRAINT fk_recipe FOREIGN KEY(recipe_id) REFERENCES recipes(id)
 )
 """.stripMargin
 
+val createTags =
+  sql"""
+CREATE TABLE tags (
+id SERIAL,
+name VARCHAR NOT NULL UNIQUE
+)
+""".stripMargin
+
+val createIngredientTags =
+  sql"""
+CREATE TABLE ingredient_tags (
+id SERIAL,
+ingredient_id INT,
+tag_id INT,
+CONSTRAINT fk_it_i FOREIGN KEY(ingredient_id) REFERENCES ingredients(id),
+CONSTRAINT fk_it_t FOREIGN KEY(tag_id) REFERENCES tags(id)
+""".stripMargin
 
 case class MElement[T](id: Int, element: T)
 
@@ -69,6 +86,14 @@ case class FullRecipe(name: String, uuid: String, ingredients: Array[Ingredient]
 case class RecipeIngredientData(name: String, uuid: String, ingredientName: String, ingredientUuid: String)
 
 case class MIngredient(id: Int, element: Ingredient)
+
+case class Tag(name: String)
+
+case class IngredientTag()
+
+case class MTag(id: Int, element: Tag)
+
+case class MIngredientTag(id: Int, element: Tag)
 
 case class MIngredientData(id: Int, name: String, uuid: String)
 
@@ -95,6 +120,15 @@ def getMIngredientFromData(md: MIngredientData): MIngredient = {
 def getMRecipeFromData(md: MRecipeData): MRecipe = {
   val recipe = Recipe(name = md.name, uuid = md.uuid)
   MRecipe(id = md.id, element = recipe)
+}
+
+def insertTag(name: String): ConnectionIO[MTag] = {
+  sql"INSERT INTO tags (name) values ($name)".update.withUniqueGeneratedKeys("id", "name")
+}
+
+
+def insertIngredientTag(ingredientId: Int, tagId: Int): ConnectionIO[MIngredientTag] = {
+  sql"INSERT INTO ingredient_tags (ingredient_id, tag_id) values ($ingredientId, $tagId)".update.withUniqueGeneratedKeys("id", "name")
 }
 
 def insertIngredient(name: String): ConnectionIO[MIngredient] = {
@@ -137,6 +171,8 @@ def getFullRecipes(): Array[FullRecipe] = {
 }
 
 def dropTables(): Unit = {
+  sql"DROP TABLE IF EXISTS ingredient_tags".update.run.transact(xa).unsafeRunSync()
+  sql"DROP TABLE IF EXISTS tags".update.run.transact(xa).unsafeRunSync()
   sql"DROP TABLE IF EXISTS recipe_ingredients".update.run.transact(xa).unsafeRunSync()
   sql"DROP TABLE IF EXISTS recipes".update.run.transact(xa).unsafeRunSync()
   sql"DROP TABLE IF EXISTS ingredients".update.run.transact(xa).unsafeRunSync()
@@ -146,44 +182,57 @@ def createTables(): Unit = {
   createRecipe.update.run.transact(xa).unsafeRunSync()
   createIngredients.update.run.transact(xa).unsafeRunSync()
   createRecipeIngredients.update.run.transact(xa).unsafeRunSync()
+  createTags.update.run.transact(xa).unsafeRunSync()
+  createIngredientTags.update.run.transact(xa).unsafeRunSync()
 }
 
+def getRecipeByName(mRecipes: Array[MRecipeData], name: String): MRecipeData = mRecipes.groupBy(_.name).transform((k, v) => v.head)(name)
+def getIngredientByName(mIngredients: Array[MIngredient], name: String): MIngredient = mIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
+def getTagByName(mTags: Array[MTag], name: String): MTag = mTags.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
-class DataHelper(val mIngredients: Array[MIngredient], val mRecipes: Array[MRecipe]) {
-
-  val recipesByName = mRecipes.groupBy(_.element.name).transform((k, v) => v.head)
-  val ingredientsByName = mIngredients.groupBy(_.element.name).transform((k, v) => v.head)
-
-  def getRecipe(name: String): MRecipe = {
-    recipesByName(name)
-  }
-
-  def getIngredient(name: String): MIngredient = {
-    ingredientsByName(name)
-  }
-}
-
-case class SetupData(ingredientNames: Array[String], recipeNames: Map[String, Array[String]])
+case class SetupData(ingredientData: Array[IngredientDataRaw], recipeNames: Map[String, Array[String]])
 
 def insertFromSetupData(sd: SetupData): Unit = {
+
+  val tagNames: Array[String] =
+    for {
+      ingredient <- sd.ingredientData
+      tag <- ingredient.IngredientTagNames
+    } yield tag
+
+  val mTags =
+    for (tagName <- tagNames.distinct)
+      yield insertTag(tagName).transact(xa).unsafeRunSync()
+
   val mIngredients =
-    for (ingredient <- sd.ingredientNames)
-      yield insertIngredient(ingredient).transact(xa).unsafeRunSync()
-  val mRecipeDatas =
+    for (ingredient <- sd.ingredientData)
+      yield insertIngredient(ingredient.name).transact(xa).unsafeRunSync()
+
+  val x =
+    for {
+      ingredient <- sd.ingredientData
+      tagName <- ingredient.IngredientTagNames
+    } yield {
+      val tagId = getTagByName(mTags, tagName).id
+      val ingredientId = getIngredientByName(mIngredients, ingredient.name).id
+      insertIngredientTag(ingredientId = ingredientId, tagId = tagId).transact(xa).unsafeRunSync()
+    }
+
+  val mRecipes: Iterable[MRecipeData] =
     for (recipe <- sd.recipeNames.keys)
       yield insertRecipe(recipe).transact(xa).unsafeRunSync()
-
-  val dh = DataHelper(mIngredients = mIngredients.toArray, mRecipes = mRecipeDatas.toArray.map(getMRecipeFromData))
 
   val mRecipeIngredients = for {
     (recipeName, recipeIngredientNames) <- sd.recipeNames
     recipeIngredientName <- recipeIngredientNames.toList
   } yield {
-    val recipeId = dh.getRecipe(recipeName).id
-    val ingredientId = dh.getIngredient(recipeIngredientName).id
+    val recipeId = getRecipeByName(mRecipes.toArray, recipeName).id
+    val ingredientId = getIngredientByName(mIngredients, recipeIngredientName).id
     insertRecipeIngredient(recipeId = recipeId, ingredientId = ingredientId).transact(xa).unsafeRunSync()
   }
+
 }
+
 
 def searchQuery(ingredientUuids: NonEmptyList[String]) = {
   val inFragment = Fragments.in(fr"i.uuid", ingredientUuids)
@@ -240,17 +289,37 @@ def getIngredientsData(): Array[MIngredientData] = {
 
 def getIngredients(): Array[Ingredient] = getIngredientsData().map(getMIngredientFromData).map(_.element)
 
+val ingredientTagNames = Array("Sugar", "Liquor", "Fortified Wine", "Bitter", "Strong", "Other")
+
+
+object ItemType extends Enumeration {
+  type ItemType = Value
+  val RECIPE, INGREDIENT = Value
+}
+//
+//case class IngredientTagData(name: String, itemType: ItemType)
+//
+//val ingredientTags = ingredientTagNames.map(n => IngredientTagData(name = n, itemType = ItemType.INGREDIENT))
+
+case class IngredientDataRaw(name: String, IngredientTagNames: Array[String])
+
 def setup(): Unit = {
-  val ingredientNames = Array("Bourbon", "Dry Vermouth", "Campari", "Sugar", "Bitters")
+  val ingredientData: Array[IngredientDataRaw] = Array(
+    IngredientDataRaw("Bourbon", Array("Strong")),
+    IngredientDataRaw("Dry Vermouth", Array("Fortified Wine")),
+    IngredientDataRaw("Campari", Array("Other")),
+    IngredientDataRaw("Sugar", Array("Sugar")),
+    IngredientDataRaw("Bitters", Array("Bitter")),
+  )
   val recipeNames = Map(
     "Boulevardier" -> Array("Bourbon", "Dry Vermouth", "Campari"),
     "Old Fashioned" -> Array("Bourbon", "Sugar", "Bitters")
   )
-  val sdSimple = SetupData(ingredientNames = ingredientNames, recipeNames = recipeNames)
+  val sdSimple = SetupData(ingredientData = ingredientData, recipeNames = recipeNames)
 
   dropTables()
   createTables()
-  insertFromSetupData(sdSimple)
+  //insertFromSetupData(sdSimple)
 }
 
 object CallMe {
