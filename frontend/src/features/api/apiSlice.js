@@ -11,6 +11,13 @@ export const apiSlice = createApi({
   baseQuery: fetchBaseQuery({baseUrl: url}),
   tagTypes: ["Ingredient", "Recipe"],
   endpoints: (builder) => ({
+    getTags: builder.query({
+      query: () => "/tags",
+      providesTags: (result = []) => [
+        "Tag",
+        ...result.tags.map(({id}) => ({type: "Tag", id})),
+      ],
+    }),
     getIngredients: builder.query({
       query: () => "/ingredients",
       providesTags: (result = []) => [
@@ -39,4 +46,9 @@ export const apiSlice = createApi({
   }),
 });
 
-export const {useGetIngredientsQuery, useGetRecipesQuery, useGetRecipesPossibleQuery} = apiSlice;
+export const {
+  useGetTagsQuery,
+  useGetIngredientsQuery,
+  useGetRecipesQuery,
+  useGetRecipesPossibleQuery,
+} = apiSlice;

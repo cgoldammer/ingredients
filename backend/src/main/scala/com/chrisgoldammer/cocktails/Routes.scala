@@ -1,5 +1,8 @@
 package com.chrisgoldammer.cocktails
 
+import doobie.postgres.*
+import doobie.postgres.implicits.*
+
 import cats.effect.*
 import org.http4s.*
 import org.http4s.circe.jsonOf
@@ -21,14 +24,25 @@ import org.http4s.headers.Origin
 
 case class RecipeResults(recipes: Array[Recipe])
 
-case class IngredientResult(ingredients: Array[Ingredient])
+case class TagResults(tags: Array[Tag])
+
+case class IngredientResults(ingredients: Array[FullIngredient])
 
 case class FullRecipeResult(recipes: Array[FullRecipe])
 
 case class User(name: String)
 
+implicit val decT: Decoder[Tag] = deriveDecoder
+implicit val encT: Encoder[Tag] = deriveEncoder
+implicit val decTR: Decoder[TagResults] = deriveDecoder
+implicit val encTR: Encoder[TagResults] = deriveEncoder
+implicit val decT2: EntityDecoder[IO, TagResults] = jsonOf[IO, TagResults]
+
 implicit val decI: Decoder[Ingredient] = deriveDecoder
 implicit val encI: Encoder[Ingredient] = deriveEncoder
+
+implicit val decFI: Decoder[FullIngredient] = deriveDecoder
+implicit val encFI: Encoder[FullIngredient] = deriveEncoder
 
 implicit val decMR: Decoder[Recipe] = deriveDecoder
 implicit val encMR: Encoder[Recipe] = deriveEncoder
@@ -40,9 +54,9 @@ implicit val decI3: Decoder[FullRecipeResult] = deriveDecoder
 implicit val encI3: Encoder[FullRecipeResult] = deriveEncoder
 implicit val decIR23: EntityDecoder[IO, FullRecipeResult] = jsonOf[IO, FullRecipeResult]
 
-implicit val decIR: Decoder[IngredientResult] = deriveDecoder
-implicit val encIR: Encoder[IngredientResult] = deriveEncoder
-implicit val decIR2: EntityDecoder[IO, IngredientResult] = jsonOf[IO, IngredientResult]
+implicit val decIR: Decoder[IngredientResults] = deriveDecoder
+implicit val encIR: Encoder[IngredientResults] = deriveEncoder
+implicit val decIR2: EntityDecoder[IO, IngredientResults] = jsonOf[IO, IngredientResults]
 
 implicit val decISL: Decoder[IngredientSearchList] = deriveDecoder
 implicit val encISL: Encoder[IngredientSearchList] = deriveEncoder
@@ -52,14 +66,20 @@ implicit val decRR: Decoder[RecipeResults] = deriveDecoder
 implicit val encRR: Encoder[RecipeResults] = deriveEncoder
 implicit val decRR2: EntityDecoder[IO, RecipeResults] = jsonOf[IO, RecipeResults]
 
-
 import org.http4s.server.middleware._
 
 val jsonApp = HttpRoutes.of[IO] {
   case GET -> Root / "ingredients" =>
     for {
       ing <- IO {
-        IngredientResult(getIngredients()).asJson
+        IngredientResults(getIngredients()).asJson
+      }
+      resp <- Ok(ing)
+    } yield resp
+  case GET -> Root / "tags" =>
+    for {
+      ing <- IO {
+        TagResults(getTags()).asJson
       }
       resp <- Ok(ing)
     } yield resp

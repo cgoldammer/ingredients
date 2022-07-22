@@ -3,6 +3,8 @@ import {useGetRecipesPossibleQuery} from "../api/apiSlice";
 import {RecipeView} from './RecipeView'
 import {useSelector} from "react-redux";
 
+import {ThemeProvider, Box, Typography, H1} from "@mui/material";
+
 const baseResult = {'recipes': []}
 
 export function RecipesPossibleView() {
@@ -13,7 +15,6 @@ export function RecipesPossibleView() {
   const divs = recipes.map(RecipeView)
   return (
     <div>
-      <div>Recipes Possible</div>
       <div>
         {divs}
       </div>

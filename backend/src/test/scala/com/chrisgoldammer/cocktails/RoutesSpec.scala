@@ -13,7 +13,7 @@ class IngredientsSpec extends CatsEffectSuite:
   }
 
   test("HelloWorld returns hello world message") {
-    assertIO(retHelloWorld.flatMap(_.as[IngredientResult]), )
+    assertIO(retHelloWorld.flatMap(_.as[IngredientResults]), )
   }
 
   private[this] val retHelloWorld: IO[Response[IO]] =

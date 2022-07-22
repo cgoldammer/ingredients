@@ -10,6 +10,8 @@ import cats.implicits.*
 import cats.effect.unsafe.implicits.global
 import java.util.UUID.randomUUID
 import scala.concurrent.ExecutionContext.Implicits.global
+import doobie.postgres.*
+import doobie.postgres.implicits.*
 
 def getUuid() = randomUUID().toString
 
@@ -80,6 +82,8 @@ case class MElement[T](id: Int, element: T)
 
 case class Ingredient(name: String, uuid: String)
 
+case class FullIngredient(name: String, uuid: String, tags: Array[Tag])
+
 case class Recipe(name: String, uuid: String)
 
 case class RecipeIngredient()
@@ -88,17 +92,21 @@ case class FullRecipe(name: String, uuid: String, ingredients: Array[Ingredient]
 
 case class RecipeIngredientData(name: String, uuid: String, ingredientName: String, ingredientUuid: String)
 
-case class MIngredient(id: Int, element: Ingredient)
+case class MFullIngredient(id: Int, element: FullIngredient)
 
 case class Tag(name: String)
 
 case class IngredientTag()
 
+case class MTagData(id: Int, name: String)
+
 case class MTag(id: Int, element: Tag)
+
+case class MIngredient(id: Int, element: Ingredient)
 
 case class MIngredientTag(id: Int, element: Tag)
 
-case class MIngredientData(id: Int, name: String, uuid: String)
+case class MFullIngredientData(id: Int, name: String, uuid: String, tags: Array[String])
 
 case class MRecipeIngredient(id: Int, element: RecipeIngredient)
 
@@ -115,9 +123,10 @@ case class IngredientResult(ingredients: Array[Ingredient])
 sealed case class IngredientSearchList(ingredients: Array[String])
 
 
-def getMIngredientFromData(md: MIngredientData): MIngredient = {
-  val ingredient = Ingredient(name = md.name, uuid = md.uuid)
-  MIngredient(id = md.id, element = ingredient)
+def getMFullIngredientFromData(md: MFullIngredientData): MFullIngredient = {
+  val tags = md.tags.map(t => Tag(t))
+  val ingredient = FullIngredient(name = md.name, uuid = md.uuid, tags = tags)
+  MFullIngredient(id = md.id, element = ingredient)
 }
 
 def getMRecipeFromData(md: MRecipeData): MRecipe = {
@@ -287,11 +296,26 @@ def getRecipesForIngredients(ingredientUids: Array[String]): Array[Recipe] = {
   getMRecipesForIngredients(ingredientUids).map(recipeFromMRecipe)
 }
 
-def getIngredientsData(): Array[MIngredientData] = {
-  sql"SELECT id, name, uuid FROM ingredients".query[MIngredientData].to[Array].transact(xa).unsafeRunSync()
+def getIngredientsData(): Array[MFullIngredientData] = {
+  sql"""
+  with base AS (SELECT i.id, i.name, i.uuid, t.name AS tag_name
+              FROM ingredients i
+                       JOIN ingredient_tags it on i.id = it.ingredient_id
+                       JOIN tags t ON it.tag_id = t.id)
+SELECT id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags FROM base
+                 group by id
+  """.query[MFullIngredientData].to[Array].transact(xa).unsafeRunSync()
 }
 
-def getIngredients(): Array[Ingredient] = getIngredientsData().map(getMIngredientFromData).map(_.element)
+def getIngredients(): Array[FullIngredient] = getIngredientsData().map(getMFullIngredientFromData).map(_.element)
+
+def getTagsData(): Array[MTagData] = {
+  sql"SELECT id, name FROM tags".query[MTagData].to[Array].transact(xa).unsafeRunSync()
+}
+
+def getTagFromMTag(mt: MTagData): Tag = Tag(mt.name)
+
+def getTags(): Array[Tag] = getTagsData().map(getTagFromMTag)
 
 val ingredientTagNames = Array("Sugar", "Liquor", "Fortified Wine", "Bitter", "Strong", "Other")
 

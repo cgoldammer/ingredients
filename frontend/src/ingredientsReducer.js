@@ -8,14 +8,17 @@ export const ingredientsSelectedSlice = createSlice({
   },
   reducers: {
     setIngredients: (state, actions) => {
-      const value = actions.payload;
+      const {tagName, additions, removals} = actions.payload;
       console.log("About to set values");
       console.log(actions);
-      state.values = value;
+      console.log("REmomvals")
+      console.log(removals);
+      const valsNotRemoved = state.values.filter(v => ! removals.map(r => r.uuid).includes(v.uuid));
+      //const valsNotRemoved = [];
+      state.values = additions.concat(valsNotRemoved);
     },
   },
 });
-
 
 export const { setIngredients } = ingredientsSelectedSlice.actions;
 export default ingredientsSelectedSlice.reducer;
