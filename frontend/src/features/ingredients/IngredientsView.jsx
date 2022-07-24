@@ -11,7 +11,7 @@ import Select from "@mui/material/Select";
 import Chip from "@mui/material/Chip";
 import { useSelector, useDispatch } from "react-redux";
 import { setIngredients } from "../../ingredientsReducer";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
 function getStyles(name, personName, theme) {
   return {
@@ -37,25 +37,35 @@ const MenuProps = {
 Each tag has its own ingredients view
  */
 
-export function IngredientsWithTagView(props){
+export function IngredientsWithTagView(props) {
+  const dispatch = useDispatch();
   const theme = useTheme();
   const { tagName, ingredients } = props;
-  const dispatch = useDispatch();
-  const ingredientsSelected = useSelector((state) => state.ingredientsSelected.values)
-  const allIds = ingredients.map(i => i.uuid);
-  const ingredientsDisplayable = ingredientsSelected.filter(i => allIds.includes(i.uuid));
+  const ingredientsSelected = useSelector(
+    (state) => state.ingredientsSelected.values
+  );
+  const allIds = ingredients.map((i) => i.uuid);
+  const ingredientsDisplayable = ingredientsSelected.filter((i) =>
+    allIds.includes(i.uuid)
+  );
   const handleChange = (event) => {
     const {
       target: { value },
     } = event;
-    console.log("Current")
+    console.log("Current");
     console.log(ingredientsDisplayable);
     console.log(value);
 
-    const additions = value.filter(v => !ingredientsSelected.map(i => i.uuid).includes(v.uuid));
-    const removals = ingredientsDisplayable.filter(v => !value.map(i => i.uuid).includes(v.uuid));
+    const additions = value.filter(
+      (v) => !ingredientsSelected.map((i) => i.uuid).includes(v.uuid)
+    );
+    const removals = ingredientsDisplayable.filter(
+      (v) => !value.map((i) => i.uuid).includes(v.uuid)
+    );
 
-    dispatch(setIngredients({tag: tagName, additions: additions, removals: removals}));
+    dispatch(
+      setIngredients({ tag: tagName, additions: additions, removals: removals })
+    );
   };
 
   return (
@@ -91,53 +101,42 @@ export function IngredientsWithTagView(props){
       </FormControl>
     </div>
   );
-
 }
 
 IngredientsWithTagView.propTypes = {
-  ingredients: PropTypes.list
+  ingredients: PropTypes.list,
+  tagName: PropTypes.String,
 };
 
-
 const splitByTag = (ingredients, tags) => {
-  console.log("Ingredients: " + ingredients.length + " | Tags: " + tags.length)
+  console.log("Ingredients: " + ingredients.length + " | Tags: " + tags.length);
   console.log(ingredients);
-  const findIngredients = tag => ingredients.filter(ingredient => ingredient.tags.map(t => t.name).includes(tag))
-  return tags.reduce((obj, x) => Object.assign(obj, { [x]: findIngredients(x) }), {})
-}
+  const findIngredients = (tag) =>
+    ingredients.filter((ingredient) =>
+      ingredient.tags.map((t) => t.name).includes(tag)
+    );
+  return tags.reduce(
+    (obj, x) => Object.assign(obj, { [x]: findIngredients(x) }),
+    {}
+  );
+};
 
 export function IngredientsView() {
-  var { data } = useGetIngredientsQuery() || {};
-  var { ingredients = [] } = data || {};
-  var { data } = useGetTagsQuery() || {};
-  const { tags = [] } = data || {};
-  const theme = useTheme();
-  const dispatch = useDispatch();
+  const { data: ingredientsData } = useGetIngredientsQuery() || {};
+  const { ingredients = [] } = ingredientsData || {};
+  const { data: tagsData } = useGetTagsQuery() || {};
+  const { tags = [] } = tagsData || {};
 
-  var splitIngredients = splitByTag(ingredients, tags.map(t => t.name))
-  console.log("KEYS")
-  console.log(tags.map(t => t.name))
-  console.log(Object.keys(splitIngredients))
-  console.log(splitIngredients['Ergonomic'])
-
-  // var res = <div></div>
-  // if (Object.keys(splitIngredients).includes('Ergonomic')){
-  //   const props = {ingredients: splitIngredients['Ergonomic']};
-  //   res = IngredientsWithTagView(props);
-  // }
+  var splitIngredients = splitByTag(
+    ingredients,
+    tags.map((t) => t.name)
+  );
   var vals = Object.keys(splitIngredients);
-  // vals = ["a", "b'"];
-  const views = vals.map((t) =>
+  const views = vals.map((t) => (
     <div key={t}>
       <IngredientsWithTagView tagName={t} ingredients={splitIngredients[t]} />
     </div>
-  );
+  ));
 
-  return (
-    <div>
-      { views }
-
-    </div>
-  )
-
+  return <div>{views}</div>;
 }

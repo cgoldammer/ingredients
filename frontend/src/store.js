@@ -1,24 +1,8 @@
 import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
 import { apiSlice } from "./features/api/apiSlice";
-import ingredientsSelectedReducer, { setIngredients } from "./ingredientsReducer";
-import recipesReducer, { setRecipes } from "./recipeReducer";
-
-const listenerMiddleware = createListenerMiddleware()
-
-// listenerMiddleware.startListening({
-//   actionCreator: setIngredients,
-//   effect: async (action, listenerApi) => {
-//     listenerApi.dispatch(apiSlice.endpoints.getRecipesPossible.initiate(action.payload))
-//   },
-// })
-
-
-// listenerMiddleware.startListening({
-//   actionCreator: apiSlice.useGetRecipesPossibleQuery,
-//   effect: async (action, listenerApi) => {
-//     listenerApi.dispatch(apiSlice.endpoints.getRecipesPossible.initiate(action.payload))
-//   },
-// })
+import ingredientsSelectedReducer from "./ingredientsReducer";
+import recipesReducer from "./recipeReducer";
+const listenerMiddleware = createListenerMiddleware();
 
 export const store = configureStore({
   reducer: {
@@ -27,5 +11,7 @@ export const store = configureStore({
     recipes: recipesReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().prepend(listenerMiddleware.middleware).concat(apiSlice.middleware),
+    getDefaultMiddleware()
+      .prepend(listenerMiddleware.middleware)
+      .concat(apiSlice.middleware),
 });

@@ -1,6 +1,4 @@
-
 import { createSlice } from "@reduxjs/toolkit";
-import thunkMiddleware from 'redux-thunk'
 
 export const recipesSlice = createSlice({
   name: "recipes",
@@ -27,7 +25,7 @@ export const recipesSlice = createSlice({
   //     }
   //   )
   // }
-})
+});
 
 export const { setRecipes } = recipesSlice.actions;
 export default recipesSlice.reducer;

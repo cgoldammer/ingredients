@@ -32,7 +32,10 @@ export const theme = createTheme({
 export const getRange = (max) => Array.from(Array(max), (n, index) => index);
 
 export const getRandomSample = (arr, size) => {
-  var shuffled = arr.slice(0), i = arr.length, temp, index;
+  var shuffled = arr.slice(0),
+    i = arr.length,
+    temp,
+    index;
   while (i--) {
     index = Math.floor((i + 1) * Math.random());
     temp = shuffled[index];
@@ -40,4 +43,4 @@ export const getRandomSample = (arr, size) => {
     shuffled[i] = temp;
   }
   return shuffled.slice(0, size);
-}
+};
