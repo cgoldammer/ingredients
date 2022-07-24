@@ -237,7 +237,7 @@ def getIngredientsData(): List[MFullIngredientData] = {
               FROM ingredients i
                        JOIN ingredient_tags it on i.id = it.ingredient_id
                        JOIN tags t ON it.tag_id = t.id)
-SELECT id, min(name) as name, min(uuid) as uuid, List_agg(tag_name) as tags FROM base
+SELECT id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags FROM base
                  group by id
   """.query[MFullIngredientData].to[List].transact(xa).unsafeRunSync()
 }
