@@ -22,13 +22,13 @@ import com.comcast.ip4s.{ipv4, port}
 
 import org.http4s.headers.Origin
 
-case class RecipeResults(recipes: Array[Recipe])
+case class RecipeResults(recipes: List[Recipe])
 
-case class TagResults(tags: Array[Tag])
+case class TagResults(tags: List[Tag])
 
-case class IngredientResults(ingredients: Array[FullIngredient])
+case class IngredientResults(ingredients: List[FullIngredient])
 
-case class FullRecipeResult(recipes: Array[FullRecipe])
+case class FullRecipeResult(recipes: List[FullRecipe])
 
 case class User(name: String)
 
