@@ -37,8 +37,6 @@ export async function client(endpoint, { body, ...customConfig } = {}) {
 }
 
 client.get = function (endpoint, customConfig = {}) {
-  console.log("END");
-  console.log(endpoint);
   return client(endpoint, { ...customConfig, method: "GET" });
 };
 

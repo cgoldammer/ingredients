@@ -22,7 +22,6 @@ export function App() {
                 <div>
                   <IngredientsView />
                   <RecipesPossibleView />
-                  {/*<RecipesView/>*/}
                 </div>
               }
             />

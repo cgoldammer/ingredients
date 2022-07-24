@@ -52,9 +52,6 @@ export function IngredientsWithTagView(props) {
     const {
       target: { value },
     } = event;
-    console.log("Current");
-    console.log(ingredientsDisplayable);
-    console.log(value);
 
     const additions = value.filter(
       (v) => !ingredientsSelected.map((i) => i.uuid).includes(v.uuid)
@@ -109,8 +106,6 @@ IngredientsWithTagView.propTypes = {
 };
 
 const splitByTag = (ingredients, tags) => {
-  console.log("Ingredients: " + ingredients.length + " | Tags: " + tags.length);
-  console.log(ingredients);
   const findIngredients = (tag) =>
     ingredients.filter((ingredient) =>
       ingredient.tags.map((t) => t.name).includes(tag)
