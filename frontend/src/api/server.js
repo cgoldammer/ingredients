@@ -120,11 +120,14 @@ export const handlers = [
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(tags));
   }),
-  rest.get("/fakeApi/recipes", (req, res, ctx) => {
-    const recipes = {
-      recipes: db.fullRecipe.getAll().map(serializeFullRecipe),
+  rest.get("/fakeApi/ingredientSets", (req, res, ctx) => {
+    const ingredients = {
+      ingredients: db.ingredient.getAll().map(serializeIngredient),
     };
-    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(recipes));
+    const firstHalf = getRange(parseInt(ingredients.length / 2))
+    const firstHalfSet = firstHalf.map(i => ingredients[i])
+    const ingredientSets = {'firstHalf': firstHalfSet}
+    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredientSets));
   }),
   rest.post("/fakeApi/recipesPossible", (req, res, ctx) => {
     const recipes = {

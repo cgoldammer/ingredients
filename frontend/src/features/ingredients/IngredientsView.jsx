@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetTagsQuery, useGetIngredientsQuery } from "../api/apiSlice";
+import { useGetTagsQuery, useGetIngredientsQuery, useGetIngredientSets } from "../api/apiSlice";
 import { Box } from "@mui/material";
 
 import { useTheme } from "@mui/material/styles";
@@ -9,8 +9,9 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import Chip from "@mui/material/Chip";
+import Button from '@mui/material/Button';
 import { useSelector, useDispatch } from "react-redux";
-import { setIngredients } from "../../ingredientsReducer";
+import { setIngredients, removeIngredients, addIngredients } from "../../ingredientsReducer";
 import PropTypes from "prop-types";
 
 function getStyles(name, personName, theme) {
@@ -33,9 +34,71 @@ const MenuProps = {
   },
 };
 
-/* Organize ingredients by tag.
-Each tag has its own ingredients view
- */
+export function IngredientsAdditionView() {
+  const dispatch = useDispatch();
+  const theme = useTheme();
+  const ingredientsSelected = useSelector(
+    (state) => state.ingredientsSelected.values
+  )
+
+  const { data: ingredientsData } = useGetIngredientsQuery() || {};
+  const { ingredients = [] } = ingredientsData || {};
+
+  const ingredientsNotSelected = ingredients.filter(
+    (v) => !ingredientsSelected.map((r) => r.uuid).includes(v.uuid)
+  );
+
+  const handleChange = event => {
+    dispatch(addIngredients([(event.target.value)]));
+  };
+
+  return (
+    <FormControl sx={{ m: 1, minWidth: 200 }}>
+      <InputLabel id="demo-simple-select-helper-label">Add Ingredient</InputLabel>
+      <Select
+        labelId="demo-simple-select-label"
+        id="demo-simple-select"
+        value=''
+        label="Add ingredient"
+        labelId="demo-simple-select-helper-label"
+        onChange={handleChange}
+      >
+        {
+          ingredientsNotSelected.map(ingredient => (
+            <MenuItem key={ingredient.uuid} value={ingredient}>{ingredient.name}</MenuItem>
+          ))
+        }
+      </Select>
+    </FormControl>
+
+  )
+
+
+}
+
+export function IngredientsSelectedView() {
+  const dispatch = useDispatch();
+  const theme = useTheme();
+  const ingredientsSelected = useSelector(
+    (state) => state.ingredientsSelected.values
+  )
+  const unselectIngredient = (value) => dispatch(removeIngredients([value]));
+
+  const buttons = ingredientsSelected.map((ingredient) => (
+    <Button
+      key={ingredient.uuid}
+      onClick={() => unselectIngredient(ingredient)}
+    >
+      {ingredient.name}
+    </Button>
+  )
+  )
+
+  return (
+    <div>{buttons}</div>
+  )
+
+}
 
 export function IngredientsWithTagView(props) {
   const dispatch = useDispatch();
@@ -133,5 +196,11 @@ export function IngredientsView() {
     </div>
   ));
 
-  return <div>{views}</div>;
+  return (
+    <div>
+      <span>Selected: </span><IngredientsSelectedView/>
+      <IngredientsAdditionView/>
+      {/*<div>{views}</div>*/}
+    </div>
+  )
 }

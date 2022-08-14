@@ -29,6 +29,9 @@ export const apiSlice = createApi({
         ...result.recipes.map(({ id }) => ({ type: "Ingredient", id })),
       ],
     }),
+    getIngredientSets: builder.query({
+      query: () => "/ingredientSets"
+    }),
     getRecipesPossible: builder.query({
       query: (ingredientSearchList) => ({
         url: "/recipesPossible",
@@ -46,6 +49,7 @@ export const apiSlice = createApi({
 export const {
   useGetTagsQuery,
   useGetIngredientsQuery,
+  useGetIngredientSets,
   useGetRecipesQuery,
   useGetRecipesPossibleQuery,
 } = apiSlice;
