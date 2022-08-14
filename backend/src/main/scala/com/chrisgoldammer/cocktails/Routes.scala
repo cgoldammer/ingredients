@@ -30,7 +30,6 @@ case class IngredientResults(ingredients: List[FullIngredient])
 
 case class FullRecipeResult(recipes: List[FullRecipe])
 
-case class User(name: String)
 
 implicit val decT: Decoder[Tag] = deriveDecoder
 implicit val encT: Encoder[Tag] = deriveEncoder

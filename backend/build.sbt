@@ -13,17 +13,17 @@ lazy val root = (project in file("."))
     version := "0.0.2",
     scalaVersion := ScalaVersion,
     libraryDependencies ++= Seq(
-      "org.http4s"      %% "http4s-ember-server" % Http4sVersion,
-      "org.http4s"      %% "http4s-ember-client" % Http4sVersion,
-      "org.http4s"      %% "http4s-dsl"          % Http4sVersion,
-      "org.scalameta"   %% "munit"               % MunitVersion           % Test,
-      "org.typelevel"   %% "munit-cats-effect-3" % MunitCatsEffectVersion % Test,
-      "ch.qos.logback"  %  "logback-classic"     % LogbackVersion,
-//      "org.scalatest" %% "scalatest-funspec" % "3.2.12" % "test",
-      "org.tpolecat" %% "doobie-core"     % DoobieVersion,
+      "org.http4s" %% "http4s-ember-server" % Http4sVersion,
+      "org.http4s" %% "http4s-ember-client" % Http4sVersion,
+      "org.http4s" %% "http4s-dsl" % Http4sVersion,
+      "org.scalameta" %% "munit" % MunitVersion % Test,
+      "org.typelevel" %% "munit-cats-effect-3" % MunitCatsEffectVersion % Test,
+      "ch.qos.logback" % "logback-classic" % LogbackVersion,
+      //      "org.scalatest" %% "scalatest-funspec" % "3.2.12" % "test",
+      "org.tpolecat" %% "doobie-core" % DoobieVersion,
       "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
     ),
-     testFrameworks += new TestFramework("munit.Framework")
+    testFrameworks += new TestFramework("munit.Framework")
   )
 
 libraryDependencies ++= Seq(
@@ -38,5 +38,14 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser"
 ).map(_ % circeVersion)
 
-lazy val example  = taskKey[Unit]("example")
-fullRunTask( example, Compile, "com.chrisgoldammer.cocktails.data.CallMe")
+val tsecV = "0.4.0-M1"
+libraryDependencies ++= Seq(
+  "io.github.jmcardon" %% "tsec-common" % tsecV
+)
+
+lazy val example = taskKey[Unit]("example")
+fullRunTask(example, Compile, "com.chrisgoldammer.cocktails.data.CallMe")
+
+scalacOptions ++= Seq( // use ++= to add to existing options
+  "-Ykind-projector"
+)
