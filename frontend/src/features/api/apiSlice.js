@@ -22,15 +22,15 @@ export const apiSlice = createApi({
         ...result.ingredients.map(({ id }) => ({ type: "Ingredient", id })),
       ],
     }),
+    getIngredientSets: builder.query({
+      query: () => "/ingredientSets"
+    }),
     getRecipes: builder.query({
       query: () => "/recipes",
       providesTags: (result = []) => [
         "Recipe",
         ...result.recipes.map(({ id }) => ({ type: "Ingredient", id })),
       ],
-    }),
-    getIngredientSets: builder.query({
-      query: () => "/ingredientSets"
     }),
     getRecipesPossible: builder.query({
       query: (ingredientSearchList) => ({
@@ -49,7 +49,7 @@ export const apiSlice = createApi({
 export const {
   useGetTagsQuery,
   useGetIngredientsQuery,
-  useGetIngredientSets,
+  useGetIngredientSetsQuery,
   useGetRecipesQuery,
   useGetRecipesPossibleQuery,
 } = apiSlice;

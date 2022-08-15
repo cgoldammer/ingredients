@@ -13,6 +13,7 @@ import Button from '@mui/material/Button';
 import { useSelector, useDispatch } from "react-redux";
 import { setIngredients, removeIngredients, addIngredients } from "../../ingredientsReducer";
 import PropTypes from "prop-types";
+import { IngredientSetsView } from "./IngredientSetsView";
 
 function getStyles(name, personName, theme) {
   return {
@@ -72,8 +73,6 @@ export function IngredientsAdditionView() {
     </FormControl>
 
   )
-
-
 }
 
 export function IngredientsSelectedView() {
@@ -198,8 +197,9 @@ export function IngredientsView() {
 
   return (
     <div>
-      <span>Selected: </span><IngredientsSelectedView/>
-      <IngredientsAdditionView/>
+      <div><span>Sets: </span><IngredientSetsView/></div>
+      <div><span>Selected: </span><IngredientsSelectedView/></div>
+      <div><IngredientsAdditionView/></div>
       {/*<div>{views}</div>*/}
     </div>
   )

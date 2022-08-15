@@ -24,9 +24,13 @@ export const ingredientsSelectedSlice = createSlice({
     addIngredients: (state, actions) => {
       const additions = actions.payload;
       state.values = newValues(state.values, additions, []);
+    },
+    setIngredientsSimple: (state, actions) => {
+      const values = actions.payload;
+      state.values = values;
     }
   },
 });
 
-export const { setIngredients, removeIngredients, addIngredients } = ingredientsSelectedSlice.actions;
+export const { setIngredients, removeIngredients, addIngredients, setIngredientsSimple } = ingredientsSelectedSlice.actions;
 export default ingredientsSelectedSlice.reducer;
