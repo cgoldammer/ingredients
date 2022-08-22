@@ -28,7 +28,8 @@ val xa = Transactor.fromDriverManager[IO](
 )
 
 
-case class MElement[T](id: Int, element: T)
+case class StoredElement[T](id: Int, element: T)
+
 
 case class Ingredient(name: String, uuid: String)
 
@@ -137,7 +138,7 @@ def getRecipeByName(mRecipes: List[MRecipeData], name: String): MRecipeData = mR
 def getIngredientByName(mIngredients: List[MIngredient], name: String): MIngredient = mIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
 def getTagByName(mTags: List[MTag], name: String): MTag = mTags.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
-case class SetupData(ingredientData: List[IngredientDataRaw], recipeNames: Map[String, List[String]])
+case class SetupData(ingredientData: List[IngredientDataRaw], recipeNames: Map[String, List[String]], ingredientSets: List[IngredientDataRaw])
 
 def insertFromSetupData(sd: SetupData): Unit = {
 
@@ -150,7 +151,6 @@ def insertFromSetupData(sd: SetupData): Unit = {
   val mTags =
     for (tagName <- tagNames.distinct)
       yield insertTag(tagName).transact(xa).unsafeRunSync()
-
 
   val mIngredients =
     for (ingredient <- sd.ingredientData)
@@ -178,6 +178,10 @@ def insertFromSetupData(sd: SetupData): Unit = {
     val ingredientId = getIngredientByName(mIngredients, recipeIngredientName).id
     insertRecipeIngredient(recipeId = recipeId, ingredientId = ingredientId).transact(xa).unsafeRunSync()
   }
+
+  val mIngredientSets = for {
+    setName <- sd.ingredientSets.map(_.name)
+  } yield insertIngredientSet
 
 }
 
@@ -259,7 +263,15 @@ object ItemType extends Enumeration {
 
 case class IngredientDataRaw(name: String, IngredientTagNames: List[String])
 
+case class IngredientSetRaw(name: String, IngredientNames: List[String])
+
 def setup(): Unit = {
+  val homeIngredients = List("Gin", "Vodka", "Bourbon", "Orange Liquour",
+    "Scotch", "Aperol", "Dry Vermouth", "Campari", "Sugar", "Bitters", "Egg White")
+  val ingredientSets: List[IngredientSetRaw] = List(
+    IngredientSetRaw("home", homeIngredients)
+  )
+
   val ingredientData: List[IngredientDataRaw] = List(
     IngredientDataRaw("Gin", List("Strong")),
     IngredientDataRaw("Vodka", List("Strong")),
@@ -281,7 +293,7 @@ def setup(): Unit = {
     "White Lady" -> List("Gin", "Orange Liquour", "Lemon Juice", "Egg White"),
     "Negroni" -> List("Gin", "Campari", "Sweet Vermouth")
   )
-  val sdSimple = SetupData(ingredientData = ingredientData, recipeNames = recipeNames)
+  val sdSimple = SetupData(ingredientData = ingredientData, recipeNames = recipeNames, ingredientSets = ingredientSets)
 
   dropTables.transact(xa).unsafeRunSync()
   createTables.transact(xa).unsafeRunSync()
