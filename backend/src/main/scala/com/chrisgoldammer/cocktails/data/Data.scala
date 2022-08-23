@@ -138,7 +138,7 @@ def getRecipeByName(mRecipes: List[MRecipeData], name: String): MRecipeData = mR
 def getIngredientByName(mIngredients: List[MIngredient], name: String): MIngredient = mIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
 def getTagByName(mTags: List[MTag], name: String): MTag = mTags.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
-case class SetupData(ingredientData: List[IngredientDataRaw], recipeNames: Map[String, List[String]], ingredientSets: List[IngredientDataRaw])
+case class SetupData(ingredientData: List[IngredientDataRaw], recipeNames: Map[String, List[String]], ingredientSets: List[IngredientSetRaw])
 
 def insertFromSetupData(sd: SetupData): Unit = {
 
@@ -179,9 +179,10 @@ def insertFromSetupData(sd: SetupData): Unit = {
     insertRecipeIngredient(recipeId = recipeId, ingredientId = ingredientId).transact(xa).unsafeRunSync()
   }
 
-  val mIngredientSets = for {
+  /* val mIngredientSets = for {
     setName <- sd.ingredientSets.map(_.name)
   } yield insertIngredientSet
+  */
 
 }
 
