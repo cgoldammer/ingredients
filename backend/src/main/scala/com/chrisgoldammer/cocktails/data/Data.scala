@@ -27,60 +27,40 @@ val xa = Transactor.fromDriverManager[IO](
   "" // password
 )
 
-
 case class StoredElement[T](id: Int, element: T)
 
-
-// implicit val ReadStored
-
-
 case class Ingredient(name: String, uuid: String)
+implicit val sReadIngredient: Read[StoredElement[Ingredient]] =
+  Read[(Int, String, String)].map { case (id, name, uuid) => new StoredElement(id, Ingredient(name, uuid))}
 
-case class FullIngredient(name: String, uuid: String, tags: List[Tag])
 
 case class Recipe(name: String, uuid: String)
-
-
 implicit val sReadRecipe: Read[StoredElement[Recipe]] =
   Read[(Int, String, String)].map { case (id, name, uuid) => new StoredElement(id, Recipe(name, uuid))}
 
-
 case class RecipeIngredient(recipeId: Int, ingredientId: Int)
-
 implicit val sReadRecipeIngredient: Read[StoredElement[RecipeIngredient]] =
   Read[(Int, Int, Int)].map { case (id, recipeId, ingredientId) => new StoredElement(id, RecipeIngredient(recipeId, ingredientId))}
 
 case class Tag(name: String)
-
 implicit val sReadTag: Read[StoredElement[Tag]] =
   Read[(Int, String)].map { case (id, name) => new StoredElement(id, Tag(name))}
 
 case class IngredientTag(ingredientId: Int, tagId: Int)
-
 implicit val sReadIngredientTag: Read[StoredElement[IngredientTag]] =
   Read[(Int, Int, Int)].map { case (id, ingredientId, tagId) => new StoredElement(id, IngredientTag(ingredientId, tagId))}
 
 case class FullRecipe(name: String, uuid: String, ingredients: List[Ingredient])
 case class FullRecipeData(name: String, uuid: String, ingredientName: String, ingredientUuid: String)
-
-case class MFullIngredient(id: Int, element: FullIngredient)
-case class MIngredient(id: Int, element: Ingredient)
-
+case class FullIngredient(name: String, uuid: String, tags: List[Tag])
 case class MFullIngredientData(id: Int, name: String, uuid: String, tags: List[String])
+case class MFullRecipe(id: Int, uuid: String, name: String, ingredients: List[StoredElement[Ingredient]])
+
+case class Results[T](data: List[T], name: String = "Default")
+// case class IngredientResult(ingredients: List[Ingredient])
+// case class IngredientSearchList(ingredients: List[String])
 
 
-case class MFullRecipe(id: Int, uuid: String, name: String, ingredients: List[MIngredient])
-
-case class IngredientResult(ingredients: List[Ingredient])
-
-sealed case class IngredientSearchList(ingredients: List[String])
-
-
-def getMFullIngredientFromData(md: MFullIngredientData): MFullIngredient = {
-  val tags = md.tags.map(t => Tag(t))
-  val ingredient = FullIngredient(name = md.name, uuid = md.uuid, tags = tags)
-  MFullIngredient(id = md.id, element = ingredient)
-}
 
 
 def insertIngredientTag(ingredientId: Int, tagId: Int): ConnectionIO[StoredElement[IngredientTag]] = {
@@ -91,9 +71,7 @@ def insertTag(name: String): ConnectionIO[StoredElement[Tag]] = {
   sql"INSERT INTO tags (name) values ($name)".update.withUniqueGeneratedKeys("id", "name")
 }
 
-
-
-def insertIngredient(name: String): ConnectionIO[MIngredient] = {
+def insertIngredient(name: String): ConnectionIO[StoredElement[Ingredient]] = {
   val uuid = getUuid()
   sql"INSERT INTO ingredients (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
 }
@@ -135,8 +113,7 @@ def getFullRecipes(): List[FullRecipe] = {
 
 def getRecipeByName(sRecipes: List[StoredElement[Recipe]], name: String): StoredElement[Recipe] = sRecipes.groupBy(_.element.name).transform((k, v) => v.head)(name)
 def getTagByName(sTags: List[StoredElement[Tag]], name: String): StoredElement[Tag] = sTags.groupBy(_.element.name).transform((k, v) => v.head)(name)
-
-def getIngredientByName(mIngredients: List[MIngredient], name: String): MIngredient = mIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
+def getIngredientByName(sIngredients: List[StoredElement[Ingredient]], name: String): StoredElement[Ingredient] = sIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
 case class SetupData(ingredientData: List[IngredientDataRaw], recipeNames: Map[String, List[String]], ingredientSets: List[IngredientSetRaw])
 
@@ -242,6 +219,12 @@ def getIngredientsData(): List[MFullIngredientData] = {
 SELECT id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags FROM base
                  group by id
   """.query[MFullIngredientData].to[List].transact(xa).unsafeRunSync()
+}
+
+def getMFullIngredientFromData(md: MFullIngredientData): StoredElement[FullIngredient] = {
+  val tags = md.tags.map(t => Tag(t))
+  val ingredient = FullIngredient(name = md.name, uuid = md.uuid, tags = tags)
+  StoredElement(md.id, ingredient)
 }
 
 def getIngredients(): List[FullIngredient] = getIngredientsData().map(getMFullIngredientFromData).map(_.element)

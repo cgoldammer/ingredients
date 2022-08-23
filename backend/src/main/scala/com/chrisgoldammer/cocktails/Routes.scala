@@ -22,48 +22,56 @@ import com.comcast.ip4s.{ipv4, port}
 
 import org.http4s.headers.Origin
 
-case class RecipeResults(recipes: List[Recipe])
-
-case class TagResults(tags: List[Tag])
-
-case class IngredientResults(ingredients: List[FullIngredient])
-
-case class FullRecipeResult(recipes: List[FullRecipe])
+//case class RecipeResults(recipes: List[Recipe])
+//case class TagResults(tags: List[Tag])
+//case class IngredientResults(ingredients: List[FullIngredient])
+//case class FullRecipeResult(recipes: List[FullRecipe])
 
 
 implicit val decT: Decoder[Tag] = deriveDecoder
 implicit val encT: Encoder[Tag] = deriveEncoder
-implicit val decTR: Decoder[TagResults] = deriveDecoder
-implicit val encTR: Encoder[TagResults] = deriveEncoder
-implicit val decT2: EntityDecoder[IO, TagResults] = jsonOf[IO, TagResults]
+
+implicit val decTR: Decoder[Results[Tag]] = deriveDecoder
+implicit val encTR: Encoder[Results[Tag]] = deriveEncoder
+implicit val decT2: EntityDecoder[IO, Results[Tag]] = jsonOf[IO, Results[Tag]]
+
 
 implicit val decI: Decoder[Ingredient] = deriveDecoder
 implicit val encI: Encoder[Ingredient] = deriveEncoder
 
+implicit val decIR: Decoder[Results[Ingredient]] = deriveDecoder
+implicit val encIR: Encoder[Results[Ingredient]] = deriveEncoder
+implicit val decIR2: EntityDecoder[IO, Results[Ingredient]] = jsonOf[IO, Results[Ingredient]]
+
+
 implicit val decFI: Decoder[FullIngredient] = deriveDecoder
 implicit val encFI: Encoder[FullIngredient] = deriveEncoder
+
+implicit val decRR9: Decoder[Results[FullIngredient]] = deriveDecoder
+implicit val encRR9: Encoder[Results[FullIngredient]] = deriveEncoder
+implicit val decRR99: EntityDecoder[IO, Results[FullIngredient]] = jsonOf[IO, Results[FullIngredient]]
+
 
 implicit val decMR: Decoder[Recipe] = deriveDecoder
 implicit val encMR: Encoder[Recipe] = deriveEncoder
 
+implicit val decRR: Decoder[Results[Recipe]] = deriveDecoder
+implicit val encRR: Encoder[Results[Recipe]] = deriveEncoder
+implicit val decRR2: EntityDecoder[IO, Results[Recipe]] = jsonOf[IO, Results[Recipe]]
+
+
 implicit val decI2: Decoder[FullRecipe] = deriveDecoder
 implicit val encI2: Encoder[FullRecipe] = deriveEncoder
 
-implicit val decI3: Decoder[FullRecipeResult] = deriveDecoder
-implicit val encI3: Encoder[FullRecipeResult] = deriveEncoder
-implicit val decIR23: EntityDecoder[IO, FullRecipeResult] = jsonOf[IO, FullRecipeResult]
+implicit val decI3: Decoder[Results[FullRecipe]] = deriveDecoder
+implicit val encI3: Encoder[Results[FullRecipe]] = deriveEncoder
+implicit val decIR23: EntityDecoder[IO, Results[FullRecipe]] = jsonOf[IO, Results[FullRecipe]]
 
-implicit val decIR: Decoder[IngredientResults] = deriveDecoder
-implicit val encIR: Encoder[IngredientResults] = deriveEncoder
-implicit val decIR2: EntityDecoder[IO, IngredientResults] = jsonOf[IO, IngredientResults]
 
-implicit val decISL: Decoder[IngredientSearchList] = deriveDecoder
-implicit val encISL: Encoder[IngredientSearchList] = deriveEncoder
-implicit val decISL2: EntityDecoder[IO, IngredientSearchList] = jsonOf[IO, IngredientSearchList]
+implicit val decISL: Decoder[Results[String]] = deriveDecoder
+implicit val encISL: Encoder[Results[String]] = deriveEncoder
+implicit val decISL2: EntityDecoder[IO, Results[String]] = jsonOf[IO, Results[String]]
 
-implicit val decRR: Decoder[RecipeResults] = deriveDecoder
-implicit val encRR: Encoder[RecipeResults] = deriveEncoder
-implicit val decRR2: EntityDecoder[IO, RecipeResults] = jsonOf[IO, RecipeResults]
 
 import org.http4s.server.middleware._
 
@@ -71,29 +79,29 @@ val jsonApp = HttpRoutes.of[IO] {
   case GET -> Root / "ingredients" =>
     for {
       ing <- IO {
-        IngredientResults(getIngredients()).asJson
+        Results(getIngredients(), "ingredients").asJson
       }
       resp <- Ok(ing)
     } yield resp
   case GET -> Root / "tags" =>
     for {
       ing <- IO {
-        TagResults(getTags()).asJson
+        Results(getTags(), "Tags").asJson
       }
       resp <- Ok(ing)
     } yield resp
   case GET -> Root / "recipes" => {
     for {
       ing <- IO {
-        FullRecipeResult(getFullRecipes()).asJson
+        Results(getFullRecipes(), "Full Recipes").asJson
       }
       resp <- Ok(ing)
     } yield resp
   }
   case req@POST -> Root / "recipesPossible" => for {
-    isl <- req.as[IngredientSearchList]
+    isl <- req.as[Results[String]]
     j <- IO {
-      RecipeResults(getRecipesForIngredients(isl.ingredients)).asJson
+      Results(getRecipesForIngredients(isl.data), "Recipes").asJson
     }
     resp <- Ok(j)
   } yield resp
