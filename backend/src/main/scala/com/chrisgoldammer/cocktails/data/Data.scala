@@ -31,41 +31,43 @@ val xa = Transactor.fromDriverManager[IO](
 case class StoredElement[T](id: Int, element: T)
 
 
+// implicit val ReadStored
+
+
 case class Ingredient(name: String, uuid: String)
 
 case class FullIngredient(name: String, uuid: String, tags: List[Tag])
 
 case class Recipe(name: String, uuid: String)
 
-case class RecipeIngredient()
 
-case class FullRecipe(name: String, uuid: String, ingredients: List[Ingredient])
+implicit val sReadRecipe: Read[StoredElement[Recipe]] =
+  Read[(Int, String, String)].map { case (id, name, uuid) => new StoredElement(id, Recipe(name, uuid))}
 
-case class RecipeIngredientData(name: String, uuid: String, ingredientName: String, ingredientUuid: String)
 
-case class MFullIngredient(id: Int, element: FullIngredient)
+case class RecipeIngredient(recipeId: Int, ingredientId: Int)
+
+implicit val sReadRecipeIngredient: Read[StoredElement[RecipeIngredient]] =
+  Read[(Int, Int, Int)].map { case (id, recipeId, ingredientId) => new StoredElement(id, RecipeIngredient(recipeId, ingredientId))}
 
 case class Tag(name: String)
 
-case class IngredientTag()
+implicit val sReadTag: Read[StoredElement[Tag]] =
+  Read[(Int, String)].map { case (id, name) => new StoredElement(id, Tag(name))}
 
-case class MTagData(id: Int, name: String)
+case class IngredientTag(ingredientId: Int, tagId: Int)
 
-case class MTag(id: Int, element: Tag)
+implicit val sReadIngredientTag: Read[StoredElement[IngredientTag]] =
+  Read[(Int, Int, Int)].map { case (id, ingredientId, tagId) => new StoredElement(id, IngredientTag(ingredientId, tagId))}
 
+case class FullRecipe(name: String, uuid: String, ingredients: List[Ingredient])
+case class FullRecipeData(name: String, uuid: String, ingredientName: String, ingredientUuid: String)
+
+case class MFullIngredient(id: Int, element: FullIngredient)
 case class MIngredient(id: Int, element: Ingredient)
-
-case class MIngredientTag(id: Int, element: Tag)
 
 case class MFullIngredientData(id: Int, name: String, uuid: String, tags: List[String])
 
-case class MRecipeIngredient(id: Int, element: RecipeIngredient)
-
-case class MRecipeIngredientData(id: Int, recipeId: Int, ingredientId: Int)
-
-case class MRecipe(id: Int, element: Recipe)
-
-case class MRecipeData(id: Int, name: String, uuid: String)
 
 case class MFullRecipe(id: Int, uuid: String, name: String, ingredients: List[MIngredient])
 
@@ -80,40 +82,32 @@ def getMFullIngredientFromData(md: MFullIngredientData): MFullIngredient = {
   MFullIngredient(id = md.id, element = ingredient)
 }
 
-def getMRecipeFromData(md: MRecipeData): MRecipe = {
-  val recipe = Recipe(name = md.name, uuid = md.uuid)
-  MRecipe(id = md.id, element = recipe)
+
+def insertIngredientTag(ingredientId: Int, tagId: Int): ConnectionIO[StoredElement[IngredientTag]] = {
+  sql"INSERT INTO ingredient_tags (ingredient_id, tag_id) values ($ingredientId, $tagId)".update.withUniqueGeneratedKeys("id", "ingredient_id", "tag_id")
 }
 
-def insertTag(name: String): ConnectionIO[MTag] = {
+def insertTag(name: String): ConnectionIO[StoredElement[Tag]] = {
   sql"INSERT INTO tags (name) values ($name)".update.withUniqueGeneratedKeys("id", "name")
 }
 
 
-def insertIngredientTag(ingredientId: Int, tagId: Int): ConnectionIO[MIngredientTag] = {
-  sql"INSERT INTO ingredient_tags (ingredient_id, tag_id) values ($ingredientId, $tagId)".update.withUniqueGeneratedKeys("id", "ingredient_id", "tag_id")
-}
 
 def insertIngredient(name: String): ConnectionIO[MIngredient] = {
   val uuid = getUuid()
   sql"INSERT INTO ingredients (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
 }
 
-def insertRecipeIngredient(recipeId: Int, ingredientId: Int): ConnectionIO[MRecipeIngredientData] = {
+def insertRecipeIngredient(recipeId: Int, ingredientId: Int): ConnectionIO[StoredElement[RecipeIngredient]] = {
   sql"INSERT INTO recipe_ingredients (recipe_id, ingredient_id) values ($recipeId, $ingredientId)"
     .update.withUniqueGeneratedKeys("id", "recipe_id", "ingredient_id")
 }
 
-def insertRecipe(name: String): ConnectionIO[MRecipeData] = {
+def insertRecipe(name: String): ConnectionIO[StoredElement[Recipe]] = {
   val uuid = getUuid()
   sql"INSERT INTO recipes (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
 }
 
-def recipeIngredientToIngredient(ri: RecipeIngredientData): Ingredient = {
-  ri match {
-    case RecipeIngredientData(_, _, ingredientName, ingredientUuid) => Ingredient(ingredientName, ingredientUuid)
-  }
-}
 
 val recipeIngredientDataQuery =
   sql"""
@@ -123,20 +117,26 @@ JOIN recipes r ON ri.recipe_id=r.id
 JOIN ingredients i ON ri.ingredient_id=i.id
 """.stripMargin
 
-def createFullRecipes(rid: List[RecipeIngredientData]): List[FullRecipe] = {
+def recipeIngredientToIngredient(ri: FullRecipeData): Ingredient = {
+  ri match {
+    case FullRecipeData(_, _, ingredientName, ingredientUuid) => Ingredient(ingredientName, ingredientUuid)
+  }
+}
+
+def createFullRecipes(rid: List[FullRecipeData]): List[FullRecipe] = {
   val grouped = rid.groupBy(_.name)
   grouped.toList.map { case (name, ri) => FullRecipe(name, ri(0).uuid, ri.map(recipeIngredientToIngredient)) }
 }
 
 def getFullRecipes(): List[FullRecipe] = {
-  val rid = recipeIngredientDataQuery.query[RecipeIngredientData].to[List].transact(xa).unsafeRunSync()
+  val rid = recipeIngredientDataQuery.query[FullRecipeData].to[List].transact(xa).unsafeRunSync()
   return createFullRecipes(rid)
 }
 
+def getRecipeByName(sRecipes: List[StoredElement[Recipe]], name: String): StoredElement[Recipe] = sRecipes.groupBy(_.element.name).transform((k, v) => v.head)(name)
+def getTagByName(sTags: List[StoredElement[Tag]], name: String): StoredElement[Tag] = sTags.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
-def getRecipeByName(mRecipes: List[MRecipeData], name: String): MRecipeData = mRecipes.groupBy(_.name).transform((k, v) => v.head)(name)
 def getIngredientByName(mIngredients: List[MIngredient], name: String): MIngredient = mIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
-def getTagByName(mTags: List[MTag], name: String): MTag = mTags.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
 case class SetupData(ingredientData: List[IngredientDataRaw], recipeNames: Map[String, List[String]], ingredientSets: List[IngredientSetRaw])
 
@@ -148,7 +148,7 @@ def insertFromSetupData(sd: SetupData): Unit = {
       tag <- ingredient.IngredientTagNames
     } yield tag
 
-  val mTags =
+  val mTags: Iterable[StoredElement[Tag]] =
     for (tagName <- tagNames.distinct)
       yield insertTag(tagName).transact(xa).unsafeRunSync()
 
@@ -161,25 +161,27 @@ def insertFromSetupData(sd: SetupData): Unit = {
       ingredient <- sd.ingredientData
       tagName <- ingredient.IngredientTagNames
     } yield {
-      val tagId = getTagByName(mTags, tagName).id
+      val tagId = getTagByName(mTags.toList, tagName).id
       val ingredientId = getIngredientByName(mIngredients, ingredient.name).id
-      insertIngredientTag(ingredientId = ingredientId, tagId = tagId).transact(xa).unsafeRunSync()
+      insertIngredientTag(ingredientId, tagId).transact(xa).unsafeRunSync()
     }
 
-  val mRecipes: Iterable[MRecipeData] =
+  val mRecipes: Iterable[StoredElement[Recipe]] =
     for (recipe <- sd.recipeNames.keys)
       yield insertRecipe(recipe).transact(xa).unsafeRunSync()
 
-  val mRecipeIngredients = for {
+  val mRecipeIngredients: Iterable[StoredElement[RecipeIngredient]] = for {
     (recipeName, recipeIngredientNames) <- sd.recipeNames
-    recipeIngredientName <- recipeIngredientNames.toList
+    recipeIngredientName <- recipeIngredientNames
   } yield {
     val recipeId = getRecipeByName(mRecipes.toList, recipeName).id
     val ingredientId = getIngredientByName(mIngredients, recipeIngredientName).id
     insertRecipeIngredient(recipeId = recipeId, ingredientId = ingredientId).transact(xa).unsafeRunSync()
   }
 
-  /* val mIngredientSets = for {
+  /*
+
+	val mIngredientSets = for {
     setName <- sd.ingredientSets.map(_.name)
   } yield insertIngredientSet
   */
@@ -220,21 +222,16 @@ def searchQuery(ingredientUuids: NonEmptyList[String]) = {
     """
 }
 
-def getMRecipesForIngredients(ingredientUids: List[String]): List[MRecipeData] = {
+def getMRecipesForIngredients(ingredientUids: List[String]): List[StoredElement[Recipe]] = {
   if (ingredientUids.size == 0) {
     return List()
   } else {
     val sn = NonEmptyList.fromListUnsafe(ingredientUids.toList)
-    println(searchQuery(sn))
-    searchQuery(sn).query[MRecipeData].to[List].transact(xa).unsafeRunSync()
+    searchQuery(sn).query[StoredElement[Recipe]].to[List].transact(xa).unsafeRunSync()
   }
 }
 
-def recipeFromMRecipe(mRecipe: MRecipeData): Recipe = Recipe(name = mRecipe.name, uuid = mRecipe.uuid)
-
-def getRecipesForIngredients(ingredientUids: List[String]): List[Recipe] = {
-  getMRecipesForIngredients(ingredientUids).map(recipeFromMRecipe)
-}
+def getRecipesForIngredients(ingredientUids: List[String]): List[Recipe] = getMRecipesForIngredients(ingredientUids).map(_.element)
 
 def getIngredientsData(): List[MFullIngredientData] = {
   sql"""
@@ -249,13 +246,11 @@ SELECT id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags FRO
 
 def getIngredients(): List[FullIngredient] = getIngredientsData().map(getMFullIngredientFromData).map(_.element)
 
-def getTagsData(): List[MTagData] = {
-  sql"SELECT id, name FROM tags".query[MTagData].to[List].transact(xa).unsafeRunSync()
+def getTagsData(): List[StoredElement[Tag]] = {
+  sql"SELECT id, name FROM tags".query[StoredElement[Tag]].to[List].transact(xa).unsafeRunSync()
 }
 
-def getTagFromMTag(mt: MTagData): Tag = Tag(mt.name)
-
-def getTags(): List[Tag] = getTagsData().map(getTagFromMTag)
+def getTags(): List[Tag] = getTagsData().map(_.element)
 
 object ItemType extends Enumeration {
   type ItemType = Value
