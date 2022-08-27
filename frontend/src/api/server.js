@@ -125,13 +125,9 @@ export const handlers = [
       ingredients: db.ingredient.getAll().map(serializeIngredient),
     }
     const { ingredients = [] } = ingredientsData || [];
-    console.log("Ingredients for first set: " + parseInt((ingredients.length) / 2));
     const firstHalf = getRange(parseInt((ingredients.length) / 2))
-    console.log(firstHalf);
-    const firstHalfSet = firstHalf.map(i => ingredients[i])
+    const firstHalfSet = firstHalf.map(i => ingredients[i].uuid)
     const ingredientSets = {'firstHalf': firstHalfSet};
-    console.log("Set created: " + Object.keys(ingredientSets).length);
-    console.log(ingredientSets);
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredientSets));
   }),
   rest.post("/fakeApi/recipesPossible", (req, res, ctx) => {

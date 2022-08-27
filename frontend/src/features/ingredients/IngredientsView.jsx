@@ -11,9 +11,11 @@ import Select from "@mui/material/Select";
 import Chip from "@mui/material/Chip";
 import Button from '@mui/material/Button';
 import { useSelector, useDispatch } from "react-redux";
-import { setIngredients, removeIngredients, addIngredients } from "../../ingredientsReducer";
+import { setIngredientsSelected, removeIngredientsSelected, addIngredientsSelected } from "../../ingredientsReducer";
 import PropTypes from "prop-types";
 import { IngredientSetsView } from "./IngredientSetsView";
+
+import { getIngredientsSelected } from "../../store"
 
 function getStyles(name, personName, theme) {
   return {
@@ -38,9 +40,7 @@ const MenuProps = {
 export function IngredientsAdditionView() {
   const dispatch = useDispatch();
   const theme = useTheme();
-  const ingredientsSelected = useSelector(
-    (state) => state.ingredientsSelected.values
-  )
+  const ingredientsSelected = useSelector(getIngredientsSelected)
 
   const { data: ingredientsData } = useGetIngredientsQuery() || {};
   const { ingredients = [] } = ingredientsData || {};
@@ -50,7 +50,7 @@ export function IngredientsAdditionView() {
   );
 
   const handleChange = event => {
-    dispatch(addIngredients([(event.target.value)]));
+    dispatch(addIngredientsSelected([(event.target.value.uuid)]));
   };
 
   return (
@@ -78,10 +78,8 @@ export function IngredientsAdditionView() {
 export function IngredientsSelectedView() {
   const dispatch = useDispatch();
   const theme = useTheme();
-  const ingredientsSelected = useSelector(
-    (state) => state.ingredientsSelected.values
-  )
-  const unselectIngredient = (value) => dispatch(removeIngredients([value]));
+  const ingredientsSelected = useSelector(getIngredientsSelected)
+  const unselectIngredient = (value) => dispatch(removeIngredientsSelected([value.uuid]));
 
   const buttons = ingredientsSelected.map((ingredient) => (
     <Button
@@ -109,13 +107,15 @@ export function IngredientsWithTagView(props) {
   const allIds = ingredients.map((i) => i.uuid);
   const ingredientsDisplayable = ingredientsSelected.filter((i) =>
     allIds.includes(i.uuid)
-  );
+  ).map(i => i.uuid);
   const handleChange = (event) => {
     const {
       target: { value },
     } = event;
 
-    const additions = value.filter(
+    const uuids = value.map(v => v.uuid);
+
+    const additions = uuids.filter(
       (v) => !ingredientsSelected.map((i) => i.uuid).includes(v.uuid)
     );
     const removals = ingredientsDisplayable.filter(
@@ -123,7 +123,7 @@ export function IngredientsWithTagView(props) {
     );
 
     dispatch(
-      setIngredients({ tag: tagName, additions: additions, removals: removals })
+      setIngredientsSelected({ tag: tagName, additions: additions, removals: removals })
     );
   };
 
@@ -198,7 +198,7 @@ export function IngredientsView() {
   return (
     <div>
       <div><span>Sets: </span><IngredientSetsView/></div>
-      <div><span>Selected: </span><IngredientsSelectedView/></div>
+      <div><span>Selected Ingredients: </span><IngredientsSelectedView/></div>
       <div><IngredientsAdditionView/></div>
       {/*<div>{views}</div>*/}
     </div>

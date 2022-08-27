@@ -12,7 +12,7 @@ import Chip from "@mui/material/Chip";
 import Button from '@mui/material/Button';
 import { useSelector, useDispatch } from "react-redux";
 import { setIngredientSet, getSelectedSet } from "../../ingredientSetsReducer";
-import { setIngredientsSimple } from "../../ingredientsReducer";
+import { setIngredientsSelectedSimple } from "../../ingredientsReducer";
 import PropTypes from "prop-types";
 
 export function IngredientSetsView() {
@@ -31,7 +31,7 @@ export function IngredientSetsView() {
   const handleChange = event => {
     const setName = event.target.value;
     dispatch(setIngredientSet({name: setName, value: ingredientSets[setName]}));
-    dispatch(setIngredientsSimple(ingredientSets[setName]));
+    dispatch(setIngredientsSelectedSimple(ingredientSets[setName]));
   };
   const items = (
     setNames.map(setName => (

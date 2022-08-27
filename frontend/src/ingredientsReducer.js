@@ -1,36 +1,34 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 export const newValues = (values, additions, removals) => {
-  const valsNotRemoved = values.filter(
-    (v) => !removals.map((r) => r.uuid).includes(v.uuid)
-  );
+  const valsNotRemoved = values.filter(v => !removals.includes(v));
   return additions.concat(valsNotRemoved);
 }
 
 export const ingredientsSelectedSlice = createSlice({
-  name: "ingredientsSelected",
+  name: "ingredientsUuidsSelected",
   initialState: {
     values: [],
   },
   reducers: {
-    setIngredients: (state, actions) => {
+    setIngredientsSelected: (state, actions) => {
       const { additions, removals } = actions.payload;
       state.values = newValues(state.values, additions, removals);
     },
-    removeIngredients: (state, actions) => {
+    removeIngredientsSelected: (state, actions) => {
       const removals = actions.payload;
       state.values = newValues(state.values, [], removals);
     },
-    addIngredients: (state, actions) => {
+    addIngredientsSelected: (state, actions) => {
       const additions = actions.payload;
       state.values = newValues(state.values, additions, []);
     },
-    setIngredientsSimple: (state, actions) => {
+    setIngredientsSelectedSimple: (state, actions) => {
       const values = actions.payload;
       state.values = values;
     }
   },
 });
 
-export const { setIngredients, removeIngredients, addIngredients, setIngredientsSimple } = ingredientsSelectedSlice.actions;
+export const { setIngredientsSelected, removeIngredientsSelected, addIngredientsSelected, setIngredientsSelectedSimple } = ingredientsSelectedSlice.actions;
 export default ingredientsSelectedSlice.reducer;
