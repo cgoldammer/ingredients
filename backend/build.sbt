@@ -43,8 +43,10 @@ libraryDependencies ++= Seq(
   "io.github.jmcardon" %% "tsec-common" % tsecV
 )
 
-lazy val example = taskKey[Unit]("example")
-fullRunTask(example, Compile, "com.chrisgoldammer.cocktails.data.CallMe")
+// lazy val example = taskKey[Unit]("setupData")
+// fullRunTask(example, Compile, "com.chrisgoldammer.cocktails.data.CallMe")
+
+//TaskKey[Unit]("setupData") := (runMain in Compile).toTask(" com.chrisgoldammer.cocktails.data.CallMe").value
 
 scalacOptions ++= Seq( // use ++= to add to existing options
   "-Ykind-projector"

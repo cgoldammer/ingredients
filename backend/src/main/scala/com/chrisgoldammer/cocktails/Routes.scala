@@ -22,11 +22,9 @@ import com.comcast.ip4s.{ipv4, port}
 
 import org.http4s.headers.Origin
 
-//case class RecipeResults(recipes: List[Recipe])
-//case class TagResults(tags: List[Tag])
-//case class IngredientResults(ingredients: List[FullIngredient])
-//case class FullRecipeResult(recipes: List[FullRecipe])
 
+implicit val decIS: Decoder[IngredientSet] = deriveDecoder
+implicit val encIS: Encoder[IngredientSet] = deriveEncoder
 
 implicit val decT: Decoder[Tag] = deriveDecoder
 implicit val encT: Encoder[Tag] = deriveEncoder
@@ -67,11 +65,19 @@ implicit val decI3: Decoder[Results[FullRecipe]] = deriveDecoder
 implicit val encI3: Encoder[Results[FullRecipe]] = deriveEncoder
 implicit val decIR23: EntityDecoder[IO, Results[FullRecipe]] = jsonOf[IO, Results[FullRecipe]]
 
+implicit val decI24: Decoder[FullIngredientSet] = deriveDecoder
+implicit val encI24: Encoder[FullIngredientSet] = deriveEncoder
+
+implicit val decRR4: Decoder[Results[FullIngredientSet]] = deriveDecoder
+implicit val encRR4: Encoder[Results[FullIngredientSet]] = deriveEncoder
+implicit val decRR24: EntityDecoder[IO, Results[FullIngredientSet]] = jsonOf[IO, Results[FullIngredientSet]]
+
 
 implicit val decISL: Decoder[Results[String]] = deriveDecoder
 implicit val encISL: Encoder[Results[String]] = deriveEncoder
 implicit val decISL2: EntityDecoder[IO, Results[String]] = jsonOf[IO, Results[String]]
 
+//implicit val encISL2: EntityEncoder[IO, io.circe.Json] = jsonOf[IO, io.circe.Json]
 
 import org.http4s.server.middleware._
 
@@ -98,7 +104,16 @@ val jsonApp = HttpRoutes.of[IO] {
       resp <- Ok(ing)
     } yield resp
   }
-  case req@POST -> Root / "recipesPossible" => for {
+  case GET -> Root / "ingredient_sets" => {
+    for {
+      ing <- IO {
+        Results(getIngredientSets(), "Ingredient Sets").asJson
+      }
+      resp <- Ok(ing)
+    } yield resp
+  }
+
+  case req@POST -> Root / "recipes_possible" => for {
     isl <- req.as[Results[String]]
     j <- IO {
       Results(getRecipesForIngredients(isl.data), "Recipes").asJson
@@ -107,13 +122,13 @@ val jsonApp = HttpRoutes.of[IO] {
   } yield resp
 }.orNotFound
 
-val allowedOrigin = Origin.Host(Uri.Scheme.http, Uri.RegName("localhost"), Some(8082))
-val allowedAll = CORS.policy.withAllowOriginAll
+//val allowedOrigin = Origin.Host(Uri.Scheme.http, Uri.RegName("localhost"), Some(8082))
+//val allowedAll = CORS.policy.withAllowOriginAll
 
-val withMiddleWare = CORS.policy
-  .withAllowOriginHost(Set(allowedOrigin))
-  .withAllowCredentials(false)
-  .apply(jsonApp)
+//val withMiddleWare = CORS.policy
+//  .withAllowOriginHost(Set(allowedOrigin))
+//  .withAllowCredentials(false)
+//  .apply(jsonApp)
 
 val withMiddleWare2 = CORS.policy.withAllowOriginAll(jsonApp)
 

@@ -33,6 +33,14 @@ case class Ingredient(name: String, uuid: String)
 implicit val sReadIngredient: Read[StoredElement[Ingredient]] =
   Read[(Int, String, String)].map { case (id, name, uuid) => new StoredElement(id, Ingredient(name, uuid))}
 
+case class IngredientSet(name: String, uuid: String)
+implicit val sReadIngredientSet: Read[StoredElement[IngredientSet]] =
+  Read[(Int, String, String)].map { case (id, name, uuid) => new StoredElement(id, IngredientSet(name, uuid))}
+
+case class IngredientSetIngredient(setId: Int, ingredientId: Int)
+implicit val sReadIngredientSetIngredient: Read[StoredElement[IngredientSetIngredient]] =
+  Read[(Int, Int, Int)].map { case (id, setId, ingredientId) => new StoredElement(id, IngredientSetIngredient(setId, ingredientId))}
+
 
 case class Recipe(name: String, uuid: String)
 implicit val sReadRecipe: Read[StoredElement[Recipe]] =
@@ -53,6 +61,12 @@ implicit val sReadIngredientTag: Read[StoredElement[IngredientTag]] =
 case class FullRecipe(name: String, uuid: String, ingredients: List[Ingredient])
 case class FullRecipeData(name: String, uuid: String, ingredientName: String, ingredientUuid: String)
 case class FullIngredient(name: String, uuid: String, tags: List[Tag])
+
+case class FullIngredientSet(name: String, uuid: String, ingredients: List[String])
+implicit val sReadFullIngredientSet: Read[StoredElement[FullIngredientSet]] =
+  Read[(Int, String, String, List[String])].map { case (id, name, uuid, ingredients) => new StoredElement(id, FullIngredientSet(name, uuid, ingredients))}
+
+
 case class MFullIngredientData(id: Int, name: String, uuid: String, tags: List[String])
 case class MFullRecipe(id: Int, uuid: String, name: String, ingredients: List[StoredElement[Ingredient]])
 
@@ -62,6 +76,15 @@ case class Results[T](data: List[T], name: String = "Default")
 
 
 
+def insertIngredientSet(name: String): ConnectionIO[StoredElement[IngredientSet]] = {
+  val uuid = getUuid()
+  sql"INSERT INTO ingredient_sets (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
+}
+
+def insertIngredientSetIngredient(setId: Int, ingredientId: Int): ConnectionIO[StoredElement[IngredientSetIngredient]] = {
+  sql"INSERT INTO ingredient_set_ingredients (ingredient_set_id, ingredient_id) values ($setId, $ingredientId)"
+    .update.withUniqueGeneratedKeys("id", "ingredient_set_id", "ingredient_id")
+}
 
 def insertIngredientTag(ingredientId: Int, tagId: Int): ConnectionIO[StoredElement[IngredientTag]] = {
   sql"INSERT INTO ingredient_tags (ingredient_id, tag_id) values ($ingredientId, $tagId)".update.withUniqueGeneratedKeys("id", "ingredient_id", "tag_id")
@@ -114,8 +137,9 @@ def getFullRecipes(): List[FullRecipe] = {
 def getRecipeByName(sRecipes: List[StoredElement[Recipe]], name: String): StoredElement[Recipe] = sRecipes.groupBy(_.element.name).transform((k, v) => v.head)(name)
 def getTagByName(sTags: List[StoredElement[Tag]], name: String): StoredElement[Tag] = sTags.groupBy(_.element.name).transform((k, v) => v.head)(name)
 def getIngredientByName(sIngredients: List[StoredElement[Ingredient]], name: String): StoredElement[Ingredient] = sIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
+def getSetByName(sIngredientSets: List[StoredElement[IngredientSet]], name: String): StoredElement[IngredientSet] = sIngredientSets.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
-case class SetupData(ingredientData: List[IngredientDataRaw], recipeNames: Map[String, List[String]], ingredientSets: List[IngredientSetRaw])
+case class SetupData(ingredientData: List[IngredientDataRaw], recipeNames: Map[String, List[String]], ingredientSets: Map[String, List[String]])
 
 def insertFromSetupData(sd: SetupData): Unit = {
 
@@ -156,12 +180,22 @@ def insertFromSetupData(sd: SetupData): Unit = {
     insertRecipeIngredient(recipeId = recipeId, ingredientId = ingredientId).transact(xa).unsafeRunSync()
   }
 
-  /*
+  val mIngredientSets = for {
+    setName <- sd.ingredientSets.keys
+  } yield insertIngredientSet(setName).transact(xa).unsafeRunSync()
 
-	val mIngredientSets = for {
-    setName <- sd.ingredientSets.map(_.name)
-  } yield insertIngredientSet
-  */
+  println("SETS INSERTED")
+
+  val mIngredientSetIngredients: Iterable[StoredElement[IngredientSetIngredient]] = for {
+    (setName, setIngredientNames) <- sd.ingredientSets
+    ingredientName <- setIngredientNames
+  } yield {
+    val setId = getSetByName(mIngredientSets.toList, setName).id
+    val ingredientId = getIngredientByName(mIngredients, ingredientName).id
+    insertIngredientSetIngredient(setId = setId, ingredientId = ingredientId).transact(xa).unsafeRunSync()
+  }
+
+  println("SET ingredients INSERTED")
 
 }
 
@@ -210,23 +244,25 @@ def getMRecipesForIngredients(ingredientUids: List[String]): List[StoredElement[
 
 def getRecipesForIngredients(ingredientUids: List[String]): List[Recipe] = getMRecipesForIngredients(ingredientUids).map(_.element)
 
-def getIngredientsData(): List[MFullIngredientData] = {
-  sql"""
-  with base AS (SELECT i.id, i.name, i.uuid, t.name AS tag_name
-              FROM ingredients i
-                       JOIN ingredient_tags it on i.id = it.ingredient_id
-                       JOIN tags t ON it.tag_id = t.id)
-SELECT id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags FROM base
-                 group by id
-  """.query[MFullIngredientData].to[List].transact(xa).unsafeRunSync()
-}
-
 def getMFullIngredientFromData(md: MFullIngredientData): StoredElement[FullIngredient] = {
   val tags = md.tags.map(t => Tag(t))
   val ingredient = FullIngredient(name = md.name, uuid = md.uuid, tags = tags)
   StoredElement(md.id, ingredient)
 }
 
+def getIngredientsData(): List[MFullIngredientData] = {
+  sql"""
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  """.query[MFullIngredientData].to[List].transact(xa).unsafeRunSync()
+}
 def getIngredients(): List[FullIngredient] = getIngredientsData().map(getMFullIngredientFromData).map(_.element)
 
 def getTagsData(): List[StoredElement[Tag]] = {
@@ -235,6 +271,20 @@ def getTagsData(): List[StoredElement[Tag]] = {
 
 def getTags(): List[Tag] = getTagsData().map(_.element)
 
+def getIngredientSetsStored(): List[StoredElement[FullIngredientSet]] = {
+  sql"""
+  with base AS (
+    SELECT s.id, s.name, s.uuid, i.uuid AS ingredient_uuid
+    FROM ingredient_sets s
+    JOIN ingredient_set_ingredients isi ON s.id=isi.ingredient_set_id
+    JOIN ingredients i ON isi.ingredient_id=i.id)
+  SELECT id, min(name) as name, min(uuid) as uuid, array_agg(ingredient_uuid) as ingredient_uuids
+  FROM base group by id
+  """.query[StoredElement[FullIngredientSet]].to[List].transact(xa).unsafeRunSync()
+}
+
+def getIngredientSets() = getIngredientSetsStored().map(_.element)
+
 object ItemType extends Enumeration {
   type ItemType = Value
   val RECIPE, INGREDIENT = Value
@@ -242,13 +292,11 @@ object ItemType extends Enumeration {
 
 case class IngredientDataRaw(name: String, IngredientTagNames: List[String])
 
-case class IngredientSetRaw(name: String, IngredientNames: List[String])
-
 def setup(): Unit = {
   val homeIngredients = List("Gin", "Vodka", "Bourbon", "Orange Liquour",
     "Scotch", "Aperol", "Dry Vermouth", "Campari", "Sugar", "Bitters", "Egg White")
-  val ingredientSets: List[IngredientSetRaw] = List(
-    IngredientSetRaw("home", homeIngredients)
+  val ingredientSets = Map(
+    "home" -> homeIngredients
   )
 
   val ingredientData: List[IngredientDataRaw] = List(
@@ -261,6 +309,7 @@ def setup(): Unit = {
     IngredientDataRaw("Dry Vermouth", List("Fortified Wine")),
     IngredientDataRaw("Sweet Vermouth", List("Fortified Wine")),
     IngredientDataRaw("Campari", List("Other alcohol")),
+    IngredientDataRaw("Aperol", List("Other alcohol")),
     IngredientDataRaw("Sugar", List("Sugar")),
     IngredientDataRaw("Bitters", List("Bitter")),
     IngredientDataRaw("Lemon Juice", List("Juice")),
@@ -279,10 +328,11 @@ def setup(): Unit = {
   insertFromSetupData(sdSimple)
 }
 
-object CallMe {
+object DataMain {
   def main(args: List[String]): Unit = {
     println("Setup starting")
     setup()
     println("Setup complete")
   }
 }
+

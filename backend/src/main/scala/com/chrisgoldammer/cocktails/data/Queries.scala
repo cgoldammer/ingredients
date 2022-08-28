@@ -83,6 +83,7 @@ val createIngredientSets =
 CREATE TABLE ingredient_sets (
 id SERIAL,
 name VARCHAR NOT NULL UNIQUE,
+uuid VARCHAR NOT NULL UNIQUE,
 PRIMARY KEY(id)
 )
 """
