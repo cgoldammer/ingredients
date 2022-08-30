@@ -7,6 +7,7 @@ import cats.effect.*
 import org.http4s.*
 import org.http4s.circe.jsonOf
 import com.chrisgoldammer.cocktails.*
+import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
 
 import _root_.io.circe.*
@@ -22,62 +23,6 @@ import com.comcast.ip4s.{ipv4, port}
 
 import org.http4s.headers.Origin
 
-
-implicit val decIS: Decoder[IngredientSet] = deriveDecoder
-implicit val encIS: Encoder[IngredientSet] = deriveEncoder
-
-implicit val decT: Decoder[Tag] = deriveDecoder
-implicit val encT: Encoder[Tag] = deriveEncoder
-
-implicit val decTR: Decoder[Results[Tag]] = deriveDecoder
-implicit val encTR: Encoder[Results[Tag]] = deriveEncoder
-implicit val decT2: EntityDecoder[IO, Results[Tag]] = jsonOf[IO, Results[Tag]]
-
-
-implicit val decI: Decoder[Ingredient] = deriveDecoder
-implicit val encI: Encoder[Ingredient] = deriveEncoder
-
-implicit val decIR: Decoder[Results[Ingredient]] = deriveDecoder
-implicit val encIR: Encoder[Results[Ingredient]] = deriveEncoder
-implicit val decIR2: EntityDecoder[IO, Results[Ingredient]] = jsonOf[IO, Results[Ingredient]]
-
-
-implicit val decFI: Decoder[FullIngredient] = deriveDecoder
-implicit val encFI: Encoder[FullIngredient] = deriveEncoder
-
-implicit val decRR9: Decoder[Results[FullIngredient]] = deriveDecoder
-implicit val encRR9: Encoder[Results[FullIngredient]] = deriveEncoder
-implicit val decRR99: EntityDecoder[IO, Results[FullIngredient]] = jsonOf[IO, Results[FullIngredient]]
-
-
-implicit val decMR: Decoder[Recipe] = deriveDecoder
-implicit val encMR: Encoder[Recipe] = deriveEncoder
-
-implicit val decRR: Decoder[Results[Recipe]] = deriveDecoder
-implicit val encRR: Encoder[Results[Recipe]] = deriveEncoder
-implicit val decRR2: EntityDecoder[IO, Results[Recipe]] = jsonOf[IO, Results[Recipe]]
-
-
-implicit val decI2: Decoder[FullRecipe] = deriveDecoder
-implicit val encI2: Encoder[FullRecipe] = deriveEncoder
-
-implicit val decI3: Decoder[Results[FullRecipe]] = deriveDecoder
-implicit val encI3: Encoder[Results[FullRecipe]] = deriveEncoder
-implicit val decIR23: EntityDecoder[IO, Results[FullRecipe]] = jsonOf[IO, Results[FullRecipe]]
-
-implicit val decI24: Decoder[FullIngredientSet] = deriveDecoder
-implicit val encI24: Encoder[FullIngredientSet] = deriveEncoder
-
-implicit val decRR4: Decoder[Results[FullIngredientSet]] = deriveDecoder
-implicit val encRR4: Encoder[Results[FullIngredientSet]] = deriveEncoder
-implicit val decRR24: EntityDecoder[IO, Results[FullIngredientSet]] = jsonOf[IO, Results[FullIngredientSet]]
-
-
-implicit val decISL: Decoder[Results[String]] = deriveDecoder
-implicit val encISL: Encoder[Results[String]] = deriveEncoder
-implicit val decISL2: EntityDecoder[IO, Results[String]] = jsonOf[IO, Results[String]]
-
-//implicit val encISL2: EntityEncoder[IO, io.circe.Json] = jsonOf[IO, io.circe.Json]
 
 import org.http4s.server.middleware._
 

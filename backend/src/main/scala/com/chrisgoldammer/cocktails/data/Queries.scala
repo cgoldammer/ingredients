@@ -8,6 +8,7 @@ import cats.syntax.traverse.*
 import doobie.hi.connection
 import doobie.postgres.*
 import doobie.postgres.implicits.*
+import com.chrisgoldammer.cocktails.data.types.*
 import cats.data.*
 
 val createIngredients =
@@ -100,8 +101,9 @@ val createStrings: List[String] = List(
 def dropString(tableName: String): String = f"DROP TABLE IF EXISTS $tableName%s"
 def tableNames = List("ingredient_set_ingredients", "ingredient_sets",
   "ingredient_tags", "tags", "recipe_ingredients", "recipes", "ingredients")
-def stringToSqlBasic(sqlString: String) = ???
-///HC.updateWithGeneratedKeys(List())(sqlString, HPS.set(()), 512).compile.drain
+// def stringToSqlBasic(sqlString: String) = ???
+def updater(sqlString: String) : Stream[ConnectionIO, Unit] = HC.updateWithGeneratedKeys(List())(sqlString, HPS.set(()), 512)
+def stringToSqlBasic(sqlString: String) = updater(sqlString).compile.drain
 val dropTables: ConnectionIO[Unit] = tableNames.traverse_ {
   table => stringToSqlBasic(dropString(table))
 }
@@ -198,5 +200,15 @@ val getIngredientsQuery = sql"""
     FROM base
     group by id
   """
+
+val getIngredientsSetsStoredQuery = sql"""
+with base AS (
+  SELECT s.id, s.name, s.uuid, i.uuid AS ingredient_uuid
+  FROM ingredient_sets s
+  JOIN ingredient_set_ingredients isi ON s.id=isi.ingredient_set_id
+  JOIN ingredients i ON isi.ingredient_id=i.id)
+SELECT id, min(name) as name, min(uuid) as uuid, array_agg(ingredient_uuid) as ingredient_uuids
+FROM base group by id
+"""
 
 
