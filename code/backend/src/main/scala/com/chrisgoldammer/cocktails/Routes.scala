@@ -1,0 +1,85 @@
+package com.chrisgoldammer.cocktails
+
+import doobie.postgres.*
+import doobie.postgres.implicits.*
+
+import cats.effect.*
+import org.http4s.*
+import org.http4s.circe.jsonOf
+import com.chrisgoldammer.cocktails.*
+import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.data.*
+
+import _root_.io.circe.*
+import _root_.io.circe.generic.semiauto.*
+import _root_.io.circe.syntax.*
+import org.http4s.dsl.io.*
+import org.http4s.implicits.*
+import org.http4s.client.dsl.io.*
+
+import org.http4s.ember.server.*
+import org.http4s.circe.jsonEncoder
+import com.comcast.ip4s.{ipv4, port}
+
+import org.http4s.headers.Origin
+
+
+import org.http4s.server.middleware._
+
+val jsonApp = HttpRoutes.of[IO] {
+  case GET -> Root / "ingredients" =>
+    for {
+      ing <- IO {
+        Results(getIngredients(), "ingredients").asJson
+      }
+      resp <- Ok(ing)
+    } yield resp
+  case GET -> Root / "tags" =>
+    for {
+      ing <- IO {
+        Results(getTags(), "Tags").asJson
+      }
+      resp <- Ok(ing)
+    } yield resp
+  case GET -> Root / "recipes" => {
+    for {
+      ing <- IO {
+        Results(getFullRecipes(), "Full Recipes").asJson
+      }
+      resp <- Ok(ing)
+    } yield resp
+  }
+  case GET -> Root / "ingredient_sets" => {
+    for {
+      ing <- IO {
+        Results(getIngredientSets(), "Ingredient Sets").asJson
+      }
+      resp <- Ok(ing)
+    } yield resp
+  }
+
+  case req@POST -> Root / "recipes_possible" => for {
+    isl <- req.as[Results[String]]
+    j <- IO {
+      Results(getRecipesForIngredients(isl.data), "Recipes").asJson
+    }
+    resp <- Ok(j)
+  } yield resp
+}.orNotFound
+
+//val allowedOrigin = Origin.Host(Uri.Scheme.http, Uri.RegName("localhost"), Some(8082))
+//val allowedAll = CORS.policy.withAllowOriginAll
+
+//val withMiddleWare = CORS.policy
+//  .withAllowOriginHost(Set(allowedOrigin))
+//  .withAllowCredentials(false)
+//  .apply(jsonApp)
+
+val withMiddleWare2 = CORS.policy.withAllowOriginAll(jsonApp)
+
+val server: Resource[IO, org.http4s.server.Server] = EmberServerBuilder
+  .default[IO]
+  .withHost(ipv4"0.0.0.0")
+  .withPort(port"8080")
+  .withHttpApp(withMiddleWare2)
+  .build

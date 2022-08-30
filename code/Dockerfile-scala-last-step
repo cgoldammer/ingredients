@@ -1,0 +1,4 @@
+FROM backend-step2-build
+WORKDIR /backend
+COPY backend .
+RUN sbt compile
