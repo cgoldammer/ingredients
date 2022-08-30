@@ -42,8 +42,8 @@ export function IngredientsAdditionView() {
   const theme = useTheme();
   const ingredientsSelected = useSelector(getIngredientsSelected)
 
-  const { data: ingredientsData } = useGetIngredientsQuery() || {};
-  const { ingredients = [] } = ingredientsData || {};
+  const { data = {data: []} } = useGetIngredientsQuery() || {};
+  const { data: ingredients = [] } = data || {};
 
   const ingredientsNotSelected = ingredients.filter(
     (v) => !ingredientsSelected.map((r) => r.uuid).includes(v.uuid)

@@ -2,19 +2,21 @@ import React from "react";
 import { useGetRecipesPossibleQuery } from "../api/apiSlice";
 import { RecipeView } from "./RecipeView";
 import { useSelector } from "react-redux";
-
-const baseResult = { recipes: [] };
+import { getIngredientsSelected } from "../../store"
 
 export function RecipesPossibleView() {
-  const ingredientsSelected = useSelector(
-    (state) => state.ingredientsSelected.values
-  );
-  const { data } =
-    useGetRecipesPossibleQuery({
-      ingredients: ingredientsSelected.map((r) => r.uuid),
-    }) || baseResult;
-  const { recipes = [] } = data || {};
-  const divs = recipes.map(RecipeView);
+  const ingredientsSelected = useSelector(getIngredientsSelected);
+  const postData = {
+    data: ingredientsSelected.map(i => i.uuid), name: "Selected",
+  }
+  console.log("POST DATA");
+  console.log(postData);
+
+  const { data = {data: []} } =
+    useGetRecipesPossibleQuery(postData) ;
+  console.log("DATA IS")
+  console.log(data)
+  const divs = data.data.map(RecipeView);
   return (
     <div>
       <div>{divs}</div>

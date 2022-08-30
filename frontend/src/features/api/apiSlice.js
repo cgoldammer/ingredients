@@ -10,37 +10,37 @@ export const apiSlice = createApi({
   endpoints: (builder) => ({
     getTags: builder.query({
       query: () => "/tags",
-      providesTags: (result = []) => [
+      providesTags: (result) => [
         "Tag",
-        ...result.tags.map(({ id }) => ({ type: "Tag", id })),
+        ...result.data.map(({ id }) => ({ type: "Tag", id })),
       ],
     }),
     getIngredients: builder.query({
       query: () => "/ingredients",
-      providesTags: (result = []) => [
+      providesTags: (result) => [
         "Ingredient",
-        ...result.ingredients.map(({ id }) => ({ type: "Ingredient", id })),
+        ...result.data.map(({ id }) => ({ type: "Ingredient", id })),
       ],
     }),
     getIngredientSets: builder.query({
-      query: () => "/ingredientSets"
+      query: () => "/ingredient_sets"
     }),
     getRecipes: builder.query({
       query: () => "/recipes",
-      providesTags: (result = []) => [
+      providesTags: (result) => [
         "Recipe",
-        ...result.recipes.map(({ id }) => ({ type: "Ingredient", id })),
+        ...result.data.map(({ id }) => ({ type: "Ingredient", id })),
       ],
     }),
     getRecipesPossible: builder.query({
       query: (ingredientSearchList) => ({
-        url: "/recipesPossible",
+        url: "/recipes_possible",
         method: "POST",
         body: ingredientSearchList, // Body is automatically converted to json with the correct headers
       }),
-      providesTags: (result = []) => [
+      providesTags: (result) => [
         "Recipe",
-        ...result.recipes.map(({ id }) => ({ type: "Recipe", id })),
+        ...result.data.map(({ id }) => ({ type: "Recipe", id })),
       ],
     }),
   }),

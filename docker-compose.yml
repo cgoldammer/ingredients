@@ -9,7 +9,7 @@ services:
       - postgres2
     ports:
       - "8300:8080"
-    command: bash -c "export POSTGRESPORT=jdbc:postgresql://postgres2:5432/ingredients; sbt 'runMain com.chrisgoldammer.cocktails.data.CallMe'; sbt 'runMain com.chrisgoldammer.cocktails.Main'"
+    command: bash -c "export POSTGRESPORT=jdbc:postgresql://postgres2:5432/ingredients; sbt 'runMain com.chrisgoldammer.cocktails.DataMain'; sbt 'runMain com.chrisgoldammer.cocktails.Main'"
 
   postgres2:
     build: 

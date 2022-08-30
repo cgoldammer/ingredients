@@ -8,6 +8,7 @@ const devServer = {
     host: '0.0.0.0',
     historyApiFallback: false,
     hot: true,
+    allowedHosts: "all",
 
     headers: {
     "Access-Control-Allow-Origin": "*",

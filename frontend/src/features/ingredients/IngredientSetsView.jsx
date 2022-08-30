@@ -22,16 +22,22 @@ export function IngredientSetsView() {
     (state) => state.ingredientsSelected.values
   )
 
-  const x = useGetIngredientSetsQuery()
-  const { data: ingredientSetsData } = useGetIngredientSetsQuery() || {};
-  const ingredientSets = ingredientSetsData || {};
-  const setNames = Object.keys(ingredientSets);
+  const x = useGetIngredientSetsQuery();
+  const { data: ingredientSetsData } = useGetIngredientSetsQuery();
+  console.log("X")
+  console.log(x)
+  console.log(ingredientSetsData)
+  const { data: ingredientSets } = ingredientSetsData || {data: []};
+  console.log("Clean")
+  console.log(ingredientSets)
+  const setNames = ingredientSets.map(i => i.name);
   const selectedSet = useSelector(getSelectedSet)
 
   const handleChange = event => {
     const setName = event.target.value;
-    dispatch(setIngredientSet({name: setName, value: ingredientSets[setName]}));
-    dispatch(setIngredientsSelectedSimple(ingredientSets[setName]));
+    const setChanged = ingredientSets.filter(i => i.name == setName)[0];
+    dispatch(setIngredientSet(setChanged));
+    dispatch(setIngredientsSelectedSimple(setChanged.ingredients));
   };
   const items = (
     setNames.map(setName => (

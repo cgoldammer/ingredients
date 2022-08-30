@@ -22,8 +22,7 @@ export const getIngredientsSelected = state => {
   const apiResults = state.api.queries['getIngredients(undefined)']
   if (apiResults != undefined) {
     if (apiResults['data'] != undefined){
-      const allIngredients = apiResults.data.ingredients
-
+      const allIngredients = apiResults.data.data
       const uuidsSelected = state.ingredientsSelected.values
 
       console.log("Ingredients: " + allIngredients.length + " | Selected: " + uuidsSelected.length)

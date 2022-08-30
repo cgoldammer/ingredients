@@ -9,8 +9,8 @@ import { getRange, getRandomSample } from "../helpers";
 const ARTIFICIAL_DELAY_MS = 1;
 const NUM_INGREDIENTS_PER_RECIPE = 2;
 const NUM_RECIPES = 5;
-const NUM_TAGS = 5;
-const NUM_TAGS_PER_INGREDIENT = 2;
+const NUM_TAGS = 1;
+const NUM_TAGS_PER_INGREDIENT = 1;
 
 /* RNG setup */
 // Set up a seeded random number generator, so that we get
@@ -110,29 +110,29 @@ for (let i = 0; i < NUM_RECIPES; i++) {
 export const handlers = [
   rest.get("/fakeApi/ingredients", (req, res, ctx) => {
     const ingredients = {
-      ingredients: db.ingredient.getAll().map(serializeIngredient),
+      data: db.ingredient.getAll().map(serializeIngredient),
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredients));
   }),
   rest.get("/fakeApi/tags", (req, res, ctx) => {
     const tags = {
-      tags: db.tag.getAll().map(serializeTag),
+      data: db.tag.getAll().map(serializeTag),
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(tags));
   }),
-  rest.get("/fakeApi/ingredientSets", (req, res, ctx) => {
+  rest.get("/fakeApi/ingredient_sets", (req, res, ctx) => {
     const ingredientsData = {
-      ingredients: db.ingredient.getAll().map(serializeIngredient),
+      data: db.ingredient.getAll().map(serializeIngredient),
     }
-    const { ingredients = [] } = ingredientsData || [];
-    const firstHalf = getRange(parseInt((ingredients.length) / 2))
-    const firstHalfSet = firstHalf.map(i => ingredients[i].uuid)
-    const ingredientSets = {'firstHalf': firstHalfSet};
+    const { data = [] } = ingredientsData || [];
+    const firstHalf = getRange(parseInt((data.length) / 2))
+    const firstHalfSet = firstHalf.map(i => data[i].uuid)
+    const ingredientSets = {'data': [{name: 'firstHalf', uuid: "123", ingredients: firstHalfSet}]};
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredientSets));
   }),
-  rest.post("/fakeApi/recipesPossible", (req, res, ctx) => {
+  rest.post("/fakeApi/recipes_possible", (req, res, ctx) => {
     const recipes = {
-      recipes: db.fullRecipe.getAll().map(serializeFullRecipe),
+      data: db.fullRecipe.getAll().map(serializeFullRecipe),
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(recipes));
   }),
