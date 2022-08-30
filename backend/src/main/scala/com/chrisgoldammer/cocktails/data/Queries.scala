@@ -1,4 +1,4 @@
-package com.chrisgoldammer.cocktails.queries
+package com.chrisgoldammer.cocktails.data
 
 import doobie.*
 import doobie.implicits.*
@@ -8,22 +8,7 @@ import cats.syntax.traverse.*
 import doobie.hi.connection
 import doobie.postgres.*
 import doobie.postgres.implicits.*
-
-//import scala.collection.immutable.Stream
-
-val q =
-  """
-  select code, name, population, gnp
-  from country
-  where population > ?
-  and   population < ?
-  """
-
-val sqlC: Stream[ConnectionIO, String] = HC.stream[String](q, ().pure[PreparedStatementIO], 512)
-
-val sqlA = sql"select 43"
-val sqlB = sql"select random()"
-
+import cats.data.*
 
 val createIngredients =
   """
@@ -110,15 +95,108 @@ val createStrings: List[String] = List(
   createIngredientSetsIngredients
 )
 
+
+
 def dropString(tableName: String): String = f"DROP TABLE IF EXISTS $tableName%s"
 def tableNames = List("ingredient_set_ingredients", "ingredient_sets",
   "ingredient_tags", "tags", "recipe_ingredients", "recipes", "ingredients")
-def stringToSqlBasic(sqlString: String) = HC.updateWithGeneratedKeys(List())(sqlString, HPS.set(()), 512).compile.drain
+def stringToSqlBasic(sqlString: String) = ???
+///HC.updateWithGeneratedKeys(List())(sqlString, HPS.set(()), 512).compile.drain
 val dropTables: ConnectionIO[Unit] = tableNames.traverse_ {
   table => stringToSqlBasic(dropString(table))
 }
 
+
+
 val createTables: ConnectionIO[Unit] = createStrings.traverse_ {
   sqlString => stringToSqlBasic(sqlString)
 }
+
+val recipeIngredientDataQuery =
+  sql"""
+       |SELECT r.name, r.uuid, i.name AS ingredient_name, i.uuid AS ingredient_uuid
+FROM recipe_ingredients ri
+JOIN recipes r ON ri.recipe_id=r.id
+JOIN ingredients i ON ri.ingredient_id=i.id
+""".stripMargin
+
+def insertIngredientSet(name: String): ConnectionIO[StoredElement[IngredientSet]] = {
+  val uuid = getUuid()
+  sql"INSERT INTO ingredient_sets (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
+}
+
+def insertIngredientSetIngredient(setId: Int, ingredientId: Int): ConnectionIO[StoredElement[IngredientSetIngredient]] = {
+  sql"INSERT INTO ingredient_set_ingredients (ingredient_set_id, ingredient_id) values ($setId, $ingredientId)"
+    .update.withUniqueGeneratedKeys("id", "ingredient_set_id", "ingredient_id")
+}
+
+def insertIngredientTag(ingredientId: Int, tagId: Int): ConnectionIO[StoredElement[IngredientTag]] = {
+  sql"INSERT INTO ingredient_tags (ingredient_id, tag_id) values ($ingredientId, $tagId)".update.withUniqueGeneratedKeys("id", "ingredient_id", "tag_id")
+}
+
+def insertTag(name: String): ConnectionIO[StoredElement[Tag]] = {
+  sql"INSERT INTO tags (name) values ($name)".update.withUniqueGeneratedKeys("id", "name")
+}
+
+def insertIngredient(name: String): ConnectionIO[StoredElement[Ingredient]] = {
+  val uuid = getUuid()
+  sql"INSERT INTO ingredients (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
+}
+
+def insertRecipeIngredient(recipeId: Int, ingredientId: Int): ConnectionIO[StoredElement[RecipeIngredient]] = {
+  sql"INSERT INTO recipe_ingredients (recipe_id, ingredient_id) values ($recipeId, $ingredientId)"
+    .update.withUniqueGeneratedKeys("id", "recipe_id", "ingredient_id")
+}
+
+def insertRecipe(name: String): ConnectionIO[StoredElement[Recipe]] = {
+  val uuid = getUuid()
+  sql"INSERT INTO recipes (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
+}
+
+
+def searchQuery(ingredientUuids: NonEmptyList[String]) = {
+  val inFragment = Fragments.in(fr"i.uuid", ingredientUuids)
+  val numIngCount = ingredientUuids.size
+  fr"""
+  WITH candidates AS (
+    SELECT recipe_id
+    FROM recipe_ingredients ri
+    JOIN ingredients i
+    ON ri.ingredient_id=i.id
+    WHERE
+    """ ++ inFragment ++
+    fr"""
+    ),
+    recipeNumberFound AS (
+      SELECT recipe_id, SUM(1) AS num_ing_found
+      FROM candidates
+      GROUP BY recipe_id
+    ),
+    recipeNumberIngredients AS (
+      SELECT recipe_id, SUM(1) AS num_ing_total
+      FROM recipe_ingredients
+      GROUP BY recipe_id
+    )
+    SELECT r.id, name, uuid
+    FROM recipes r
+    JOIN recipeNumberIngredients rni
+    ON r.id=rni.recipe_id
+    JOIN recipeNumberFound rnf
+    ON r.id=rnf.recipe_id
+    WHERE num_ing_found=num_ing_total
+    """
+}
+
+val getIngredientsQuery = sql"""
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  """
+
 

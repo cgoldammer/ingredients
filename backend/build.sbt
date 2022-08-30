@@ -19,9 +19,9 @@ lazy val root = (project in file("."))
       "org.scalameta" %% "munit" % MunitVersion % Test,
       "org.typelevel" %% "munit-cats-effect-3" % MunitCatsEffectVersion % Test,
       "ch.qos.logback" % "logback-classic" % LogbackVersion,
-      //      "org.scalatest" %% "scalatest-funspec" % "3.2.12" % "test",
       "org.tpolecat" %% "doobie-core" % DoobieVersion,
       "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
+      "org.tpolecat" %% "doobie-hikari" % DoobieVersion,
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )
@@ -46,7 +46,7 @@ libraryDependencies ++= Seq(
 // lazy val example = taskKey[Unit]("setupData")
 // fullRunTask(example, Compile, "com.chrisgoldammer.cocktails.data.CallMe")
 
-//TaskKey[Unit]("setupData") := (runMain in Compile).toTask(" com.chrisgoldammer.cocktails.data.CallMe").value
+TaskKey[Unit]("setupData") := (runMain in Compile).toTask(" com.chrisgoldammer.cocktails.data.CallMe").value
 
 scalacOptions ++= Seq( // use ++= to add to existing options
   "-Ykind-projector"
