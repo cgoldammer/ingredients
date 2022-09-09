@@ -23,7 +23,7 @@ export const apiSlice = createApi({
       ],
     }),
     getIngredientSets: builder.query({
-      query: () => "/ingredient_sets"
+      query: () => "/ingredient_sets",
     }),
     getRecipes: builder.query({
       query: () => "/recipes",

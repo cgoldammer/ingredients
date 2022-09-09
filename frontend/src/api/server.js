@@ -123,11 +123,13 @@ export const handlers = [
   rest.get("/fakeApi/ingredient_sets", (req, res, ctx) => {
     const ingredientsData = {
       data: db.ingredient.getAll().map(serializeIngredient),
-    }
+    };
     const { data = [] } = ingredientsData || [];
-    const firstHalf = getRange(parseInt((data.length) / 2))
-    const firstHalfSet = firstHalf.map(i => data[i].uuid)
-    const ingredientSets = {'data': [{name: 'firstHalf', uuid: "123", ingredients: firstHalfSet}]};
+    const firstHalf = getRange(parseInt(data.length / 2));
+    const firstHalfSet = firstHalf.map((i) => data[i].uuid);
+    const ingredientSets = {
+      data: [{ name: "firstHalf", uuid: "123", ingredients: firstHalfSet }],
+    };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredientSets));
   }),
   rest.post("/fakeApi/recipes_possible", (req, res, ctx) => {

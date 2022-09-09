@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetTagsQuery, useGetIngredientsQuery, useGetIngredientSets } from "../api/apiSlice";
+import { useGetTagsQuery, useGetIngredientsQuery } from "../api/apiSlice";
 import { Box } from "@mui/material";
 
 import { useTheme } from "@mui/material/styles";
@@ -9,13 +9,17 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import Chip from "@mui/material/Chip";
-import Button from '@mui/material/Button';
+import Button from "@mui/material/Button";
 import { useSelector, useDispatch } from "react-redux";
-import { setIngredientsSelected, removeIngredientsSelected, addIngredientsSelected } from "../../ingredientsReducer";
+import {
+  setIngredientsSelected,
+  removeIngredientsSelected,
+  addIngredientsSelected,
+} from "../../ingredientsReducer";
 import PropTypes from "prop-types";
 import { IngredientSetsView } from "./IngredientSetsView";
 
-import { getIngredientsSelected } from "../../store"
+import { getIngredientsSelected } from "../../store";
 
 function getStyles(name, personName, theme) {
   return {
@@ -39,47 +43,46 @@ const MenuProps = {
 
 export function IngredientsAdditionView() {
   const dispatch = useDispatch();
-  const theme = useTheme();
-  const ingredientsSelected = useSelector(getIngredientsSelected)
+  const ingredientsSelected = useSelector(getIngredientsSelected);
 
-  const { data = {data: []} } = useGetIngredientsQuery() || {};
+  const { data = { data: [] } } = useGetIngredientsQuery() || {};
   const { data: ingredients = [] } = data || {};
 
   const ingredientsNotSelected = ingredients.filter(
     (v) => !ingredientsSelected.map((r) => r.uuid).includes(v.uuid)
   );
 
-  const handleChange = event => {
-    dispatch(addIngredientsSelected([(event.target.value.uuid)]));
+  const handleChange = (event) => {
+    dispatch(addIngredientsSelected([event.target.value.uuid]));
   };
 
   return (
     <FormControl sx={{ m: 1, minWidth: 200 }}>
-      <InputLabel id="demo-simple-select-helper-label">Add Ingredient</InputLabel>
+      <InputLabel id="demo-simple-select-helper-label">
+        Add Ingredient
+      </InputLabel>
       <Select
         labelId="demo-simple-select-label"
         id="demo-simple-select"
-        value=''
+        value=""
         label="Add ingredient"
-        labelId="demo-simple-select-helper-label"
         onChange={handleChange}
       >
-        {
-          ingredientsNotSelected.map(ingredient => (
-            <MenuItem key={ingredient.uuid} value={ingredient}>{ingredient.name}</MenuItem>
-          ))
-        }
+        {ingredientsNotSelected.map((ingredient) => (
+          <MenuItem key={ingredient.uuid} value={ingredient}>
+            {ingredient.name}
+          </MenuItem>
+        ))}
       </Select>
     </FormControl>
-
-  )
+  );
 }
 
 export function IngredientsSelectedView() {
   const dispatch = useDispatch();
-  const theme = useTheme();
-  const ingredientsSelected = useSelector(getIngredientsSelected)
-  const unselectIngredient = (value) => dispatch(removeIngredientsSelected([value.uuid]));
+  const ingredientsSelected = useSelector(getIngredientsSelected);
+  const unselectIngredient = (value) =>
+    dispatch(removeIngredientsSelected([value.uuid]));
 
   const buttons = ingredientsSelected.map((ingredient) => (
     <Button
@@ -88,13 +91,9 @@ export function IngredientsSelectedView() {
     >
       {ingredient.name}
     </Button>
-  )
-  )
+  ));
 
-  return (
-    <div>{buttons}</div>
-  )
-
+  return <div>{buttons}</div>;
 }
 
 export function IngredientsWithTagView(props) {
@@ -105,15 +104,15 @@ export function IngredientsWithTagView(props) {
     (state) => state.ingredientsSelected.values
   );
   const allIds = ingredients.map((i) => i.uuid);
-  const ingredientsDisplayable = ingredientsSelected.filter((i) =>
-    allIds.includes(i.uuid)
-  ).map(i => i.uuid);
+  const ingredientsDisplayable = ingredientsSelected
+    .filter((i) => allIds.includes(i.uuid))
+    .map((i) => i.uuid);
   const handleChange = (event) => {
     const {
       target: { value },
     } = event;
 
-    const uuids = value.map(v => v.uuid);
+    const uuids = value.map((v) => v.uuid);
 
     const additions = uuids.filter(
       (v) => !ingredientsSelected.map((i) => i.uuid).includes(v.uuid)
@@ -123,7 +122,11 @@ export function IngredientsWithTagView(props) {
     );
 
     dispatch(
-      setIngredientsSelected({ tag: tagName, additions: additions, removals: removals })
+      setIngredientsSelected({
+        tag: tagName,
+        additions: additions,
+        removals: removals,
+      })
     );
   };
 
@@ -180,9 +183,11 @@ const splitByTag = (ingredients, tags) => {
 
 export function IngredientsView() {
   const { data: ingredientsData } = useGetIngredientsQuery() || {};
-  const { ingredients = [] } = ingredientsData || {};
+  const { data: ingredients = [] } = ingredientsData || {};
   const { data: tagsData } = useGetTagsQuery() || {};
-  const { tags = [] } = tagsData || {};
+  const { data: tags = [] } = tagsData || {};
+
+  console.log("Ingredients for view:" + ingredients.length);
 
   var splitIngredients = splitByTag(
     ingredients,
@@ -197,10 +202,18 @@ export function IngredientsView() {
 
   return (
     <div>
-      <div><span>Sets: </span><IngredientSetsView/></div>
-      <div><span>Selected Ingredients: </span><IngredientsSelectedView/></div>
-      <div><IngredientsAdditionView/></div>
-      {/*<div>{views}</div>*/}
+      <div>
+        <span>Sets: </span>
+        <IngredientSetsView />
+      </div>
+      <div>
+        <span>Selected Ingredients: </span>
+        <IngredientsSelectedView />
+      </div>
+      <div>
+        <IngredientsAdditionView />
+      </div>
+      <div>{views}</div>
     </div>
-  )
+  );
 }

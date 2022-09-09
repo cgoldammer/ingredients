@@ -16,4 +16,5 @@ backend/project/target
 frontend/node_modules/
 frontend/serve_content/prod
 frontend/package-lock.json
+frontend/notes.md
 temp
