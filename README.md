@@ -15,12 +15,41 @@ There are the following build modes:
 
 ```
 cd dockerfiles
-docker build . -f sbt_scala --build-arg SCALA_VERSION="3.1.2" -t scalabase
-
-docker build . -f Dockerfile-scala --target backend-step2-build --tag backend-step2-build
+docker build . -f sbt_scala --build-arg SCALA_VERSION="3.1.2" -t scalabase]
+cd ..
+docker build . -f Dockerfile-scala --target backend-step2-built2 --tag backend-step2-built2
 
 docker-compose build
 docker-compose up
 ```
 
-Then 
+
+
+# Setup for EC2 server
+
+```angular2html
+sudo yum update -y
+sudo yum install tmux -y
+sudo yum install docker -y
+```
+
+// https://www.cyberciti.biz/faq/how-to-install-docker-on-amazon-linux-2/
+```angular2html
+sudo usermod -a -G docker ec2-user
+id ec2-user
+newgrp docker
+sudo yum install python3-pip
+pip3 install --user docker-compose
+
+sudo systemctl enable docker.service
+sudo systemctl start docker.service
+```
+
+
+To run server:
+```angular2html
+./deploy.sh
+tunnel_patent_web_from_business &
+tunnel_patent_api_from_business &
+run_patent_from_business
+```

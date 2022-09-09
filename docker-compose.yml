@@ -4,7 +4,7 @@ services:
   scala:
     build:
       context: .
-      dockerfile: Dockerfile-scala-last-step
+      dockerfile: Dockerfile-scala
     depends_on: 
       - postgres2
     ports:

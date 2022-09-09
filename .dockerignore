@@ -1,0 +1,5 @@
+frontend/node_modules                                                                                 │app_1        |   modules by path ./src/features/ 21.7 KiB 5 modules
+frontend/package-lock.json                                                                            │app_1        |   modules by path ./src/*.jsx 3.84 KiB
+backend/project/target
+backend/target
+.git

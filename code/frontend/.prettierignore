@@ -1,9 +1,0 @@
-serve_content
-node_modules
-
-package.json
-webpack.*.js
-.babelrc
-
-*.yml
-

@@ -16,16 +16,18 @@ import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
 
 
+
+
+def getUuid() = randomUUID().toString
+val defaultPort = "jdbc:postgresql://localhost:5432/world"
+val connString = sys.env.get("POSTGRESPORT").getOrElse(defaultPort)
+
 val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
   "org.postgresql.Driver", // driver classname
   connString,
   "postgres", // user
   "" // password
 )
-
-def getUuid() = randomUUID().toString
-val defaultPort = "jdbc:postgresql://localhost:5432/world"
-val connString = sys.env.get("POSTGRESPORT").getOrElse(defaultPort)
 
 def recipeIngredientToIngredient(ri: FullRecipeData): Ingredient = {
   ri match {

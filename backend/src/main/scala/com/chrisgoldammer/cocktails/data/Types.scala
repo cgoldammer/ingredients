@@ -101,14 +101,12 @@ implicit val decRR9: Decoder[Results[FullIngredient]] = deriveDecoder
 implicit val encRR9: Encoder[Results[FullIngredient]] = deriveEncoder
 implicit val decRR99: EntityDecoder[IO, Results[FullIngredient]] = jsonOf[IO, Results[FullIngredient]]
 
-
 implicit val decMR: Decoder[Recipe] = deriveDecoder
 implicit val encMR: Encoder[Recipe] = deriveEncoder
 
 implicit val decRR: Decoder[Results[Recipe]] = deriveDecoder
 implicit val encRR: Encoder[Results[Recipe]] = deriveEncoder
 implicit val decRR2: EntityDecoder[IO, Results[Recipe]] = jsonOf[IO, Results[Recipe]]
-
 
 implicit val decI2: Decoder[FullRecipe] = deriveDecoder
 implicit val encI2: Encoder[FullRecipe] = deriveEncoder

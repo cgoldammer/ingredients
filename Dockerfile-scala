@@ -1,10 +1,11 @@
 FROM scalabase as backend-step1-scala
 
-FROM backend-step1-scala AS backend-step2-build
+FROM backend-step1-scala AS backend-step2-built2
 WORKDIR /backend
 COPY backend .
+RUN echo "done"
 
-FROM backend-step2-build AS backend-step3-rebuild
+FROM backend-step2-built2 AS backend-step3-rebuild
 WORKDIR /backend
 COPY backend .
 RUN sbt compile
