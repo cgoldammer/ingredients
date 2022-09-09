@@ -49,7 +49,7 @@ sudo systemctl start docker.service
 To run server:
 ```angular2html
 ./deploy.sh
-tunnel_patent_web_from_business &
-tunnel_patent_api_from_business &
-run_patent_from_business
+tunnel_cocktails_frontend &
+tunnel_cocktails_backend &
+run_from_server
 ```
