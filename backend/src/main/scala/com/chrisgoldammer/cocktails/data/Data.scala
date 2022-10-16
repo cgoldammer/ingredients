@@ -16,10 +16,24 @@ import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
 
 
+// val connstringServer = localhost:5432
+
+/* 
+ * I need a way of saying: Encapsulate anything
+ * that accesses the DB as a function like
+ * connector -> action
+ * And when I instantiate the app, I can pass
+ * it setup info (which includes the connection data)
+ * And that sets up the right db
+*/
+
+
+
+
 
 
 def getUuid() = randomUUID().toString
-val defaultPort = "jdbc:postgresql://localhost:5432/world"
+val defaultPort = "jdbc:postgresql://localhost:5432/ingredients"
 val connString = sys.env.get("POSTGRESPORT").getOrElse(defaultPort)
 
 val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
@@ -144,11 +158,76 @@ def getIngredientsData(): List[MFullIngredientData] = {
   getIngredientsQuery.query[MFullIngredientData].to[List].transact(xa).unsafeRunSync()
 }
 
+case class DBSetup()
+
 def setup(): Unit = {
   dropTables.transact(xa).unsafeRunSync()
   createTables.transact(xa).unsafeRunSync()
   insertFromSetupData(setupDataSimple)
 }
 
+def setupIO(sd: SetupData): ConnectionIO[Unit] = dropTables >> createTables >> insertFromSetupDataIO(sd)
+
+
+def insertFromSetupDataIO(sd: SetupData): ConnectionIO[Unit] = for {
+  mTags <- sd.ingredientData.flatMap(_.IngredientTagNames).distinct.traverse(insertTag)
+  mIngredients <- sd.ingredientData.traverse(ingredient => insertIngredient(ingredient.name))
+  ids = for {
+    ingredient <- sd.ingredientData
+    tagName <- ingredient.IngredientTagNames
+  } yield {
+    val tagId = getTagByName(mTags.toList, tagName).id
+    val ingredientId: Int = getIngredientByName(mIngredients, ingredient.name).id
+    (ingredientId, tagId)
+  }
+
+  _ <- ids.traverse(x => x match {
+      case (ingredientId: Int, tagId:Int) => insertIngredientTag(ingredientId, tagId)
+    })
+
+  mRecipes <- sd.recipeNames.keys.toList.traverse(insertRecipe)
+//
+  ids: Map[Int, Int] = for {
+    (recipeName, recipeIngredientNames) <- sd.recipeNames
+    recipeIngredientName <- recipeIngredientNames
+  } yield {
+    val recipeId = getRecipeByName(mRecipes.toList, recipeName).id
+    val ingredientId = getIngredientByName(mIngredients, recipeIngredientName).id
+    (recipeId, ingredientId)
+  }
+
+
+  mRecipeIngredients <- ids.toList.traverse(x => x match {
+    case (recipeId: Int, ingredientId: Int) => insertRecipeIngredient(recipeId, ingredientId)
+  })
+
+  mIngredientSets <- sd.ingredientSets.keys.toList.traverse(insertIngredientSet)
+
+  ids = for {
+    (setName, setIngredientNames) <- sd.ingredientSets
+    ingredientName <- setIngredientNames
+  } yield {
+    val setId = getSetByName(mIngredientSets.toList, setName).id
+    val ingredientId = getIngredientByName(mIngredients, ingredientName).id
+    (setId, ingredientId)
+  }
+
+  mIngredientSetIngredients <- ids.toList.traverse(x => x match {
+    case (setId: Int, ingredientId: Int) => insertIngredientSetIngredient(setId, ingredientId)
+  })
+} yield None
+
+abstract class DataTools(dbSetup: DBSetup):
+  val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
+    "org.postgresql.Driver", // driver classname
+    connString,
+    "postgres", // user
+    "" // password
+  )
+
+  def setup(): Unit
+    dropTables.transact(xa).unsafeRunSync()
+    createTables.transact(xa).unsafeRunSync()
+    insertFromSetupData(setupDataSimple)
 
 

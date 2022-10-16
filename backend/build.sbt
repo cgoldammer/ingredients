@@ -40,7 +40,8 @@ libraryDependencies ++= Seq(
 
 val tsecV = "0.4.0-M1"
 libraryDependencies ++= Seq(
-  "io.github.jmcardon" %% "tsec-common" % tsecV
+  "io.github.jmcardon" %% "tsec-common" % tsecV,
+  "io.github.jmcardon" %% "tsec-password" % tsecV
 )
 
 // lazy val example = taskKey[Unit]("setupData")

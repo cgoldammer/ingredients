@@ -22,50 +22,71 @@ import org.http4s.circe.jsonEncoder
 import com.comcast.ip4s.{ipv4, port}
 
 import org.http4s.headers.Origin
+import cats.data.{Kleisli}
 
 
 import org.http4s.server.middleware._
 
-val jsonApp = HttpRoutes.of[IO] {
-  case GET -> Root / "ingredients" =>
-    for {
-      ing <- IO {
-        Results(getIngredients(), "ingredients").asJson
-      }
-      resp <- Ok(ing)
-    } yield resp
-  case GET -> Root / "tags" =>
-    for {
-      ing <- IO {
-        Results(getTags(), "Tags").asJson
-      }
-      resp <- Ok(ing)
-    } yield resp
-  case GET -> Root / "recipes" => {
-    for {
-      ing <- IO {
-        Results(getFullRecipes(), "Full Recipes").asJson
-      }
-      resp <- Ok(ing)
-    } yield resp
-  }
-  case GET -> Root / "ingredient_sets" => {
-    for {
-      ing <- IO {
-        Results(getIngredientSets(), "Ingredient Sets").asJson
-      }
-      resp <- Ok(ing)
-    } yield resp
-  }
+case class DBSetup()
+case class AuthBackend()
+case class AppParams(db: DBSetup, auth: AuthBackend)
 
-  case req@POST -> Root / "recipes_possible" => for {
-    isl <- req.as[Results[String]]
-    j <- IO {
-      Results(getRecipesForIngredients(isl.data), "Recipes").asJson
+val defaultParams = AppParams(DBSetup(), AuthBackend())
+
+type Http4sApp = Kleisli[IO, Request[IO], Response[IO]]
+
+def jsonApp(ap: AppParams): Http4sApp = {
+  HttpRoutes.of[IO] {
+    case GET -> Root / "ingredients" =>
+      for {
+        ing <- IO {
+          Results(getIngredients(), "ingredients").asJson
+        }
+        resp <- Ok(ing)
+      } yield resp
+    case GET -> Root / "tags" =>
+      for {
+        ing <- IO {
+          Results(getTags(), "Tags").asJson
+        }
+        resp <- Ok(ing)
+      } yield resp
+    case GET -> Root / "recipes" => {
+      for {
+        ing <- IO {
+          Results(getFullRecipes(), "Full Recipes").asJson
+        }
+        resp <- Ok(ing)
+      } yield resp
     }
-    resp <- Ok(j)
-  } yield resp
-}.orNotFound
+    case GET -> Root / "ingredient_sets" => {
+      for {
+        ing <- IO {
+          Results(getIngredientSets(), "Ingredient Sets").asJson
+        }
+        resp <- Ok(ing)
+      } yield resp
+    }
+
+    case req@POST -> Root / "recipes_possible" => for {
+      isl <- req.as[Results[String]]
+      j <- IO {
+        Results(getRecipesForIngredients(isl.data), "Recipes").asJson
+      }
+      resp <- Ok(j)
+    } yield resp
+    case req@GET -> Root / "login" => logIn.run(req)
+    case req@GET -> Root / "authorize_user_from_cookie" => for {
+      res <- authorizeUserFromCookie.run(req)
+      resp <- Ok(res.toString())
+    } yield resp
+    case req@GET -> Root / "register" => register.run(req)
+    case req@GET -> Root / "example" => Ok("HELLO!")
+
+  }.orNotFound
+}
+
+
 
 //val allowedOrigin = Origin.Host(Uri.Scheme.http, Uri.RegName("localhost"), Some(8082))
 //val allowedAll = CORS.policy.withAllowOriginAll
@@ -75,7 +96,7 @@ val jsonApp = HttpRoutes.of[IO] {
 //  .withAllowCredentials(false)
 //  .apply(jsonApp)
 
-val withMiddleWare2 = CORS.policy.withAllowOriginAll(jsonApp)
+val withMiddleWare2 = CORS.policy.withAllowOriginAll(jsonApp(defaultParams))
 
 val server: Resource[IO, org.http4s.server.Server] = EmberServerBuilder
   .default[IO]
