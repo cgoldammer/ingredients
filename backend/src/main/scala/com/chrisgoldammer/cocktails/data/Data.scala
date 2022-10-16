@@ -64,59 +64,6 @@ def getTagByName(sTags: List[StoredElement[Tag]], name: String): StoredElement[T
 def getIngredientByName(sIngredients: List[StoredElement[Ingredient]], name: String): StoredElement[Ingredient] = sIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
 def getSetByName(sIngredientSets: List[StoredElement[IngredientSet]], name: String): StoredElement[IngredientSet] = sIngredientSets.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
-def insertFromSetupData(sd: SetupData): Unit = {
-
-  val tagNames: List[String] =
-    for {
-      ingredient <- sd.ingredientData
-      tag <- ingredient.IngredientTagNames
-    } yield tag
-
-  val mTags: Iterable[StoredElement[Tag]] =
-    for (tagName <- tagNames.distinct)
-      yield insertTag(tagName).transact(xa).unsafeRunSync()
-
-  val mIngredients =
-    for (ingredient <- sd.ingredientData)
-      yield insertIngredient(ingredient.name).transact(xa).unsafeRunSync()
-
-  val x =
-    for {
-      ingredient <- sd.ingredientData
-      tagName <- ingredient.IngredientTagNames
-    } yield {
-      val tagId = getTagByName(mTags.toList, tagName).id
-      val ingredientId = getIngredientByName(mIngredients, ingredient.name).id
-      insertIngredientTag(ingredientId, tagId).transact(xa).unsafeRunSync()
-    }
-
-  val mRecipes: Iterable[StoredElement[Recipe]] =
-    for (recipe <- sd.recipeNames.keys)
-      yield insertRecipe(recipe).transact(xa).unsafeRunSync()
-
-  val mRecipeIngredients: Iterable[StoredElement[RecipeIngredient]] = for {
-    (recipeName, recipeIngredientNames) <- sd.recipeNames
-    recipeIngredientName <- recipeIngredientNames
-  } yield {
-    val recipeId = getRecipeByName(mRecipes.toList, recipeName).id
-    val ingredientId = getIngredientByName(mIngredients, recipeIngredientName).id
-    insertRecipeIngredient(recipeId = recipeId, ingredientId = ingredientId).transact(xa).unsafeRunSync()
-  }
-
-  val mIngredientSets = for {
-    setName <- sd.ingredientSets.keys
-  } yield insertIngredientSet(setName).transact(xa).unsafeRunSync()
-
-
-  val mIngredientSetIngredients: Iterable[StoredElement[IngredientSetIngredient]] = for {
-    (setName, setIngredientNames) <- sd.ingredientSets
-    ingredientName <- setIngredientNames
-  } yield {
-    val setId = getSetByName(mIngredientSets.toList, setName).id
-    val ingredientId = getIngredientByName(mIngredients, ingredientName).id
-    insertIngredientSetIngredient(setId = setId, ingredientId = ingredientId).transact(xa).unsafeRunSync()
-  }
-}
 
 def getMRecipesForIngredients(ingredientUids: List[String]): List[StoredElement[Recipe]] = {
   if (ingredientUids.size == 0) {
@@ -160,11 +107,7 @@ def getIngredientsData(): List[MFullIngredientData] = {
 
 case class DBSetup()
 
-def setup(): Unit = {
-  dropTables.transact(xa).unsafeRunSync()
-  createTables.transact(xa).unsafeRunSync()
-  insertFromSetupData(setupDataSimple)
-}
+
 
 def setupIO(sd: SetupData): ConnectionIO[Unit] = dropTables >> createTables >> insertFromSetupDataIO(sd)
 
@@ -217,7 +160,7 @@ def insertFromSetupDataIO(sd: SetupData): ConnectionIO[Unit] = for {
   })
 } yield None
 
-abstract class DataTools(dbSetup: DBSetup):
+class DataTools(dbSetup: DBSetup):
   val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver", // driver classname
     connString,
@@ -225,9 +168,9 @@ abstract class DataTools(dbSetup: DBSetup):
     "" // password
   )
 
-  def setup(): Unit
-    dropTables.transact(xa).unsafeRunSync()
-    createTables.transact(xa).unsafeRunSync()
-    insertFromSetupData(setupDataSimple)
+object DataTools {
+  def setup(): IO[Unit] = setupIO(setupDataSimple).transact(xa)
+}
+
 
 
