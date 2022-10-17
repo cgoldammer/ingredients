@@ -27,16 +27,15 @@ import cats.data.{Kleisli}
 
 import org.http4s.server.middleware._
 
-case class AuthBackend()
-case class AppParams(db: DBSetup, auth: AuthBackend)
+case class AppParams(db: DBSetup, auth: AuthBackend = AuthBackend.Local)
 
-val defaultParams = AppParams(DBSetup(), AuthBackend())
 
 type Http4sApp = Kleisli[IO, Request[IO], Response[IO]]
 
 def jsonApp(ap: AppParams): Http4sApp = {
 
   val dt = DataTools(ap.db)
+  val af = AuthFunctions(ap.auth, ap.db)
 
   HttpRoutes.of[IO] {
     case GET -> Root / "ingredients" =>
@@ -77,12 +76,12 @@ def jsonApp(ap: AppParams): Http4sApp = {
       } yield Results(rfi, "Recipes").asJson
       resp <- Ok(j)
     } yield resp
-    case req@GET -> Root / "login" => logIn.run(req)
+    case req@GET -> Root / "login" => af.logIn.run(req)
     case req@GET -> Root / "authorize_user_from_cookie" => for {
-      res <- authorizeUserFromCookie.run(req)
+      res <- af.authorizeUserFromCookie.run(req)
       resp <- Ok(res.toString())
     } yield resp
-    case req@GET -> Root / "register" => register.run(req)
+    case req@GET -> Root / "register" => af.register.run(req)
     case req@GET -> Root / "example" => Ok("HELLO!")
 
   }.orNotFound
@@ -98,11 +97,15 @@ def jsonApp(ap: AppParams): Http4sApp = {
 //  .withAllowCredentials(false)
 //  .apply(jsonApp)
 
-val withMiddleWare2 = CORS.policy.withAllowOriginAll(jsonApp(defaultParams))
+def server(ap: AppParams): Resource[IO, org.http4s.server.Server] = {
+  val app = jsonApp(ap)
+  val withMiddleWare = CORS.policy.withAllowOriginAll(app)
 
-val server: Resource[IO, org.http4s.server.Server] = EmberServerBuilder
-  .default[IO]
-  .withHost(ipv4"0.0.0.0")
-  .withPort(port"8080")
-  .withHttpApp(withMiddleWare2)
-  .build
+  EmberServerBuilder
+    .default[IO]
+    .withHost(ipv4"0.0.0.0")
+    .withPort(port"8080")
+    .withHttpApp(withMiddleWare)
+    .build
+
+}

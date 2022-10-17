@@ -1,4 +1,6 @@
 package com.chrisgoldammer.cocktails
+
+import com.chrisgoldammer.cocktails.data.*
 import cats.effect.IO
 import junit.framework.TestSuite
 import org.http4s.*
@@ -22,9 +24,13 @@ def resetDB() = {
 
 def getRandom(): String = Random.alphanumeric.take(20).mkString("")
 
+
+  
+
+
 def getAppForTesting(): Http4sApp = {
-  var testParams = AppParams(DBSetup(), AuthBackend())
-  return jsonApp(testParams)
+  val dbSetup = Settings.TestLocal.getSetup()
+  return jsonApp(AppParams(dbSetup, AuthBackend()))
 }
 
 

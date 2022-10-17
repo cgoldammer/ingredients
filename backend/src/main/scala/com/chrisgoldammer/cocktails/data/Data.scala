@@ -14,33 +14,17 @@ import doobie.postgres.implicits.*
 import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
 
-
-// val connstringServer = localhost:5432
-
-/* 
- * I need a way of saying: Encapsulate anything
- * that accesses the DB as a function like
- * connector -> action
- * And when I instantiate the app, I can pass
- * it setup info (which includes the connection data)
- * And that sets up the right db
-*/
+def camel2underscores(x: String) = {
+  "_?[A-Z][a-z\\d]+".r.findAllMatchIn(x).map(_.group(0).toLowerCase).mkString("_")
+}
 
 
-
-
+def getSettings(): Option[Settings] = sys.env.get("SETTINGS").map(Settings.fromString).flatten
 
 
 def getUuid() = randomUUID().toString
-val defaultPort = "jdbc:postgresql://localhost:5432/ingredients"
-val connString = sys.env.get("POSTGRESPORT").getOrElse(defaultPort)
 
-val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
-  "org.postgresql.Driver", // driver classname
-  connString,
-  "postgres", // user
-  "" // password
-)
+
 
 def recipeIngredientToIngredient(ri: FullRecipeData): Ingredient = {
   ri match {
@@ -101,7 +85,6 @@ object ItemType extends Enumeration {
 
 def getIngredientsDataIO(): ConnectionIO[List[MFullIngredientData]] = getIngredientsQuery.query[MFullIngredientData].to[List]
 
-case class DBSetup()
 
 
 def setupIO(sd: SetupData): ConnectionIO[Unit] = dropTables >> createTables >> insertFromSetupDataIO(sd)
@@ -158,7 +141,7 @@ def insertFromSetupDataIO(sd: SetupData): ConnectionIO[Unit] = for {
 class DataTools(dbSetup: DBSetup):
   val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver", // driver classname
-    connString,
+    dbSetup.getConnString(),
     "postgres", // user
     "" // password
   )
