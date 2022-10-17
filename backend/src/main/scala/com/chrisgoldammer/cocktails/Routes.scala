@@ -27,7 +27,6 @@ import cats.data.{Kleisli}
 
 import org.http4s.server.middleware._
 
-case class DBSetup()
 case class AuthBackend()
 case class AppParams(db: DBSetup, auth: AuthBackend)
 
@@ -36,43 +35,46 @@ val defaultParams = AppParams(DBSetup(), AuthBackend())
 type Http4sApp = Kleisli[IO, Request[IO], Response[IO]]
 
 def jsonApp(ap: AppParams): Http4sApp = {
+
+  val dt = DataTools(ap.db)
+
   HttpRoutes.of[IO] {
     case GET -> Root / "ingredients" =>
       for {
-        ing <- IO {
-          Results(getIngredients(), "ingredients").asJson
-        }
+        ing <- for {
+          i <- dt.getIngredients()
+        } yield Results(i, "ingredients").asJson
         resp <- Ok(ing)
       } yield resp
     case GET -> Root / "tags" =>
       for {
-        ing <- IO {
-          Results(getTags(), "Tags").asJson
-        }
+        ing <- for {
+          tags <- dt.getTags()
+        } yield Results(tags, "Tags").asJson
         resp <- Ok(ing)
       } yield resp
     case GET -> Root / "recipes" => {
       for {
-        ing <- IO {
-          Results(getFullRecipes(), "Full Recipes").asJson
-        }
+        ing <- for {
+          r <- dt.getFullRecipes()
+        } yield Results(r, "Full Recipes").asJson
         resp <- Ok(ing)
       } yield resp
     }
     case GET -> Root / "ingredient_sets" => {
       for {
-        ing <- IO {
-          Results(getIngredientSets(), "Ingredient Sets").asJson
-        }
+        ing <- for {
+          is <- dt.getIngredientSets()
+        } yield Results(is, "Ingredient Sets").asJson
         resp <- Ok(ing)
       } yield resp
     }
 
     case req@POST -> Root / "recipes_possible" => for {
       isl <- req.as[Results[String]]
-      j <- IO {
-        Results(getRecipesForIngredients(isl.data), "Recipes").asJson
-      }
+      j <- for {
+        rfi <- dt.getRecipesForIngredients(isl.data)
+      } yield Results(rfi, "Recipes").asJson
       resp <- Ok(j)
     } yield resp
     case req@GET -> Root / "login" => logIn.run(req)

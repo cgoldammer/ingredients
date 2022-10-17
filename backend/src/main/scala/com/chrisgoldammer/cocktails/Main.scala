@@ -1,13 +1,14 @@
 package com.chrisgoldammer.cocktails
 
-import cats.effect.unsafe.implicits.global
-import com.chrisgoldammer.cocktails.data.DataTools
+import com.chrisgoldammer.cocktails.data.{DBSetup, DataTools}
 import cats.Applicative.*
-
 import cats.effect.{ExitCode, IO, IOApp}
 
 object Main extends IOApp.Simple:
   def run: IO[Unit] = server.use(_ => IO.never).as(ExitCode.Success)
 
 object DataMain extends IOApp.Simple:
-  def run: IO[Unit] = DataTools.setup()
+  def run: IO[Unit] = {
+    val dt = DataTools(DBSetup())
+    dt.setup()
+  }

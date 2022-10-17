@@ -7,7 +7,6 @@ import cats.*
 import cats.data.*
 import cats.effect.*
 import cats.implicits.*
-import cats.effect.unsafe.implicits.global
 import java.util.UUID.randomUUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import doobie.postgres.*
@@ -54,27 +53,22 @@ def createFullRecipes(rid: List[FullRecipeData]): List[FullRecipe] = {
   grouped.toList.map { case (name, ri) => FullRecipe(name, ri(0).uuid, ri.map(recipeIngredientToIngredient)) }
 }
 
-def getFullRecipes(): List[FullRecipe] = {
-  val rid = recipeIngredientDataQuery.query[FullRecipeData].to[List].transact(xa).unsafeRunSync()
-  return createFullRecipes(rid)
-}
+def getFullRecipesIO(): ConnectionIO[List[FullRecipe]] = recipeIngredientDataQuery.query[FullRecipeData].to[List].map(createFullRecipes)
 
 def getRecipeByName(sRecipes: List[StoredElement[Recipe]], name: String): StoredElement[Recipe] = sRecipes.groupBy(_.element.name).transform((k, v) => v.head)(name)
 def getTagByName(sTags: List[StoredElement[Tag]], name: String): StoredElement[Tag] = sTags.groupBy(_.element.name).transform((k, v) => v.head)(name)
 def getIngredientByName(sIngredients: List[StoredElement[Ingredient]], name: String): StoredElement[Ingredient] = sIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
 def getSetByName(sIngredientSets: List[StoredElement[IngredientSet]], name: String): StoredElement[IngredientSet] = sIngredientSets.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
+def getMRecipesForIngredientsIO(ingredientUids: List[String]): ConnectionIO[List[StoredElement[Recipe]]] =
+  NonEmptyList
+    .fromList(ingredientUids)
+    .map(sn => searchQuery(sn).query[StoredElement[Recipe]].to[List])
+    .getOrElse(List().pure[ConnectionIO])
 
-def getMRecipesForIngredients(ingredientUids: List[String]): List[StoredElement[Recipe]] = {
-  if (ingredientUids.size == 0) {
-    return List()
-  } else {
-    val sn = NonEmptyList.fromListUnsafe(ingredientUids.toList)
-    searchQuery(sn).query[StoredElement[Recipe]].to[List].transact(xa).unsafeRunSync()
-  }
-}
-
-def getRecipesForIngredients(ingredientUids: List[String]): List[Recipe] = getMRecipesForIngredients(ingredientUids).map(_.element)
+def getRecipesForIngredientsIO(ingredientUids: List[String]): ConnectionIO[List[Recipe]] = for {
+  m <- getMRecipesForIngredientsIO(ingredientUids)
+} yield m.map(_.element)
 
 def getMFullIngredientFromData(md: MFullIngredientData): StoredElement[FullIngredient] = {
   val tags = md.tags.map(t => Tag(t))
@@ -82,31 +76,32 @@ def getMFullIngredientFromData(md: MFullIngredientData): StoredElement[FullIngre
   StoredElement(md.id, ingredient)
 }
 
-def getIngredients(): List[FullIngredient] = getIngredientsData().map(getMFullIngredientFromData).map(_.element)
+def getIngredientsIO(): ConnectionIO[List[FullIngredient]] = for {
+  ing <- getIngredientsDataIO()
+} yield ing.map(getMFullIngredientFromData).map(_.element)
 
-def getTagsData(): List[StoredElement[Tag]] = {
-  sql"SELECT id, name FROM tags".query[StoredElement[Tag]].to[List].transact(xa).unsafeRunSync()
+def getTagsDataIO(): ConnectionIO[List[StoredElement[Tag]]] = {
+  sql"SELECT id, name FROM tags".query[StoredElement[Tag]].to[List]
 }
 
-def getTags(): List[Tag] = getTagsData().map(_.element)
+def getTagsIO(): ConnectionIO[List[Tag]] = for {
+  tags <- getTagsDataIO()
+} yield tags.map(_.element)
 
-def getIngredientSetsStored(): List[StoredElement[FullIngredientSet]] = {
-  getIngredientsSetsStoredQuery.query[StoredElement[FullIngredientSet]].to[List].transact(xa).unsafeRunSync()
-}
+def getIngredientSetsStoredIO(): ConnectionIO[List[StoredElement[FullIngredientSet]]] = getIngredientsSetsStoredQuery.query[StoredElement[FullIngredientSet]].to[List]
 
-def getIngredientSets() = getIngredientSetsStored().map(_.element)
+def getIngredientSetsIO(): ConnectionIO[List[FullIngredientSet]] = for {
+  is <- getIngredientSetsStoredIO()
+} yield is.map(_.element)
 
 object ItemType extends Enumeration {
   type ItemType = Value
   val RECIPE, INGREDIENT = Value
 }
 
-def getIngredientsData(): List[MFullIngredientData] = {
-  getIngredientsQuery.query[MFullIngredientData].to[List].transact(xa).unsafeRunSync()
-}
+def getIngredientsDataIO(): ConnectionIO[List[MFullIngredientData]] = getIngredientsQuery.query[MFullIngredientData].to[List]
 
 case class DBSetup()
-
 
 
 def setupIO(sd: SetupData): ConnectionIO[Unit] = dropTables >> createTables >> insertFromSetupDataIO(sd)
@@ -168,8 +163,16 @@ class DataTools(dbSetup: DBSetup):
     "" // password
   )
 
-object DataTools {
+  def getTags(): IO[List[Tag]] = getTagsIO().transact(xa)
   def setup(): IO[Unit] = setupIO(setupDataSimple).transact(xa)
+  def getFullRecipes(): IO[List[FullRecipe]] = getFullRecipesIO().transact(xa)
+  def getIngredients(): IO[List[FullIngredient]] = getIngredientsIO().transact(xa)
+  def getRecipesForIngredients(ingredientUids: List[String]): IO[List[Recipe]] = getRecipesForIngredientsIO(ingredientUids).transact(xa)
+  def getIngredientSets(): IO[List[FullIngredientSet]] = getIngredientSetsIO().transact(xa)
+
+object DataTools {
+
+
 }
 
 

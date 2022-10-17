@@ -7,7 +7,6 @@ import cats.*
 import cats.data.*
 import cats.effect.*
 import cats.implicits.*
-import cats.effect.unsafe.implicits.global
 import java.util.UUID.randomUUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import doobie.postgres.*
