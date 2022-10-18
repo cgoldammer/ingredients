@@ -1,6 +1,7 @@
 package com.chrisgoldammer.cocktails
 
 import com.chrisgoldammer.cocktails.data.*
+import com.chrisgoldammer.cocktails.data.types.*
 import cats.effect.IO
 import junit.framework.TestSuite
 import org.http4s.*
@@ -25,12 +26,9 @@ def resetDB() = {
 def getRandom(): String = Random.alphanumeric.take(20).mkString("")
 
 
-  
-
-
 def getAppForTesting(): Http4sApp = {
   val dbSetup = Settings.TestLocal.getSetup()
-  return jsonApp(AppParams(dbSetup, AuthBackend()))
+  return jsonApp(AppParams(dbSetup, AuthBackend.Local))
 }
 
 
@@ -44,15 +42,18 @@ class IngredientsSpec extends CatsEffectSuite:
     assert(newUserDoesNotExistWithoutRegister())
   }
 
-  test("After registering, the user exists"){
-    assert(newUserExistsAfterRegistering(), bStore.asString())
+  test("After registering with a transitory backend, a user disappears when app is reloaded"){
+    assert(newUserDisappearsIfTheBackendIsTransitory())
+  }
+
+  test("After registering, the user exists") {
+    assert(newUserExistsAfterRegistering())
   }
 
   def getRandomUser(): BasicCredentials = BasicCredentials(getRandom(), getRandom())
 
-  def doesUserExist(bc: BasicCredentials): Boolean = {
+  def doesUserExist(bc: BasicCredentials, app: Http4sApp): Boolean = {
     val authHeader = Authorization(bc)
-    val app = getAppForTesting()
     var loginRequest: Request[IO] = Request[IO](Method.GET, uri"/login", headers = Headers(authHeader))
     val serviceIO = app.run(loginRequest)
     val response = serviceIO.unsafeRunSync()
@@ -62,8 +63,10 @@ class IngredientsSpec extends CatsEffectSuite:
 
   def newUserDoesNotExistWithoutRegister(): Boolean = {
     resetDB()
+    val app = getAppForTesting()
+
     val user = getRandomUser()
-    return !doesUserExist(user)
+    return !doesUserExist(user, app)
   }
 
   def newUserExistsAfterRegistering(): Boolean = {
@@ -74,7 +77,23 @@ class IngredientsSpec extends CatsEffectSuite:
     val authHeader = Authorization(user)
     val registerRequest: Request[IO] = Request[IO](Method.GET, uri"/register", headers = Headers(authHeader))
     val registerResponse = app.run(registerRequest).unsafeRunSync()
-    return doesUserExist(user)
+    return doesUserExist(user, app)
+  }
+
+  def newUserDisappearsIfTheBackendIsTransitory(): Boolean = {
+
+    resetDB()
+    val app = getAppForTesting()
+
+    val user = getRandomUser()
+
+    val authHeader = Authorization(user)
+    val registerRequest: Request[IO] = Request[IO](Method.GET, uri"/register", headers = Headers(authHeader))
+    app.run(registerRequest).unsafeRunSync()
+
+    val app2 = getAppForTesting()
+    return !doesUserExist(user, app2)
+
   }
 
 

@@ -94,7 +94,7 @@ trait BackingStore {
     def get(id: String): OptionT[IO, CreatedUserData]
     def put(elem: BasicCredentials): IO[Option[CreatedUserData]]
     def update(v: CreatedUserData): IO[CreatedUserData]
-    def delete(id: String): IO[Unit]
+    def delete(id: String): IO[Boolean]
 }
 
 enum AuthBackend:
@@ -102,39 +102,46 @@ enum AuthBackend:
 
   def getBackingStore(db: DBSetup): BackingStore = {
     this match
-      case AuthBackend.Local => dummyBackingStore
+      case AuthBackend.Local => dummyBackingStore()
   }
 
-val dummyBackingStore = new BackingStore {
-  val storageMap = mutable.HashMap.empty[String, CreatedUserData]
-  def getRandom(): String = Random.alphanumeric.take(20).mkString("")
+def dummyBackingStore(): BackingStore = {
+  val bStore = new BackingStore {
+    val storageMap = mutable.HashMap.empty[String, CreatedUserData]
 
-  def asString(): String = storageMap.toString()
+    def getRandom(): String = Random.alphanumeric.take(20).mkString("")
 
-  def putIfEmpty(c: CreatedUserData): IO[Option[CreatedUserData]] = IO({
-    if (storageMap.put(c.name, c).isEmpty) Some(c) else None
-  })
+    def asString(): String = storageMap.toString()
 
-  def getCreated(c: BasicCredentials): IO[CreatedUserData] = for {
-    h <- AuthHelpers.hashPassword(c.password)
-  } yield CreatedUserData(getRandom(), c.username, h)
+    def putIfEmpty(c: CreatedUserData): IO[Option[CreatedUserData]] = IO({
+      if (storageMap.put(c.name, c).isEmpty) Some(c) else None
+    })
 
-  def put(elem: BasicCredentials): IO[Option[CreatedUserData]] = getCreated(elem).flatMap(putIfEmpty)
+    def getCreated(c: BasicCredentials): IO[CreatedUserData] = for {
+      h <- AuthHelpers.hashPassword(c.password)
+    } yield CreatedUserData(getRandom(), c.username, h)
 
-  def get(id: String): OptionT[IO, CreatedUserData] =
-    OptionT.fromOption[IO](storageMap.get(id))
+    def put(elem: BasicCredentials): IO[Option[CreatedUserData]] = getCreated(elem).flatMap(putIfEmpty)
 
-  def update(v: CreatedUserData): IO[CreatedUserData] = IO({
-    storageMap.update(v.name, v)
-    v
-  })
+    def get(id: String): OptionT[IO, CreatedUserData] =
+      OptionT.fromOption[IO](storageMap.get(id))
 
-  def delete(id: String): IO[Unit] =
-    storageMap.remove(id) match {
-      case Some(_) => IO.unit
-      case None => IO.raiseError(new IllegalArgumentException)
-    }
+    def update(v: CreatedUserData): IO[CreatedUserData] = IO({
+      storageMap.update(v.name, v)
+      v
+    })
+
+
+    def delete(id: String): IO[Boolean] =
+      storageMap.remove(id) match {
+        case Some(_) => IO(true)
+        case None => IO(false)
+      }
+  }
+
+  return bStore
 }
+
 
 // TODO: Create a way that the backingstore is a parameter on app startup
 object AuthHelpers {
