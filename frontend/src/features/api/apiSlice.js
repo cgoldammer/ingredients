@@ -1,12 +1,28 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import base64 from "base-64"
 const url = process.env.BACKENDURL;
 console.log("Backend: " + url);
 
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl: url }),
-  tagTypes: ["Ingredient", "Recipe"],
+  baseQuery: fetchBaseQuery(
+    { baseUrl: url
+    , prepareHeaders: (headers, { getState, endpoint }) => {
+        const mutations = getState().api.mutations
+        const registerMutations = Object.values(mutations).filter(m => m.endpointName == "registerUser")
+      if (registerMutations.length > 0){
+        const token = registerMutations[0].data
+        console.log("Setting auth header: " + token)
+        console.log("Endpoint:" + endpoint)
+        if (token && endpoint != "registerUser") {
+          headers.set('authorization', `Bearer ${token.replace('Bearer ', '')}`)
+        }
+      }
+      return headers
+    },
+  }),
+  tagTypes: ["User", "Ingredient", "Recipe"],
+  credentials: 'include',
   endpoints: (builder) => ({
     getTags: builder.query({
       query: () => "/tags",
@@ -36,12 +52,28 @@ export const apiSlice = createApi({
       query: (ingredientSearchList) => ({
         url: "/recipes_possible",
         method: "POST",
-        body: ingredientSearchList, // Body is automatically converted to json with the correct headers
+        body: ingredientSearchList,
       }),
       providesTags: (result) => [
         "Recipe",
         ...result.data.map(({ id }) => ({ type: "Recipe", id })),
       ],
+    }),
+    registerUser: builder.mutation({
+      invalidatesTags: ['User'],
+      query: (data) => {
+        const {username, password} = data;
+        console.log("Data received:" + username + password)
+        return ({
+          url: "/register",
+          method: "POST",
+          headers: {'authorization': 'Basic ' + base64.encode(username + ":" + password)}
+        })
+      }
+    }),
+    getUser: builder.query({
+      query: () => "/get_user",
+      providesTags: ['User']
     }),
   }),
 });
@@ -52,4 +84,17 @@ export const {
   useGetIngredientSetsQuery,
   useGetRecipesQuery,
   useGetRecipesPossibleQuery,
+  useRegisterUserMutation,
+  useGetUserQuery,
 } = apiSlice;
+
+/* Login process:
+- Register -> If successful, returns token in body and logs user in
+- Login: If successful, returns token in body  and logs user in
+
+Frontend: Takes token, stores it in localstorage and in redux state. It's send along with
+any future requests, and taken from local storage upon app startup.
+
+- Any request: If it contains auth cookie (and cookie hasn't been invalidated),
+  backend infers the user from the cookie and provides relevant content.
+ */

@@ -2,6 +2,7 @@ import React from "react";
 
 import { IngredientsView } from "./features/ingredients/IngredientsView";
 import { RecipesPossibleView } from "./features/recipes/RecipesPossibleView";
+import {LoginView} from "./features/LoginView"
 
 import { ThemeProvider, Box } from "@mui/material";
 
@@ -15,17 +16,18 @@ export function App() {
     <ThemeProvider theme={theme}>
       <Box>
         <Box sx={{ my: 2 }}>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <div>
-                  <IngredientsView />
-                  <RecipesPossibleView />
-                </div>
-              }
-            />
-          </Routes>
+          <LoginView/>
+          {/*<Routes>*/}
+          {/*  <Route*/}
+          {/*    path="/"*/}
+          {/*    element={*/}
+          {/*      <div>*/}
+          {/*        <IngredientsView />*/}
+          {/*        <RecipesPossibleView />*/}
+          {/*      </div>*/}
+          {/*    }*/}
+          {/*  />*/}
+          {/*</Routes>*/}
         </Box>
       </Box>
     </ThemeProvider>

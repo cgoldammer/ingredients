@@ -52,7 +52,7 @@ class IngredientsSpec extends CatsEffectSuite:
   test("A user can login after registering first") {
     assert(afterRegisterALoginReturnsAToken())
   }
-//
+
   test("After registering, a user credentials stay valid when app is reloaded"){
     assert(newUserPersistsAfterAppReload())
   }
@@ -60,18 +60,18 @@ class IngredientsSpec extends CatsEffectSuite:
   test("Resetting DB prevents a user from logging in") {
     assert(resettingDBPreventsLogin())
   }
-//
-//  test("After registering, we can send get user data from just the token") {
-//    assert(afterRegisteringOneCanSendTokenRequest())
-//  }
+
+  test("After registering, we can send get user data from just the token") {
+    assert(afterRegisteringOneCanSendTokenRequest())
+  }
 
   def getRandomUser(): BasicCredentials = BasicCredentials(getRandom(), getRandom())
 
-  def tokenUserResponse(token: String, app: Http4sApp): Either[String, AuthUser] = {
-    val authHeader = Authorization(Credentials.Token(AuthScheme.Bearer, token.replace("Bearer ", "")))
+  def tokenUserResponse(token: String, app: Http4sApp): AuthUser = {
+    val authHeader = Authorization(Credentials.Token(AuthScheme.Bearer, token.stripPrefix("\"").stripSuffix("\"").replace("Bearer ", "")))
     var getUserRequest: Request[IO] = Request[IO](Method.GET, uri"/get_user", headers = Headers(authHeader))
     val requestIO = app.run(getUserRequest)
-    return requestIO.flatMap(_.as[Either[String, AuthUser]]).unsafeRunSync()
+    return requestIO.flatMap(_.as[AuthUser]).unsafeRunSync()
   }
 
   def loginReturnsToken(bc: BasicCredentials, app: Http4sApp): Boolean = {
@@ -79,7 +79,8 @@ class IngredientsSpec extends CatsEffectSuite:
     var loginRequest: Request[IO] = Request[IO](Method.GET, uri"/login", headers = Headers(authHeader))
     val requestIO = app.run(loginRequest)
     val token = requestIO.flatMap(_.as[String]).unsafeRunSync()
-    return token.startsWith("Bearer ")
+    println("Token" + token)
+    return token.startsWith(""""Bearer """)
   }
 
   def withoutRegisterALoginDoesNotReturnAToken(): Boolean = {
@@ -96,7 +97,7 @@ class IngredientsSpec extends CatsEffectSuite:
     val user = getRandomUser()
     println("User: " + user.toString)
     val authHeader = Authorization(user)
-    val registerRequest: Request[IO] = Request[IO](Method.GET, uri"/register", headers = Headers(authHeader))
+    val registerRequest: Request[IO] = Request[IO](Method.POST, uri"/register", headers = Headers(authHeader))
     app.run(registerRequest).unsafeRunSync()
     return loginReturnsToken(user, app)
   }
@@ -107,12 +108,12 @@ class IngredientsSpec extends CatsEffectSuite:
 
     val user = getRandomUser()
     val authHeader = Authorization(user)
-    val registerRequest: Request[IO] = Request[IO](Method.GET, uri"/register", headers = Headers(authHeader))
+    val registerRequest: Request[IO] = Request[IO](Method.POST, uri"/register", headers = Headers(authHeader))
     val registerIO = app.run(registerRequest)
     try {
       val token = registerIO.flatMap(_.as[String]).unsafeRunSync()
       val optionUser = tokenUserResponse(token, app)
-      return optionUser.toOption.map(_.name) == Some(user.username)
+      return optionUser.name == user.username
     } catch {
       case e: org.http4s.MalformedMessageBodyFailure => {
         return false
@@ -127,7 +128,7 @@ class IngredientsSpec extends CatsEffectSuite:
     val user = getRandomUser()
 
     val authHeader = Authorization(user)
-    val registerRequest: Request[IO] = Request[IO](Method.GET, uri"/register", headers = Headers(authHeader))
+    val registerRequest: Request[IO] = Request[IO](Method.POST, uri"/register", headers = Headers(authHeader))
     app.run(registerRequest).unsafeRunSync()
 
     val app2 = getAppForTesting()
@@ -140,14 +141,13 @@ class IngredientsSpec extends CatsEffectSuite:
     val user = getRandomUser()
 
     val authHeader = Authorization(user)
-    val registerRequest: Request[IO] = Request[IO](Method.GET, uri"/register", headers = Headers(authHeader))
+    val registerRequest: Request[IO] = Request[IO](Method.POST, uri"/register", headers = Headers(authHeader))
     app.run(registerRequest).unsafeRunSync()
 
     resetDB(dbSetup)
     val app2 = getAppForTesting()
     return !loginReturnsToken(user, app2)
   }
-
 
 // TODO: AppParams DB works as expected
 // TODO: AppParams authBackend works as expected

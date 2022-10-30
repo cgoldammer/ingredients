@@ -7,19 +7,24 @@ import cats.data.*
 import org.http4s.*
 import org.http4s.dsl.io.*
 import org.http4s.server.*
+import org.http4s.implicits._
+
 import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.cryptocore.*
 import doobie.*
 import doobie.implicits._
 
+import _root_.io.circe.{Json}
+import _root_.io.circe.generic.auto._
+import _root_.io.circe.parser.{parse => jsonParse}
+import _root_.io.circe.syntax._
 import scala.io.Codec
 import scala.util.Random
 import org.http4s.headers.Cookie
 import org.http4s.syntax.header.*
 import org.http4s.headers.Authorization
-import org.http4s.client.dsl.io.*
+import org.http4s.circe.CirceEntityCodec._
 
-import _root_.io.circe.{Decoder, Encoder, Json}
 
 import javax.crypto.{Cipher, Mac}
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
@@ -65,7 +70,7 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
       case Some(c) => verifyUserExists(c)
   } yield res
 
-  def getBearer(user: String): String = "Bearer " + crypto.signToken(user, clock.millis.toString)
+
 
   def registerUser(user: BasicCredentials): IO[Response[IO]] = for {
     s <- backend.put(user).transact(xa)
@@ -75,7 +80,7 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
   val register: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
     verifyRegister(request: Request[IO]).flatMap(_ match {
       case None =>
-        Forbidden("B")
+        Forbidden("Registration failed")
       case Some(user) => registerUser(user)
     })
   })
@@ -85,6 +90,11 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
   } yield res.map(toAuthUser)
 
   def retrieveUser: Kleisli[IO, String, Option[AuthUser]] = Kleisli(getUser)
+
+  def getBearer(user: String): Json = {
+      val s = "Bearer " + crypto.signToken(user, clock.millis.toString)
+      jsonParse(raw""""$s"""").getOrElse(Json.Null)
+   }
 
   val logIn: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
     verifyLogin(request: Request[IO]).flatMap(_ match {

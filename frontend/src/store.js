@@ -18,6 +18,8 @@ export const store = configureStore({
       .concat(apiSlice.middleware),
 });
 
+
+
 export const getIngredientsSelected = (state) => {
   const apiResults = state.api.queries["getIngredients(undefined)"];
   if (apiResults != undefined) {

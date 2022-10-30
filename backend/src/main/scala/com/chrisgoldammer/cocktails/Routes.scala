@@ -84,9 +84,11 @@ def jsonApp(ap: AppParams): Http4sApp = {
     case req@GET -> Root / "login" => af.logIn.run(req)
     case req@GET -> Root / "get_user" => for {
       res <- af.authorizeUserFromToken.run(req)
-      resp <- Ok(res.asJson)
+      resp <- res match
+        case Right(au) => Ok(au.asJson)
+        case Left(error) => Forbidden(error)
     } yield resp
-    case req@GET -> Root / "register" => af.register.run(req)
+    case req@POST -> Root / "register" => af.register.run(req)
     case req@GET -> Root / "example" => Ok("HELLO!")
     case req@GET -> Root / "example2" => Ok(LoginResponse("hi").asJson)
 

@@ -9,7 +9,7 @@ services:
       - postgres2
     ports:
       - "8300:8080"
-    command: bash -c "export POSTGRESPORT=jdbc:postgresql://postgres2:5432/ingredients; sbt 'runMain com.chrisgoldammer.cocktails.DataMain'; sbt 'runMain com.chrisgoldammer.cocktails.Main'"
+    command: bash -c "export SETTINGS=DevDocker; sbt 'runMain com.chrisgoldammer.cocktails.DataMain'; sbt 'runMain com.chrisgoldammer.cocktails.Main'"
 
   postgres2:
     build: 
@@ -18,7 +18,7 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_USER: postgres
-      POSTGRES_DB: ingredients
+      POSTGRES_DB: ingredients_dev
     ports:
       - "5433:5432"
 

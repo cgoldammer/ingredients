@@ -11,6 +11,7 @@ const NUM_INGREDIENTS_PER_RECIPE = 2;
 const NUM_RECIPES = 5;
 const NUM_TAGS = 1;
 const NUM_TAGS_PER_INGREDIENT = 1;
+const NUM_USERS = 2;
 
 /* RNG setup */
 // Set up a seeded random number generator, so that we get
@@ -41,6 +42,7 @@ if (useSeededRNG) {
 export const db = factory({
   user: {
     uuid: primaryKey(String),
+    name: String,
   },
   tag: {
     name: primaryKey(String),
@@ -79,6 +81,19 @@ const createFullRecipeData = (ingredients) => {
   };
 };
 
+const createUserData = () => {
+  return {
+    uuid: faker.random.uuid(),
+    name: faker.internet.userName(),
+  };
+};
+
+const serializeUser = (user) => {
+  return {
+    ...user,
+  };
+};
+
 const serializeFullRecipe = (recipe) => {
   return {
     ...recipe,
@@ -98,6 +113,13 @@ const serializeTag = (tag) => {
 };
 
 const tags = getRange(NUM_TAGS).map(() => db.tag.create(createTagData()));
+
+const users = getRange(NUM_USERS).map(() => {
+  return db.user.create(createUserData())
+});
+
+console.log("Users")
+console.log(users)
 
 for (let i = 0; i < NUM_RECIPES; i++) {
   const ingredients = getRange(NUM_INGREDIENTS_PER_RECIPE).map(() => {
@@ -137,6 +159,13 @@ export const handlers = [
       data: db.fullRecipe.getAll().map(serializeFullRecipe),
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(recipes));
+  }),
+
+  rest.post("/fakeApi/register", (req, res, ctx) => {
+    return res(ctx.json("Basic tokenFromServer"));
+  }),
+  rest.get("/fakeApi/get_user", (req, res, ctx) => {
+    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(db.user.getAll()[0]));
   }),
 ];
 

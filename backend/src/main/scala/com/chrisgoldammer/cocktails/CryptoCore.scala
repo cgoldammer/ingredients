@@ -59,9 +59,6 @@ case class CryptoBits(key: PrivateKey) {
   }
 }
 
-
-
-
 val user = AuthUser(id = "fff", name = "TestUser")
 
 def getUuid() = randomUUID().toString

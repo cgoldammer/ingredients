@@ -26,6 +26,7 @@ import org.http4s.client.dsl.io.*
 import org.http4s.*
 import org.http4s.circe.jsonOf
 
+
 case class StoredElement[T](id: Int, element: T)
 
 case class Ingredient(name: String, uuid: String)
@@ -98,15 +99,15 @@ implicit val encISL: Encoder[Results[String]] = deriveEncoder
 implicit val decISL2: EntityDecoder[IO, Results[String]] = jsonOf[IO, Results[String]]
 
 case class AuthUser(id: String, name: String)
-implicit val encAU: Encoder[Either[String, AuthUser]] = deriveEncoder
-implicit val decAU4: Decoder[Either[String, AuthUser]] = deriveDecoder
+implicit val encAU: Encoder[AuthUser] = deriveEncoder
+implicit val decAU4: Decoder[AuthUser] = deriveDecoder
 implicit val decAU2: EntityDecoder[IO, AuthUser] = jsonOf[IO, AuthUser]
-implicit val decAU3: EntityDecoder[IO, Either[String, AuthUser]] = jsonOf[IO, Either[String, AuthUser]]
 
 case class LoginResponse(body: String)
 implicit val decLR: Decoder[LoginResponse] = deriveDecoder
 implicit val encLR: Encoder[LoginResponse] = deriveEncoder
 implicit val decLR2: EntityDecoder[IO, LoginResponse] = jsonOf[IO, LoginResponse]
+
 
 def loginResponseJson(body: String): Json = LoginResponse(body).asJson
 
