@@ -13,6 +13,7 @@ import doobie.postgres.*
 import doobie.postgres.implicits.*
 import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
+import com.chrisgoldammer.cocktails.cryptocore.*
 
 def camel2underscores(x: String) = {
   "_?[A-Z][a-z\\d]+".r.findAllMatchIn(x).map(_.group(0).toLowerCase).mkString("_")
@@ -86,11 +87,12 @@ object ItemType extends Enumeration {
 def getIngredientsDataIO(): ConnectionIO[List[MFullIngredientData]] = getIngredientsQuery.query[MFullIngredientData].to[List]
 
 
+def setupIO(sd: SetupData): ConnectionIO[Unit] = dropTables >> createTables >> insertFromSetupDataIO(sd, dummyBackingStore())
 
-def setupIO(sd: SetupData): ConnectionIO[Unit] = dropTables >> createTables >> insertFromSetupDataIO(sd)
+def insertFromSetupDataIO(sd: SetupData, bStore: BackingStore): ConnectionIO[Unit] = for {
 
-
-def insertFromSetupDataIO(sd: SetupData): ConnectionIO[Unit] = for {
+  users <- sd.users.traverse(bStore.put)
+  
   mTags <- sd.ingredientData.flatMap(_.IngredientTagNames).distinct.traverse(insertTag)
   mIngredients <- sd.ingredientData.traverse(ingredient => insertIngredient(ingredient.name))
   ids = for {

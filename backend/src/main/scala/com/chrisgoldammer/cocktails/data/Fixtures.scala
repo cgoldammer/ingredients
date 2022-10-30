@@ -13,7 +13,7 @@ import doobie.postgres.*
 import doobie.postgres.implicits.*
 import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
-
+import org.http4s.{BasicCredentials, Request}
 val homeIngredients = List("Gin", "Vodka", "Bourbon", "Orange Liquour",
   "Scotch", "Aperol", "Dry Vermouth", "Campari", "Sugar", "Bitters", "Egg White")
 val ingredientSets = Map(
@@ -43,6 +43,10 @@ val recipeNames = Map(
   "Negroni" -> List("Gin", "Campari", "Sweet Vermouth")
 )
 
+val user0 = BasicCredentials("testUser", "testPassword")
 
-case class SetupData(ingredientData: List[IngredientDataRaw], recipeNames: Map[String, List[String]], ingredientSets: Map[String, List[String]])
-val setupDataSimple = SetupData(ingredientData = ingredientData, recipeNames = recipeNames, ingredientSets = ingredientSets)
+case class SetupData(ingredientData: List[IngredientDataRaw]
+                     , recipeNames: Map[String, List[String]]
+                     , ingredientSets: Map[String, List[String]]
+                    , users: List[BasicCredentials])
+val setupDataSimple = SetupData(ingredientData = ingredientData, recipeNames = recipeNames, ingredientSets = ingredientSets, users=List(user0))

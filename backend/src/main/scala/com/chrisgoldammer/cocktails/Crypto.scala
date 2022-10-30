@@ -7,12 +7,19 @@ import cats.data.*
 import org.http4s.*
 import org.http4s.dsl.io.*
 import org.http4s.server.*
+import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.cryptocore.*
+import doobie.*
+import doobie.implicits._
 
 import scala.io.Codec
 import scala.util.Random
 import org.http4s.headers.Cookie
 import org.http4s.syntax.header.*
 import org.http4s.headers.Authorization
+import org.http4s.client.dsl.io.*
+
+import _root_.io.circe.{Decoder, Encoder, Json}
 
 import javax.crypto.{Cipher, Mac}
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
@@ -29,134 +36,27 @@ import org.http4s.BasicCredentials
 import tsec.passwordhashers.jca.*
 import com.chrisgoldammer.cocktails.data.types.*
 
-case class PrivateKey(key: Array[Byte])
-
-case class CryptoBits(key: PrivateKey) {
-
-  def validatePassword(signature: String, nonce: String, raw: String): Boolean = constantTimeEquals(signature, sign(nonce + "-" + raw))
-
-  def sign(message: String): String = {
-    val mac = Mac.getInstance("HmacSHA1")
-    mac.init(new SecretKeySpec(key.key, "HmacSHA1"))
-    Hex.encodeHexString(mac.doFinal(message.getBytes("utf-8")))
-  }
-
-  def signToken(token: String, nonce: String): String = {
-    val joined = nonce + "-" + token
-    sign(joined) + "-" + joined
-  }
-
-  def validateSignedToken(token: String): Option[String] = {
-    token.split("-", 3) match {
-      case Array(signature, nonce, raw) => {
-        val signed = sign(nonce + "-" + raw)
-        if (constantTimeEquals(signature, signed)) Some(raw) else None
-      }
-      case _ => None
-    }
-  }
-
-  def constantTimeEquals(a: String, b: String): Boolean = {
-    var equal = 0
-    for (i <- 0 until (a.length min b.length)) {
-      equal |= a(i) ^ b(i)
-    }
-    if (a.length != b.length) {
-      false
-    } else {
-      equal == 0
-    }
-  }
-}
 
 
-
-case class AuthUser(id: String, name: String)
-val user = AuthUser(id = "fff", name = "TestUser")
+def toEither[A,B](a: Option[A], b: B): Either[B, A] = Either.cond(a.isDefined, a.get, b)
 
 
-
-case class CreatedUserData(id: String, name: String, hash: String) {
-}
-
-def toAuthUser(that: CreatedUserData): AuthUser = AuthUser(that.id, that.name)
-
-val createdUser = CreatedUserData(user.id, user.name, "$s0$e0801$jSIPEy4Ow8LouWdRNmEydA==$4M2oXnkqIPtT8VcU1LU+kDdgwbV893W9UvPi4oWH/A4=")
-
-val password = "helloworld"
-val userCreationData = BasicCredentials(user.name, password)
-
-val authUser: Kleisli[OptionT[IO, *], Request[IO], AuthUser] =
-  Kleisli(_ => OptionT.liftF(IO(???)))
-
-trait BackingStore {
-    def asString(): String
-    def get(id: String): OptionT[IO, CreatedUserData]
-    def put(elem: BasicCredentials): IO[Option[CreatedUserData]]
-    def update(v: CreatedUserData): IO[CreatedUserData]
-    def delete(id: String): IO[Boolean]
-}
-
-enum AuthBackend:
-  case Doobie, Local
-
-  def getBackingStore(db: DBSetup): BackingStore = {
-    this match
-      case AuthBackend.Local => dummyBackingStore()
-  }
-
-def dummyBackingStore(): BackingStore = {
-  val bStore = new BackingStore {
-    val storageMap = mutable.HashMap.empty[String, CreatedUserData]
-
-    def getRandom(): String = Random.alphanumeric.take(20).mkString("")
-
-    def asString(): String = storageMap.toString()
-
-    def putIfEmpty(c: CreatedUserData): IO[Option[CreatedUserData]] = IO({
-      if (storageMap.put(c.name, c).isEmpty) Some(c) else None
-    })
-
-    def getCreated(c: BasicCredentials): IO[CreatedUserData] = for {
-      h <- AuthHelpers.hashPassword(c.password)
-    } yield CreatedUserData(getRandom(), c.username, h)
-
-    def put(elem: BasicCredentials): IO[Option[CreatedUserData]] = getCreated(elem).flatMap(putIfEmpty)
-
-    def get(id: String): OptionT[IO, CreatedUserData] =
-      OptionT.fromOption[IO](storageMap.get(id))
-
-    def update(v: CreatedUserData): IO[CreatedUserData] = IO({
-      storageMap.update(v.name, v)
-      v
-    })
-
-
-    def delete(id: String): IO[Boolean] =
-      storageMap.remove(id) match {
-        case Some(_) => IO(true)
-        case None => IO(false)
-      }
-  }
-
-  return bStore
-}
-
-
-// TODO: Create a way that the backingstore is a parameter on app startup
-object AuthHelpers {
-  def hashPassword(pass: String): IO[String] = SCrypt.hashpw[IO](pass.getBytes()).map(_.toString)
-}
 
 case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
-  val backend = ab.getBackingStore(db)
+  val backend = ab.getBackingStore()
+  val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
+    "org.postgresql.Driver", // driver classname
+    db.getConnString(),
+    "postgres", // user
+    "" // password
+  )
 
   def verifyUserExists(c: BasicCredentials): IO[Option[AuthUser]] = for {
-    storedUser <- backend.get(c.username).value
+    storedUser <- backend.get(c.username).transact(xa)
   } yield storedUser.map(checkUser(c.password)).flatten.headOption
 
   def verifyUserNameDoesNotExist(c: BasicCredentials): IO[Option[BasicCredentials]] = for {
-    res <- backend.get(c.username).value
+    res <- backend.get(c.username).transact(xa)
   } yield Option.when(!res.isDefined)(c)
 
   def verifyLogin(request: Request[IO]): IO[Option[AuthUser]] = for {
@@ -165,9 +65,11 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
       case Some(c) => verifyUserExists(c)
   } yield res
 
+  def getBearer(user: String): String = "Bearer " + crypto.signToken(user, clock.millis.toString)
+
   def registerUser(user: BasicCredentials): IO[Response[IO]] = for {
-    _ <- backend.put(user)
-    resp <- Ok()
+    s <- backend.put(user).transact(xa)
+    resp <- Ok(getBearer(user.username.toString))
   } yield resp
 
   val register: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
@@ -178,20 +80,19 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
     })
   })
 
+  def getUser(id: String): IO[Option[AuthUser]] = for {
+    res <- backend.get(id).transact(xa)
+  } yield res.map(toAuthUser)
 
-  def getUser(id: String): IO[AuthUser] = for {
-    res <- backend.get(id).value
-  } yield toAuthUser(res.toList(0))
-
-  def retrieveUser: Kleisli[IO, String, AuthUser] = Kleisli(getUser)
+  def retrieveUser: Kleisli[IO, String, Option[AuthUser]] = Kleisli(getUser)
 
   val logIn: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
     verifyLogin(request: Request[IO]).flatMap(_ match {
       case None =>
         Forbidden("Bad User Credentials")
       case Some(user) => {
-        val message = crypto.signToken(user.name.toString, clock.millis.toString)
-        Ok("Logged in!").map(_.addCookie(ResponseCookie("authcookie", message)))
+        val message = getBearer(user.name.toString)
+        Ok(message)
       }
     })
   })
@@ -202,24 +103,24 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
         None
       })
       case Some(c) => {
+        println("Credentials: " + c)
         verifyUserNameDoesNotExist(c)
       }
   } yield res
 
-  val authorizeUserFromCookie: Kleisli[IO, Request[IO], Either[String, AuthUser]] = Kleisli({ request =>
-    val message = for {
-      header <- request.headers.get[Cookie]
-        .toRight("Cookie parsing error")
-      cookie <- header.values.toList.find(_.name == "authcookie")
-        .toRight("Couldn't find the authcookie")
-      token <- crypto.validateSignedToken(cookie.content)
-        .toRight("Cookie invalid")
-    } yield token
-    message.traverse(retrieveUser.run)
+  val authorizeUserFromToken: Kleisli[IO, Request[IO], Either[String, AuthUser]] = Kleisli({ request =>
+
+    val header = request.headers.get[Authorization].toList.headOption
+    val messageEither = header match
+      case None => Right("No header found")
+      case Some(h) => crypto.validateSignedToken(h.credentials.toString.replace("Bearer ", "")).toRight("Token invalid")
+
+    messageEither match
+      case Left(error) => IO(Left(error))
+      case Right(userId) => retrieveUser.run(userId).map(a => toEither(a, "no user found"))
   })
-
-
 }
+
 
 def checkUser(pass: String)(storedUser: CreatedUserData): Option[AuthUser] = {
   val isMatch = SCryptUtil.check(pass.getBytes(), storedUser.hash)
@@ -228,6 +129,7 @@ def checkUser(pass: String)(storedUser: CreatedUserData): Option[AuthUser] = {
 
 
 def getCredentials(request: Request[IO]): Option[BasicCredentials] = {
+  
   val header = request.headers.get[Authorization].toList.headOption
   for {
     h <- header

@@ -2,6 +2,7 @@ package com.chrisgoldammer.cocktails
 
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.cryptocore.*
 import cats.effect.IO
 import junit.framework.TestSuite
 import org.http4s.*
@@ -9,7 +10,13 @@ import org.http4s.implicits.*
 import munit.CatsEffectSuite
 import org.http4s.headers.*
 import org.typelevel.ci.*
-
+import cats.data.*
+import cats.implicits.*
+import doobie.*
+import doobie.implicits.*
+import cats.implicits.*
+import doobie.util.ExecutionContexts
+import cats.effect.unsafe.implicits.global
 import java.util.concurrent.Executors
 import scala.util.Random
 import org.http4s.client.{Client, JavaNetClientBuilder}
@@ -17,72 +24,104 @@ import sun.net.www.http.HttpClient
 
 import munit.FunSuite
 
-def resetDB() = {
-  println("Resetting DB")
+def resetDB(dbSetup: DBSetup) = {
+  val dt = DataTools(dbSetup)
+  val p = dropTables >> createTables
+  p.transact(dt.xa).unsafeRunSync()
 }
-
-
 
 def getRandom(): String = Random.alphanumeric.take(20).mkString("")
 
 
 def getAppForTesting(): Http4sApp = {
   val dbSetup = Settings.TestLocal.getSetup()
-  return jsonApp(AppParams(dbSetup, AuthBackend.Local))
+  return jsonApp(AppParams(dbSetup, AuthBackend.Doobie))
 }
 
-
-
 class IngredientsSpec extends CatsEffectSuite:
+
+  val dbSetup = Settings.TestLocal.getSetup()
 
   val blockingPool = Executors.newFixedThreadPool(5)
   val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
 
-  test("A random user cannot login (without registering)") {
-    assert(newUserDoesNotExistWithoutRegister())
+//  test("A user cannot login without registering first") {
+//    assert(withoutRegisterALoginDoesNotReturnAToken())
+//  }
+
+  test("A user can login after registering first") {
+    assert(afterRegisterALoginReturnsAToken())
+  }
+//
+  test("After registering, a user credentials stay valid when app is reloaded"){
+    assert(newUserPersistsAfterAppReload())
   }
 
-  test("After registering with a transitory backend, a user disappears when app is reloaded"){
-    assert(newUserDisappearsIfTheBackendIsTransitory())
+  test("Resetting DB prevents a user from logging in") {
+    assert(resettingDBPreventsLogin())
   }
-
-  test("After registering, the user exists") {
-    assert(newUserExistsAfterRegistering())
-  }
+//
+//  test("After registering, we can send get user data from just the token") {
+//    assert(afterRegisteringOneCanSendTokenRequest())
+//  }
 
   def getRandomUser(): BasicCredentials = BasicCredentials(getRandom(), getRandom())
 
-  def doesUserExist(bc: BasicCredentials, app: Http4sApp): Boolean = {
+  def tokenUserResponse(token: String, app: Http4sApp): Either[String, AuthUser] = {
+    val authHeader = Authorization(Credentials.Token(AuthScheme.Bearer, token.replace("Bearer ", "")))
+    var getUserRequest: Request[IO] = Request[IO](Method.GET, uri"/get_user", headers = Headers(authHeader))
+    val requestIO = app.run(getUserRequest)
+    return requestIO.flatMap(_.as[Either[String, AuthUser]]).unsafeRunSync()
+  }
+
+  def loginReturnsToken(bc: BasicCredentials, app: Http4sApp): Boolean = {
     val authHeader = Authorization(bc)
     var loginRequest: Request[IO] = Request[IO](Method.GET, uri"/login", headers = Headers(authHeader))
-    val serviceIO = app.run(loginRequest)
-    val response = serviceIO.unsafeRunSync()
-    val cookie = response.headers.get(CIString("Set-Cookie"))
-    return cookie.nonEmpty
+    val requestIO = app.run(loginRequest)
+    val token = requestIO.flatMap(_.as[String]).unsafeRunSync()
+    return token.startsWith("Bearer ")
   }
 
-  def newUserDoesNotExistWithoutRegister(): Boolean = {
-    resetDB()
+  def withoutRegisterALoginDoesNotReturnAToken(): Boolean = {
+    resetDB(dbSetup)
     val app = getAppForTesting()
-
     val user = getRandomUser()
-    return !doesUserExist(user, app)
+    return !loginReturnsToken(user, app)
   }
 
-  def newUserExistsAfterRegistering(): Boolean = {
-    resetDB()
+  def afterRegisterALoginReturnsAToken(): Boolean = {
+    println("RUNNING")
+    resetDB(dbSetup)
+    val app = getAppForTesting()
+    val user = getRandomUser()
+    println("User: " + user.toString)
+    val authHeader = Authorization(user)
+    val registerRequest: Request[IO] = Request[IO](Method.GET, uri"/register", headers = Headers(authHeader))
+    app.run(registerRequest).unsafeRunSync()
+    return loginReturnsToken(user, app)
+  }
+
+  def afterRegisteringOneCanSendTokenRequest(): Boolean = {
+    resetDB(dbSetup)
     val app = getAppForTesting()
 
     val user = getRandomUser()
     val authHeader = Authorization(user)
     val registerRequest: Request[IO] = Request[IO](Method.GET, uri"/register", headers = Headers(authHeader))
-    val registerResponse = app.run(registerRequest).unsafeRunSync()
-    return doesUserExist(user, app)
+    val registerIO = app.run(registerRequest)
+    try {
+      val token = registerIO.flatMap(_.as[String]).unsafeRunSync()
+      val optionUser = tokenUserResponse(token, app)
+      return optionUser.toOption.map(_.name) == Some(user.username)
+    } catch {
+      case e: org.http4s.MalformedMessageBodyFailure => {
+        return false
+      }
+    }
   }
 
-  def newUserDisappearsIfTheBackendIsTransitory(): Boolean = {
-
-    resetDB()
+  def newUserPersistsAfterAppReload(): Boolean = {
+    resetDB(dbSetup)
     val app = getAppForTesting()
 
     val user = getRandomUser()
@@ -92,8 +131,21 @@ class IngredientsSpec extends CatsEffectSuite:
     app.run(registerRequest).unsafeRunSync()
 
     val app2 = getAppForTesting()
-    return !doesUserExist(user, app2)
+    return loginReturnsToken(user, app2)
+  }
 
+  def resettingDBPreventsLogin(): Boolean = {
+    resetDB(dbSetup)
+    val app = getAppForTesting()
+    val user = getRandomUser()
+
+    val authHeader = Authorization(user)
+    val registerRequest: Request[IO] = Request[IO](Method.GET, uri"/register", headers = Headers(authHeader))
+    app.run(registerRequest).unsafeRunSync()
+
+    resetDB(dbSetup)
+    val app2 = getAppForTesting()
+    return !loginReturnsToken(user, app2)
   }
 
 

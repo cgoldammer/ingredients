@@ -13,14 +13,13 @@ import doobie.postgres.*
 import doobie.postgres.implicits.*
 import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import org.http4s.EntityDecoder
 
-
-import _root_.io.circe.*
-import _root_.io.circe.generic.semiauto.*
+import _root_.io.circe.{Decoder, Encoder, Json}
+import _root_.io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import _root_.io.circe.generic.auto.*
 import _root_.io.circe.syntax.*
+
+import org.http4s.EntityDecoder
 import org.http4s.dsl.io.*
 import org.http4s.implicits.*
 import org.http4s.client.dsl.io.*
@@ -74,57 +73,44 @@ case class Results[T](data: List[T], name: String = "Default")
 
 case class IngredientDataRaw(name: String, IngredientTagNames: List[String])
 
-implicit val decIS: Decoder[IngredientSet] = deriveDecoder
-implicit val encIS: Encoder[IngredientSet] = deriveEncoder
-
-implicit val decT: Decoder[Tag] = deriveDecoder
-implicit val encT: Encoder[Tag] = deriveEncoder
-
-implicit val decTR: Decoder[Results[Tag]] = deriveDecoder
 implicit val encTR: Encoder[Results[Tag]] = deriveEncoder
 implicit val decT2: EntityDecoder[IO, Results[Tag]] = jsonOf[IO, Results[Tag]]
-
-
-implicit val decI: Decoder[Ingredient] = deriveDecoder
-implicit val encI: Encoder[Ingredient] = deriveEncoder
-
-implicit val decIR: Decoder[Results[Ingredient]] = deriveDecoder
-implicit val encIR: Encoder[Results[Ingredient]] = deriveEncoder
 implicit val decIR2: EntityDecoder[IO, Results[Ingredient]] = jsonOf[IO, Results[Ingredient]]
-
-
-implicit val decFI: Decoder[FullIngredient] = deriveDecoder
-implicit val encFI: Encoder[FullIngredient] = deriveEncoder
-
-implicit val decRR9: Decoder[Results[FullIngredient]] = deriveDecoder
-implicit val encRR9: Encoder[Results[FullIngredient]] = deriveEncoder
 implicit val decRR99: EntityDecoder[IO, Results[FullIngredient]] = jsonOf[IO, Results[FullIngredient]]
-
-implicit val decMR: Decoder[Recipe] = deriveDecoder
-implicit val encMR: Encoder[Recipe] = deriveEncoder
-
 implicit val decRR: Decoder[Results[Recipe]] = deriveDecoder
 implicit val encRR: Encoder[Results[Recipe]] = deriveEncoder
 implicit val decRR2: EntityDecoder[IO, Results[Recipe]] = jsonOf[IO, Results[Recipe]]
-
-implicit val decI2: Decoder[FullRecipe] = deriveDecoder
-implicit val encI2: Encoder[FullRecipe] = deriveEncoder
-
 implicit val decI3: Decoder[Results[FullRecipe]] = deriveDecoder
 implicit val encI3: Encoder[Results[FullRecipe]] = deriveEncoder
 implicit val decIR23: EntityDecoder[IO, Results[FullRecipe]] = jsonOf[IO, Results[FullRecipe]]
 
-implicit val decI24: Decoder[FullIngredientSet] = deriveDecoder
-implicit val encI24: Encoder[FullIngredientSet] = deriveEncoder
-
+//implicit val encX: Encoder[FullIngredientSet] = deriveEncoder
 implicit val decRR4: Decoder[Results[FullIngredientSet]] = deriveDecoder
 implicit val encRR4: Encoder[Results[FullIngredientSet]] = deriveEncoder
 implicit val decRR24: EntityDecoder[IO, Results[FullIngredientSet]] = jsonOf[IO, Results[FullIngredientSet]]
 
+implicit val decRR42: Decoder[Results[FullIngredient]] = deriveDecoder
+implicit val encRR42: Encoder[Results[FullIngredient]] = deriveEncoder
+implicit val decRR242: EntityDecoder[IO, Results[FullIngredient]] = jsonOf[IO, Results[FullIngredient]]
 
 implicit val decISL: Decoder[Results[String]] = deriveDecoder
 implicit val encISL: Encoder[Results[String]] = deriveEncoder
 implicit val decISL2: EntityDecoder[IO, Results[String]] = jsonOf[IO, Results[String]]
+
+case class AuthUser(id: String, name: String)
+implicit val encAU: Encoder[Either[String, AuthUser]] = deriveEncoder
+implicit val decAU4: Decoder[Either[String, AuthUser]] = deriveDecoder
+implicit val decAU2: EntityDecoder[IO, AuthUser] = jsonOf[IO, AuthUser]
+implicit val decAU3: EntityDecoder[IO, Either[String, AuthUser]] = jsonOf[IO, Either[String, AuthUser]]
+
+case class LoginResponse(body: String)
+implicit val decLR: Decoder[LoginResponse] = deriveDecoder
+implicit val encLR: Encoder[LoginResponse] = deriveEncoder
+implicit val decLR2: EntityDecoder[IO, LoginResponse] = jsonOf[IO, LoginResponse]
+
+def loginResponseJson(body: String): Json = LoginResponse(body).asJson
+
+implicit val decJS: EntityDecoder[IO, Json] = jsonOf[IO, Json]
 
 
 case class DBSetup(port: Int = 5432, serverName: String = "localhost", dbName: String="ingradients_dev") {

@@ -10,6 +10,29 @@ import doobie.postgres.*
 import doobie.postgres.implicits.*
 import com.chrisgoldammer.cocktails.data.types.*
 import cats.data.*
+import com.chrisgoldammer.cocktails.cryptocore.*
+
+val createUsers =
+  """
+CREATE TABLE users (
+id SERIAL,
+name VARCHAR NOT NULL UNIQUE,
+uuid VARCHAR NOT NULL UNIQUE,
+hash VARCHAR NOT NULL,
+is_admin BOOLEAN,
+PRIMARY KEY(id)
+)
+"""
+
+val createUserData =
+  """
+CREATE TABLE user_data (
+id SERIAL,
+user_id INT,
+PRIMARY KEY(id),
+CONSTRAINT fk_userdata_user FOREIGN KEY(user_id) REFERENCES users(id)
+)
+"""
 
 val createIngredients =
   """
@@ -70,7 +93,9 @@ CREATE TABLE ingredient_sets (
 id SERIAL,
 name VARCHAR NOT NULL UNIQUE,
 uuid VARCHAR NOT NULL UNIQUE,
-PRIMARY KEY(id)
+user_id INT,
+PRIMARY KEY(id),
+CONSTRAINT fk_ingredientset_user FOREIGN KEY(user_id) REFERENCES users(id)
 )
 """
 
@@ -87,6 +112,8 @@ CONSTRAINT fk_is_i FOREIGN KEY(ingredient_id) REFERENCES ingredients(id),
 """
 
 val createStrings: List[String] = List(
+  createUsers,
+  createUserData,
   createIngredients,
   createRecipe,
   createTags,
@@ -100,7 +127,7 @@ val createStrings: List[String] = List(
 
 def dropString(tableName: String): String = f"DROP TABLE IF EXISTS $tableName%s"
 def tableNames = List("ingredient_set_ingredients", "ingredient_sets",
-  "ingredient_tags", "tags", "recipe_ingredients", "recipes", "ingredients")
+  "ingredient_tags", "tags", "recipe_ingredients", "recipes", "ingredients", "user_data", "users")
 // def stringToSqlBasic(sqlString: String) = ???
 def updater(sqlString: String) : Stream[ConnectionIO, Unit] = HC.updateWithGeneratedKeys(List())(sqlString, HPS.set(()), 512)
 def stringToSqlBasic(sqlString: String) = updater(sqlString).compile.drain

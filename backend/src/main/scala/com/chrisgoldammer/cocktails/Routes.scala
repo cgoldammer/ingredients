@@ -7,6 +7,7 @@ import cats.effect.*
 import org.http4s.*
 import org.http4s.circe.jsonOf
 import com.chrisgoldammer.cocktails.*
+import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
 
@@ -27,10 +28,14 @@ import cats.data.{Kleisli}
 
 import org.http4s.server.middleware._
 
-case class AppParams(db: DBSetup, auth: AuthBackend = AuthBackend.Local)
+case class AppParams(db: DBSetup, auth: AuthBackend = AuthBackend.Doobie)
 
 
 type Http4sApp = Kleisli[IO, Request[IO], Response[IO]]
+
+implicit val decIR: Decoder[Option[AuthUser]] = deriveDecoder
+implicit val encIR: Encoder[Option[AuthUser]] = deriveEncoder
+implicit val decIR2: EntityDecoder[IO, Option[AuthUser]] = jsonOf[IO, Option[AuthUser]]
 
 def jsonApp(ap: AppParams): Http4sApp = {
 
@@ -77,12 +82,13 @@ def jsonApp(ap: AppParams): Http4sApp = {
       resp <- Ok(j)
     } yield resp
     case req@GET -> Root / "login" => af.logIn.run(req)
-    case req@GET -> Root / "authorize_user_from_cookie" => for {
-      res <- af.authorizeUserFromCookie.run(req)
-      resp <- Ok(res.toString())
+    case req@GET -> Root / "get_user" => for {
+      res <- af.authorizeUserFromToken.run(req)
+      resp <- Ok(res.asJson)
     } yield resp
     case req@GET -> Root / "register" => af.register.run(req)
     case req@GET -> Root / "example" => Ok("HELLO!")
+    case req@GET -> Root / "example2" => Ok(LoginResponse("hi").asJson)
 
   }.orNotFound
 }
