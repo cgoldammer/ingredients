@@ -1,0 +1,666 @@
+2022-11-01T08:58:09.523138: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  2022-11-01T08:59:04.568039: select uuid, name, hash from users where name=?2022-11-01T08:59:05.475905: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  2022-11-01T09:00:05.718600: select uuid, name, hash from users where name=?
+2022-11-01T09:00:08.381713: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:00:59.529591: select uuid, name, hash from users where name=?
+2022-11-01T09:01:01.734467: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:01:08.980348: select uuid, name, hash from users where name=?
+2022-11-01T09:01:10.395792: select uuid, name, hash from users where name=?
+2022-11-01T09:01:10.615517: select uuid, name, hash from users where name=?
+2022-11-01T09:01:11.161682: select uuid, name, hash from users where name=?
+2022-11-01T09:01:11.400733: select uuid, name, hash from users where name=?
+2022-11-01T09:01:13.497761: select uuid, name, hash from users where name=?
+2022-11-01T09:01:15.349244: select uuid, name, hash from users where name=?
+2022-11-01T09:01:15.804584: select uuid, name, hash from users where name=?
+2022-11-01T09:01:16.161791: select uuid, name, hash from users where name=?
+2022-11-01T09:01:18.687754: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:01:45.332788: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:05:06.583673: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:08:36.359292: select uuid, name, hash from users where name=?
+2022-11-01T09:08:36.360018: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:08:36.500528: select uuid, name, hash from users where name=?
+2022-11-01T09:08:36.587306: select uuid, name, hash from users where name=?
+2022-11-01T09:08:36.793192: select uuid, name, hash from users where name=?
+2022-11-01T09:08:36.870128: select uuid, name, hash from users where name=?
+2022-11-01T09:08:37.580516: select uuid, name, hash from users where name=?
+2022-11-01T09:08:37.798748: select uuid, name, hash from users where name=?
+2022-11-01T09:08:37.974949: select uuid, name, hash from users where name=?
+2022-11-01T09:08:38.089494: select uuid, name, hash from users where name=?
+2022-11-01T09:29:49.319005: select uuid, name, hash from users where name=?
+2022-11-01T09:29:52.759376: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:29:52.913655: select uuid, name, hash from users where name=?
+2022-11-01T09:29:54.289332: select uuid, name, hash from users where name=?
+2022-11-01T09:29:55.426846: select uuid, name, hash from users where name=?
+2022-11-01T09:30:36.579158: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:30:37.637739: select uuid, name, hash from users where name=?
+2022-11-01T09:36:22.191778: select uuid, name, hash from users where name=?
+2022-11-01T09:38:17.123841: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:38:19.528140: select uuid, name, hash from users where name=?
+2022-11-01T09:39:36.019759: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:39:37.569219: select uuid, name, hash from users where name=?
+2022-11-01T09:39:53.200502: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:39:54.328477: select uuid, name, hash from users where name=?
+2022-11-01T09:41:02.012361: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:41:03.287085: select uuid, name, hash from users where name=?
+2022-11-01T09:41:17.794882: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:41:18.478772: select uuid, name, hash from users where name=?
+2022-11-01T09:41:18.504027: select uuid, name, hash from users where name=?
+2022-11-01T09:41:18.814274: select uuid, name, hash from users where name=?
+2022-11-01T09:41:49.709934: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:41:50.757741: select uuid, name, hash from users where name=?
+2022-11-01T09:41:50.787825: select uuid, name, hash from users where name=?
+2022-11-01T09:41:50.917523: select uuid, name, hash from users where name=?
+2022-11-01T09:44:02.682575: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T09:44:03.450052: select uuid, name, hash from users where name=?
+2022-11-01T09:44:03.477014: select uuid, name, hash from users where name=?
+2022-11-01T09:44:03.657521: select uuid, name, hash from users where name=?
+2022-11-01T10:03:55.212244: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T10:03:56.162435: select uuid, name, hash from users where name=?
+2022-11-01T10:03:56.212085: select uuid, name, hash from users where name=?
+2022-11-01T10:03:56.388717: select uuid, name, hash from users where name=?
+2022-11-01T10:03:56.540205: select uuid, name, hash from users where name=?
+2022-11-01T10:03:56.577947: 
+with base AS (
+  SELECT s.id, s.name, s.uuid, i.uuid AS ingredient_uuid
+  FROM ingredient_sets s
+  JOIN users u ON s.user_id = u.id
+  JOIN ingredient_set_ingredients isi ON s.id=isi.ingredient_set_id
+  JOIN ingredients i ON isi.ingredient_id=i.id
+  WHERE u.uuid = ?
+  )
+SELECT id, min(name) as name, min(uuid) as uuid, array_agg(ingredient_uuid) as ingredient_uuids
+FROM base group by id
+
+2022-11-01T10:04:21.699144: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T10:04:21.963745: select uuid, name, hash from users where name=?
+2022-11-01T10:04:21.973772: select uuid, name, hash from users where name=?
+2022-11-01T10:04:22.067961: select uuid, name, hash from users where name=?
+2022-11-01T10:04:22.171301: select uuid, name, hash from users where name=?
+2022-11-01T10:04:22.181506: 
+with base AS (
+  SELECT s.id, s.name, s.uuid, i.uuid AS ingredient_uuid
+  FROM ingredient_sets s
+  JOIN users u ON s.user_id = u.id
+  JOIN ingredient_set_ingredients isi ON s.id=isi.ingredient_set_id
+  JOIN ingredients i ON isi.ingredient_id=i.id
+  WHERE u.uuid = ?
+  )
+SELECT id, min(name) as name, min(uuid) as uuid, array_agg(ingredient_uuid) as ingredient_uuids
+FROM base group by id
+
+2022-11-01T10:06:40.722765: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T10:06:48.148882: select uuid, name, hash from users where name=?
+2022-11-01T10:06:48.180209: select uuid, name, hash from users where name=?
+2022-11-01T10:06:48.199526: select uuid, name, hash from users where name=?
+2022-11-01T10:06:48.219943: select uuid, name, hash from users where name=?
+2022-11-01T10:08:06.544216: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T10:08:13.861895: select uuid, name, hash from users where name=?
+2022-11-01T10:08:13.899429: select uuid, name, hash from users where name=?
+2022-11-01T10:08:14.496697: select uuid, name, hash from users where name=?
+2022-11-01T10:08:14.672560: select uuid, name, hash from users where name=?
+2022-11-01T10:10:37.728033: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-01T10:10:58.312209: select uuid, name, hash from users where name=?
+2022-11-01T10:11:00.028348: select uuid, name, hash from users where name=?
+2022-11-01T10:11:00.691506: select uuid, name, hash from users where name=?
+2022-11-01T10:11:02.390184: select uuid, name, hash from users where name=?
+2022-11-03T08:52:56.444128: select uuid, name, hash from users where name=?
+2022-11-03T08:52:57.993245: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-03T08:52:58.435391: select uuid, name, hash from users where name=?
+2022-11-03T08:52:58.917287: select uuid, name, hash from users where name=?
+2022-11-03T08:53:00.242244: select uuid, name, hash from users where name=?
+2022-11-03T08:53:00.838906: select uuid, name, hash from users where name=?
+2022-11-03T08:53:01.153170: select uuid, name, hash from users where name=?
+2022-11-03T08:53:01.315823: select uuid, name, hash from users where name=?
+2022-11-03T08:53:01.456635: select uuid, name, hash from users where name=?
+2022-11-03T08:53:01.583032: select uuid, name, hash from users where name=?
+2022-11-03T08:53:22.086834: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-03T08:53:23.257315: select uuid, name, hash from users where name=?
+2022-11-03T08:53:23.404333: select uuid, name, hash from users where name=?
+2022-11-03T08:53:23.516920: select uuid, name, hash from users where name=?
+2022-11-03T08:53:23.574974: select uuid, name, hash from users where name=?
+2022-11-03T08:56:49.570566: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-03T08:56:49.797942: select uuid, name, hash from users where name=?
+2022-11-03T08:56:49.807075: select uuid, name, hash from users where name=?
+2022-11-03T08:56:49.814561: select uuid, name, hash from users where name=?
+2022-11-03T08:56:49.824945: select uuid, name, hash from users where name=?
+2022-11-03T09:11:08.621241: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-03T09:11:09.569791: select uuid, name, hash from users where name=?
+2022-11-03T09:11:09.605494: select uuid, name, hash from users where name=?
+2022-11-03T09:11:09.680994: select uuid, name, hash from users where name=?
+2022-11-03T09:11:09.718511: select uuid, name, hash from users where name=?
+2022-11-03T09:12:40.928628: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-03T09:12:41.536766: select uuid, name, hash from users where name=?
+2022-11-03T09:12:41.596389: select uuid, name, hash from users where name=?
+2022-11-03T09:12:41.617811: select uuid, name, hash from users where name=?
+2022-11-03T09:12:41.648492: select uuid, name, hash from users where name=?
+2022-11-03T09:13:40.008775: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-03T09:13:40.805681: select uuid, name, hash from users where name=?
+2022-11-03T09:13:40.851010: select uuid, name, hash from users where name=?
+2022-11-03T09:13:40.868888: select uuid, name, hash from users where name=?
+2022-11-03T09:13:40.897332: select uuid, name, hash from users where name=?
+2022-11-03T09:16:04.048816: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-03T09:16:04.560613: select uuid, name, hash from users where name=?
+2022-11-03T09:16:04.572429: select uuid, name, hash from users where name=?
+2022-11-03T09:16:04.586272: select uuid, name, hash from users where name=?
+2022-11-03T09:30:27.904526: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-03T09:30:28.848066: select uuid, name, hash from users where name=?
+2022-11-03T09:30:28.889810: select uuid, name, hash from users where name=?
+2022-11-03T09:31:33.188159: select uuid, name, hash from users where name=?
+2022-11-03T09:31:33.567617: select uuid, name, hash from users where name=?
+2022-11-03T09:31:33.843361: select uuid, name, hash from users where name=?
+2022-11-03T09:31:34.455549: select uuid, name, hash from users where name=?
+2022-11-03T09:31:34.587394: select uuid, name, hash from users where name=?
+2022-11-03T09:31:34.892963: select uuid, name, hash from users where name=?
+2022-11-03T09:31:35.273510: select uuid, name, hash from users where name=?
+2022-11-03T09:31:35.555311: select uuid, name, hash from users where name=?
+2022-11-03T09:31:35.687843: select uuid, name, hash from users where name=?
+2022-11-03T09:34:45.335236: select uuid, name, hash from users where name=?
+2022-11-03T09:34:45.760434: select uuid, name, hash from users where name=?
+2022-11-03T09:34:46.000563: select uuid, name, hash from users where name=?
+2022-11-03T09:34:46.421461: select uuid, name, hash from users where name=?
+2022-11-03T09:34:46.680217: select uuid, name, hash from users where name=?
+2022-11-03T09:34:47.188773: select uuid, name, hash from users where name=?
+2022-11-03T09:34:47.439820: select uuid, name, hash from users where name=?
+2022-11-03T09:34:47.853698: select uuid, name, hash from users where name=?
+2022-11-03T09:34:47.985939: select uuid, name, hash from users where name=?
+2022-11-03T09:37:38.478819: select uuid, name, hash from users where name=?
+2022-11-03T09:37:38.651483: select uuid, name, hash from users where name=?
+2022-11-03T09:37:38.832229: select uuid, name, hash from users where name=?
+2022-11-03T09:37:39.061499: select uuid, name, hash from users where name=?
+2022-11-03T09:37:39.143972: select uuid, name, hash from users where name=?
+2022-11-03T09:37:39.352831: select uuid, name, hash from users where name=?
+2022-11-03T09:37:39.535879: select uuid, name, hash from users where name=?
+2022-11-03T09:37:39.638666: select uuid, name, hash from users where name=?
+2022-11-03T09:37:39.741090: select uuid, name, hash from users where name=?
+2022-11-03T09:42:59.271939: select uuid, name, hash from users where name=?
+2022-11-03T09:42:59.557266: select uuid, name, hash from users where name=?
+2022-11-03T09:42:59.716616: select uuid, name, hash from users where name=?
+2022-11-03T09:43:00.109173: select uuid, name, hash from users where name=?
+2022-11-03T09:43:00.250904: select uuid, name, hash from users where name=?
+2022-11-03T09:43:00.626791: select uuid, name, hash from users where name=?
+2022-11-03T09:43:01.145411: select uuid, name, hash from users where name=?
+2022-11-03T09:43:01.405226: select uuid, name, hash from users where name=?
+2022-11-03T09:43:01.563263: select uuid, name, hash from users where name=?
+2022-11-03T09:43:02.197496: SELECT name FROM users
+2022-11-03T09:43:49.177991: select uuid, name, hash from users where name=?
+2022-11-03T09:43:49.556245: select uuid, name, hash from users where name=?
+2022-11-03T09:43:49.701201: select uuid, name, hash from users where name=?
+2022-11-03T09:43:50.002154: select uuid, name, hash from users where name=?
+2022-11-03T09:43:50.171062: select uuid, name, hash from users where name=?
+2022-11-03T09:43:50.542138: select uuid, name, hash from users where name=?
+2022-11-03T09:43:50.847109: select uuid, name, hash from users where name=?
+2022-11-03T09:43:51.049704: select uuid, name, hash from users where name=?
+2022-11-03T09:43:51.216708: select uuid, name, hash from users where name=?
+2022-11-03T09:43:51.749439: SELECT name FROM users
+2022-11-03T09:44:06.471092: select uuid, name, hash from users where name=?
+2022-11-03T09:44:06.830107: select uuid, name, hash from users where name=?
+2022-11-03T09:44:07.092698: select uuid, name, hash from users where name=?
+2022-11-03T09:44:07.471696: select uuid, name, hash from users where name=?
+2022-11-03T09:44:07.744050: select uuid, name, hash from users where name=?
+2022-11-03T09:44:08.040320: select uuid, name, hash from users where name=?
+2022-11-03T09:44:08.860481: select uuid, name, hash from users where name=?
+2022-11-03T09:44:09.076452: select uuid, name, hash from users where name=?
+2022-11-03T09:44:09.363546: select uuid, name, hash from users where name=?
+2022-11-03T09:44:09.850189: SELECT name FROM users
+2022-11-03T10:19:52.523502: select uuid, name, hash from users where name=?
+2022-11-03T10:19:53.183092: select uuid, name, hash from users where name=?
+2022-11-03T10:19:53.492051: select uuid, name, hash from users where name=?
+2022-11-03T10:19:53.851411: select uuid, name, hash from users where name=?
+2022-11-03T10:19:54.055293: select uuid, name, hash from users where name=?
+2022-11-03T10:19:54.562172: select uuid, name, hash from users where name=?
+2022-11-03T10:19:55.183545: select uuid, name, hash from users where name=?
+2022-11-03T10:19:55.555827: select uuid, name, hash from users where name=?
+2022-11-03T10:19:55.756643: select uuid, name, hash from users where name=?
+2022-11-03T10:19:56.621298: SELECT name FROM users
+2022-11-03T10:21:38.056878: select uuid, name, hash from users where name=?
+2022-11-03T10:21:40.329446: select uuid, name, hash from users where name=?
+2022-11-03T10:21:40.766146: select uuid, name, hash from users where name=?
+2022-11-03T10:21:41.928523: select uuid, name, hash from users where name=?
+2022-11-03T10:21:42.359288: select uuid, name, hash from users where name=?
+2022-11-03T10:21:43.272072: select uuid, name, hash from users where name=?
+2022-11-03T10:21:44.355774: select uuid, name, hash from users where name=?
+2022-11-03T10:21:45.765488: select uuid, name, hash from users where name=?
+2022-11-03T10:21:46.371786: select uuid, name, hash from users where name=?
+2022-11-03T10:21:47.791241: SELECT name FROM users
+2022-11-03T10:24:36.671626: select uuid, name, hash from users where name=?
+2022-11-03T10:24:37.269739: select uuid, name, hash from users where name=?
+2022-11-03T10:24:37.468257: select uuid, name, hash from users where name=?
+2022-11-03T10:24:37.840238: select uuid, name, hash from users where name=?
+2022-11-03T10:24:37.977897: select uuid, name, hash from users where name=?
+2022-11-03T10:24:38.345212: select uuid, name, hash from users where name=?
+2022-11-03T10:24:38.614359: select uuid, name, hash from users where name=?
+2022-11-03T10:24:38.962277: select uuid, name, hash from users where name=?
+2022-11-03T10:24:39.107248: select uuid, name, hash from users where name=?
+2022-11-03T10:24:39.710514: SELECT name FROM users
+2022-11-03T10:30:32.838186: select uuid, name, hash from users where name=?
+2022-11-03T10:30:33.072954: select uuid, name, hash from users where name=?
+2022-11-03T10:30:33.351720: select uuid, name, hash from users where name=?
+2022-11-03T10:30:33.539167: select uuid, name, hash from users where name=?
+2022-11-03T10:30:33.631962: select uuid, name, hash from users where name=?
+2022-11-03T10:30:33.805961: select uuid, name, hash from users where name=?
+2022-11-03T10:30:33.982865: select uuid, name, hash from users where name=?
+2022-11-03T10:30:34.038333: select uuid, name, hash from users where name=?
+2022-11-03T10:30:34.141639: select uuid, name, hash from users where name=?
+2022-11-03T10:30:34.365105: SELECT name FROM users
+2022-11-03T10:30:58.364760: select uuid, name, hash from users where name=?
+2022-11-03T10:30:59.145428: select uuid, name, hash from users where name=?
+2022-11-03T10:30:59.397807: select uuid, name, hash from users where name=?
+2022-11-03T10:31:00.342359: select uuid, name, hash from users where name=?
+2022-11-03T10:31:00.587732: select uuid, name, hash from users where name=?
+2022-11-03T10:31:01.200521: select uuid, name, hash from users where name=?
+2022-11-03T10:31:01.973961: select uuid, name, hash from users where name=?
+2022-11-03T10:31:02.796758: select uuid, name, hash from users where name=?
+2022-11-03T10:31:03.067536: select uuid, name, hash from users where name=?
+2022-11-03T10:31:04.562012: SELECT name FROM users
+2022-11-03T10:33:50.314994: select uuid, name, hash from users where name=?
+2022-11-03T10:33:50.859654: select uuid, name, hash from users where name=?
+2022-11-03T10:33:51.054621: select uuid, name, hash from users where name=?
+2022-11-03T10:33:51.780082: select uuid, name, hash from users where name=?
+2022-11-03T10:33:51.919327: select uuid, name, hash from users where name=?
+2022-11-03T10:33:52.280628: select uuid, name, hash from users where name=?
+2022-11-03T10:33:52.840228: select uuid, name, hash from users where name=?
+2022-11-03T10:33:53.277527: select uuid, name, hash from users where name=?
+2022-11-03T10:33:53.466557: select uuid, name, hash from users where name=?
+2022-11-03T10:33:54.440509: SELECT name FROM users
+2022-11-03T10:34:25.375326: select uuid, name, hash from users where name=?
+2022-11-03T10:34:25.661763: select uuid, name, hash from users where name=?
+2022-11-03T10:34:25.832469: select uuid, name, hash from users where name=?
+2022-11-03T10:34:26.311755: select uuid, name, hash from users where name=?
+2022-11-03T10:34:26.437025: select uuid, name, hash from users where name=?
+2022-11-03T10:34:26.791468: select uuid, name, hash from users where name=?
+2022-11-03T10:34:27.123486: select uuid, name, hash from users where name=?
+2022-11-03T10:34:27.409923: select uuid, name, hash from users where name=?
+2022-11-03T10:34:27.526161: select uuid, name, hash from users where name=?
+2022-11-03T10:34:28.150721: SELECT name FROM users
+2022-11-03T10:35:18.701957: select uuid, name, hash from users where name=?
+2022-11-03T10:35:18.833554: select uuid, name, hash from users where name=?
+2022-11-03T10:35:18.952961: select uuid, name, hash from users where name=?
+2022-11-03T10:35:19.098821: select uuid, name, hash from users where name=?
+2022-11-03T10:35:19.192032: select uuid, name, hash from users where name=?
+2022-11-03T10:35:19.349023: select uuid, name, hash from users where name=?
+2022-11-03T10:35:19.510805: select uuid, name, hash from users where name=?
+2022-11-03T10:35:19.564299: select uuid, name, hash from users where name=?
+2022-11-03T10:35:19.654579: select uuid, name, hash from users where name=?
+2022-11-03T10:35:19.862622: SELECT name FROM users
+2022-11-03T10:36:21.194273: select uuid, name, hash from users where name=?
+2022-11-03T10:36:22.100053: select uuid, name, hash from users where name=?
+2022-11-03T10:36:22.354893: select uuid, name, hash from users where name=?
+2022-11-03T10:36:23.416510: select uuid, name, hash from users where name=?
+2022-11-03T10:36:23.651661: select uuid, name, hash from users where name=?
+2022-11-03T10:36:24.274672: select uuid, name, hash from users where name=?
+2022-11-03T10:36:25.366789: select uuid, name, hash from users where name=?
+2022-11-03T10:36:25.957197: select uuid, name, hash from users where name=?
+2022-11-03T10:36:26.171847: select uuid, name, hash from users where name=?
+2022-11-03T10:36:27.440805: SELECT name FROM users
+2022-11-03T10:43:55.691533: select uuid, name, hash from users where name=?
+2022-11-03T10:43:55.829979: select uuid, name, hash from users where name=?
+2022-11-03T10:43:55.936323: select uuid, name, hash from users where name=?
+2022-11-03T10:43:56.101905: select uuid, name, hash from users where name=?
+2022-11-03T10:43:56.192532: select uuid, name, hash from users where name=?
+2022-11-03T10:43:56.365393: select uuid, name, hash from users where name=?
+2022-11-03T10:43:56.523150: select uuid, name, hash from users where name=?
+2022-11-03T10:43:56.586282: select uuid, name, hash from users where name=?
+2022-11-03T10:43:56.673753: select uuid, name, hash from users where name=?
+2022-11-03T10:45:53.792974: select uuid, name, hash from users where name=?
+2022-11-03T10:45:54.234328: select uuid, name, hash from users where name=?
+2022-11-03T10:45:54.510602: select uuid, name, hash from users where name=?
+2022-11-03T10:45:54.893117: select uuid, name, hash from users where name=?
+2022-11-03T10:45:55.038353: select uuid, name, hash from users where name=?
+2022-11-03T10:45:55.358912: select uuid, name, hash from users where name=?
+2022-11-03T10:45:55.744302: select uuid, name, hash from users where name=?
+2022-11-03T10:45:56.083294: select uuid, name, hash from users where name=?
+2022-11-03T10:45:56.268478: select uuid, name, hash from users where name=?
+2022-11-03T10:54:28.265315: select uuid, name, hash from users where name=?
+2022-11-03T10:54:28.575257: select uuid, name, hash from users where name=?
+2022-11-03T10:54:28.720091: select uuid, name, hash from users where name=?
+2022-11-03T10:54:29.042050: select uuid, name, hash from users where name=?
+2022-11-03T10:54:29.236316: select uuid, name, hash from users where name=?
+2022-11-03T10:54:29.564232: select uuid, name, hash from users where name=?
+2022-11-03T10:54:29.852665: select uuid, name, hash from users where name=?
+2022-11-03T10:54:30.030524: select uuid, name, hash from users where name=?
+2022-11-03T10:54:30.126542: select uuid, name, hash from users where name=?
+2022-11-03T10:54:30.503001: select uuid, name, hash from users where name=?
+2022-11-03T11:11:59.728761: select uuid, name, hash from users where name=?
+2022-11-03T11:12:00.342487: select uuid, name, hash from users where name=?
+2022-11-03T11:12:00.550349: select uuid, name, hash from users where name=?
+2022-11-03T11:12:01.014733: select uuid, name, hash from users where name=?
+2022-11-03T11:12:01.290664: select uuid, name, hash from users where name=?
+2022-11-03T11:12:01.690582: select uuid, name, hash from users where name=?
+2022-11-03T11:12:02.299266: select uuid, name, hash from users where name=?
+2022-11-03T11:12:02.359667: select uuid, name, hash from users where name=?
+2022-11-03T11:12:02.445555: select uuid, name, hash from users where name=?
+2022-11-03T11:12:02.736201: select uuid, name, hash from users where name=?
+2022-11-03T11:19:33.423990: 
+  with base AS (
+    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+    FROM ingredients i
+    JOIN ingredient_tags it on i.id = it.ingredient_id
+    JOIN tags t ON it.tag_id = t.id)
+  SELECT
+    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
+    FROM base
+    group by id
+  
+2022-11-03T11:19:34.726316: select uuid, name, hash from users where name=?
+2022-11-03T11:19:34.857366: select uuid, name, hash from users where name=?
+2022-11-03T11:19:35.036737: select uuid, name, hash from users where name=?
+2022-11-03T11:19:35.115266: 
+with base AS (
+  SELECT s.id, s.name, s.uuid, i.uuid AS ingredient_uuid
+  FROM ingredient_sets s
+  JOIN users u ON s.user_id = u.id
+  JOIN ingredient_set_ingredients isi ON s.id=isi.ingredient_set_id
+  JOIN ingredients i ON isi.ingredient_id=i.id
+  WHERE u.uuid = ?
+  )
+SELECT id, min(name) as name, min(uuid) as uuid, array_agg(ingredient_uuid) as ingredient_uuids
+FROM base group by id
+
+2022-11-03T11:19:50.314584: select uuid, name, hash from users where name=?
+2022-11-03T11:19:50.909744: select uuid, name, hash from users where name=?
+2022-11-03T11:19:51.354324: select uuid, name, hash from users where name=?
+2022-11-03T11:19:52.204798: select uuid, name, hash from users where name=?
+2022-11-03T11:19:52.345235: select uuid, name, hash from users where name=?
+2022-11-03T11:19:52.754777: select uuid, name, hash from users where name=?
+2022-11-03T11:19:53.707601: select uuid, name, hash from users where name=?
+2022-11-03T11:19:54.555157: select uuid, name, hash from users where name=?
+2022-11-03T11:19:54.827645: select uuid, name, hash from users where name=?
+2022-11-03T11:19:55.732337: select uuid, name, hash from users where name=?

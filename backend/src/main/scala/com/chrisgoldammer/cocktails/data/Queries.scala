@@ -228,12 +228,15 @@ val getIngredientsQuery = sql"""
     group by id
   """
 
-val getIngredientsSetsStoredQuery = sql"""
+def getIngredientsSetsStoredQuery(userUuid: String) = sql"""
 with base AS (
   SELECT s.id, s.name, s.uuid, i.uuid AS ingredient_uuid
   FROM ingredient_sets s
+  JOIN users u ON s.user_id = u.id
   JOIN ingredient_set_ingredients isi ON s.id=isi.ingredient_set_id
-  JOIN ingredients i ON isi.ingredient_id=i.id)
+  JOIN ingredients i ON isi.ingredient_id=i.id
+  WHERE u.uuid = $userUuid
+  )
 SELECT id, min(name) as name, min(uuid) as uuid, array_agg(ingredient_uuid) as ingredient_uuids
 FROM base group by id
 """

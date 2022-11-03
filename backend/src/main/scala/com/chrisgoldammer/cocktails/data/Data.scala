@@ -20,9 +20,6 @@ def camel2underscores(x: String) = {
 }
 
 
-def getSettings(): Option[Settings] = sys.env.get("SETTINGS").map(Settings.fromString).flatten
-
-
 def getUuid() = randomUUID().toString
 
 
@@ -73,10 +70,10 @@ def getTagsIO(): ConnectionIO[List[Tag]] = for {
   tags <- getTagsDataIO()
 } yield tags.map(_.element)
 
-def getIngredientSetsStoredIO(): ConnectionIO[List[StoredElement[FullIngredientSet]]] = getIngredientsSetsStoredQuery.query[StoredElement[FullIngredientSet]].to[List]
+def getIngredientSetsStoredIO(userUuid: String): ConnectionIO[List[StoredElement[FullIngredientSet]]] = getIngredientsSetsStoredQuery(userUuid).query[StoredElement[FullIngredientSet]].to[List]
 
-def getIngredientSetsIO(): ConnectionIO[List[FullIngredientSet]] = for {
-  is <- getIngredientSetsStoredIO()
+def getIngredientSetsIO(userUuid: String): ConnectionIO[List[FullIngredientSet]] = for {
+  is <- getIngredientSetsStoredIO(userUuid)
 } yield is.map(_.element)
 
 object ItemType extends Enumeration {
@@ -86,8 +83,7 @@ object ItemType extends Enumeration {
 
 def getIngredientsDataIO(): ConnectionIO[List[MFullIngredientData]] = getIngredientsQuery.query[MFullIngredientData].to[List]
 
-
-def setupIO(sd: SetupData): ConnectionIO[Unit] = dropTables >> createTables >> insertFromSetupDataIO(sd, dummyBackingStore())
+def setupIO(sd: SetupData): ConnectionIO[Unit] = dropTables >> createTables >> insertFromSetupDataIO(sd, doobieBackingStore())
 
 def insertFromSetupDataIO(sd: SetupData, bStore: BackingStore): ConnectionIO[Unit] = for {
 
@@ -140,20 +136,22 @@ def insertFromSetupDataIO(sd: SetupData, bStore: BackingStore): ConnectionIO[Uni
   })
 } yield None
 
+def getTransactor(dbSetup: DBSetup): Transactor[IO] = Transactor.fromDriverManager[IO](
+  "org.postgresql.Driver", // driver classname
+  dbSetup.getConnString(),
+  "postgres", // user
+  "" // password
+)
+
 class DataTools(dbSetup: DBSetup):
-  val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
-    "org.postgresql.Driver", // driver classname
-    dbSetup.getConnString(),
-    "postgres", // user
-    "" // password
-  )
+  val xa: Transactor[IO] = getTransactor(dbSetup)
 
   def getTags(): IO[List[Tag]] = getTagsIO().transact(xa)
   def setup(): IO[Unit] = setupIO(setupDataSimple).transact(xa)
   def getFullRecipes(): IO[List[FullRecipe]] = getFullRecipesIO().transact(xa)
   def getIngredients(): IO[List[FullIngredient]] = getIngredientsIO().transact(xa)
   def getRecipesForIngredients(ingredientUids: List[String]): IO[List[Recipe]] = getRecipesForIngredientsIO(ingredientUids).transact(xa)
-  def getIngredientSets(): IO[List[FullIngredientSet]] = getIngredientSetsIO().transact(xa)
+  def getIngredientSets(userUuid: String): IO[List[FullIngredientSet]] = getIngredientSetsIO(userUuid).transact(xa)
 
 object DataTools {
 

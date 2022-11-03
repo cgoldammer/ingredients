@@ -2,10 +2,11 @@ package com.chrisgoldammer.cocktails.cryptocore
 
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
-import com.chrisgoldammer.cocktails.data.types.{AuthUser, DBSetup}
+import com.chrisgoldammer.cocktails.data.types.*
 import org.apache.commons.codec.binary.Hex
 import org.http4s.{BasicCredentials, Request}
 import tsec.passwordhashers.jca.*
+
 import java.util.UUID.randomUUID
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -14,8 +15,10 @@ import scala.util.Random
 import doobie.*
 import doobie.implicits.*
 import doobie.hi.connection
-import doobie.postgres._
-import doobie.postgres.implicits._
+import doobie.postgres.*
+import doobie.postgres.implicits.*
+
+import java.time
 
 import java.util.UUID.randomUUID
 
@@ -87,7 +90,7 @@ enum AuthBackend:
 
   def getBackingStore(): BackingStore = {
     this match
-      case AuthBackend.Doobie => dummyBackingStore()
+      case AuthBackend.Doobie => doobieBackingStore()
   }
 
 // TODO: Create a way that the backingstore is a parameter on app startup
@@ -95,10 +98,10 @@ object AuthHelpers {
   def hashPassword(pass: String): String = SCrypt.hashpwUnsafe(pass.getBytes())
 }
 
-//def ioToConnection[A](io: IO[A]): ConnectionIO[A] = WeakAsync.liftK[IO, ConnectionIO]
 
 
-def dummyBackingStore(): BackingStore = {
+
+def doobieBackingStore(): BackingStore = {
   val bStore = new BackingStore {
     val storageMap = mutable.HashMap.empty[String, CreatedUserData]
 
@@ -113,14 +116,14 @@ def dummyBackingStore(): BackingStore = {
       val uuid = getUuid()
       val hash = cu.hash
       for {
-        p <- sql"insert into users (name, uuid, hash, is_admin) values ($name, $uuid, $hash, false)".updateWithLogHandler(LogHandler.jdkLogHandler).withUniqueGeneratedKeys[String]("name")
+        p <- sql"insert into users (name, uuid, hash, is_admin) values ($name, $uuid, $hash, false)".update.withUniqueGeneratedKeys[String]("name")
       } yield Some(cu)
     }
 
     def get(id: String): ConnectionIO[Option[CreatedUserData]] =
     {
       for {
-        p <- sql"select uuid, name, hash from users where name=$id".queryWithLogHandler[CreatedUserData](LogHandler.jdkLogHandler).to[List].map(_.headOption)
+        p <- sql"select uuid, name, hash from users where name=$id".query[CreatedUserData].to[List].map(_.headOption)
       } yield p
     }
 //

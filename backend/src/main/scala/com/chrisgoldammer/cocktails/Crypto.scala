@@ -25,7 +25,6 @@ import org.http4s.syntax.header.*
 import org.http4s.headers.Authorization
 import org.http4s.circe.CirceEntityCodec._
 
-
 import javax.crypto.{Cipher, Mac}
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 import org.apache.commons.codec.binary.Hex
@@ -41,11 +40,8 @@ import org.http4s.BasicCredentials
 import tsec.passwordhashers.jca.*
 import com.chrisgoldammer.cocktails.data.types.*
 
-
-
-def toEither[A,B](a: Option[A], b: B): Either[B, A] = Either.cond(a.isDefined, a.get, b)
-
-
+def toEither[A, B](a: Option[A], b: B): Either[B, A] =
+  Either.cond(a.isDefined, a.get, b)
 
 case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
   val backend = ab.getBackingStore()
@@ -60,17 +56,17 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
     storedUser <- backend.get(c.username).transact(xa)
   } yield storedUser.map(checkUser(c.password)).flatten.headOption
 
-  def verifyUserNameDoesNotExist(c: BasicCredentials): IO[Option[BasicCredentials]] = for {
+  def verifyUserNameDoesNotExist(
+      c: BasicCredentials
+  ): IO[Option[BasicCredentials]] = for {
     res <- backend.get(c.username).transact(xa)
   } yield Option.when(!res.isDefined)(c)
 
   def verifyLogin(request: Request[IO]): IO[Option[AuthUser]] = for {
     res <- getCredentials(request) match
-      case None => IO.pure(None)
+      case None    => IO.pure(None)
       case Some(c) => verifyUserExists(c)
   } yield res
-
-
 
   def registerUser(user: BasicCredentials): IO[Response[IO]] = for {
     s <- backend.put(user).transact(xa)
@@ -80,7 +76,7 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
   val register: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
     verifyRegister(request: Request[IO]).flatMap(_ match {
       case None =>
-        Forbidden("Registration failed")
+        Forbidden(jsonParseString("Registration failed"))
       case Some(user) => registerUser(user)
     })
   })
@@ -91,15 +87,17 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
 
   def retrieveUser: Kleisli[IO, String, Option[AuthUser]] = Kleisli(getUser)
 
-  def getBearer(user: String): Json = {
-      val s = "Bearer " + crypto.signToken(user, clock.millis.toString)
-      jsonParse(raw""""$s"""").getOrElse(Json.Null)
-   }
+  def jsonParseString(s: String): Json =
+    jsonParse(raw""""$s"""").getOrElse(Json.Null)
+
+  def getBearer(user: String): Json = jsonParseString(
+    "Bearer " + crypto.signToken(user, clock.millis.toString)
+  )
 
   val logIn: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
     verifyLogin(request: Request[IO]).flatMap(_ match {
       case None =>
-        Forbidden("Bad User Credentials")
+        Forbidden(jsonParseString("Bad User Credentials"))
       case Some(user) => {
         val message = getBearer(user.name.toString)
         Ok(message)
@@ -109,37 +107,41 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
 
   def verifyRegister(request: Request[IO]): IO[Option[BasicCredentials]] = for {
     res <- getCredentials(request) match
-      case None => IO.pure({
-        None
-      })
+      case None =>
+        IO.pure({
+          None
+        })
       case Some(c) => {
-        println("Credentials: " + c)
         verifyUserNameDoesNotExist(c)
       }
   } yield res
 
-  val authorizeUserFromToken: Kleisli[IO, Request[IO], Either[String, AuthUser]] = Kleisli({ request =>
+  val authorizeUserFromToken
+      : Kleisli[IO, Request[IO], Either[String, AuthUser]] = Kleisli({
+    request =>
 
-    val header = request.headers.get[Authorization].toList.headOption
-    val messageEither = header match
-      case None => Right("No header found")
-      case Some(h) => crypto.validateSignedToken(h.credentials.toString.replace("Bearer ", "")).toRight("Token invalid")
+      val header = request.headers.get[Authorization].toList.headOption
+      val messageEither = header match
+        case None => Right("No header found")
+        case Some(h) =>
+          crypto
+            .validateSignedToken(h.credentials.toString.replace("Bearer ", ""))
+            .toRight("Token invalid")
 
-    messageEither match
-      case Left(error) => IO(Left(error))
-      case Right(userId) => retrieveUser.run(userId).map(a => toEither(a, "no user found"))
+      messageEither match
+        case Left(error) => IO(Left(error))
+        case Right(userId) =>
+          retrieveUser.run(userId).map(a => toEither(a, "no user found"))
   })
 }
-
 
 def checkUser(pass: String)(storedUser: CreatedUserData): Option[AuthUser] = {
   val isMatch = SCryptUtil.check(pass.getBytes(), storedUser.hash)
   Option.when(isMatch)(AuthUser(storedUser.id, storedUser.name))
 }
 
-
 def getCredentials(request: Request[IO]): Option[BasicCredentials] = {
-  
+
   val header = request.headers.get[Authorization].toList.headOption
   for {
     h <- header
@@ -147,19 +149,6 @@ def getCredentials(request: Request[IO]): Option[BasicCredentials] = {
   } yield s
 }
 
-
-
-
 val key = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
 val crypto = CryptoBits(key)
 val clock = java.time.Clock.systemUTC
-
-
-
-
-
-
-
-
-
-

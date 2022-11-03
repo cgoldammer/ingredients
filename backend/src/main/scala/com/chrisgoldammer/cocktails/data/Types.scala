@@ -7,18 +7,20 @@ import cats.*
 import cats.data.*
 import cats.effect.*
 import cats.implicits.*
+import doobie.util.log.LogEvent
+import java.nio.file.{Files, Paths, StandardOpenOption}
+
 import java.util.UUID.randomUUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
-
 import _root_.io.circe.{Decoder, Encoder, Json}
 import _root_.io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import _root_.io.circe.generic.auto.*
 import _root_.io.circe.syntax.*
-
+import doobie.util.log.LogEvent
 import org.http4s.EntityDecoder
 import org.http4s.dsl.io.*
 import org.http4s.implicits.*
@@ -26,6 +28,8 @@ import org.http4s.client.dsl.io.*
 import org.http4s.*
 import org.http4s.circe.jsonOf
 
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.time
 
 case class StoredElement[T](id: Int, element: T)
 
@@ -77,6 +81,8 @@ case class IngredientDataRaw(name: String, IngredientTagNames: List[String])
 implicit val encTR: Encoder[Results[Tag]] = deriveEncoder
 implicit val decT2: EntityDecoder[IO, Results[Tag]] = jsonOf[IO, Results[Tag]]
 implicit val decIR2: EntityDecoder[IO, Results[Ingredient]] = jsonOf[IO, Results[Ingredient]]
+implicit val decRR433: Decoder[FullIngredient] = deriveDecoder
+
 implicit val decRR99: EntityDecoder[IO, Results[FullIngredient]] = jsonOf[IO, Results[FullIngredient]]
 implicit val decRR: Decoder[Results[Recipe]] = deriveDecoder
 implicit val encRR: Encoder[Results[Recipe]] = deriveEncoder
@@ -92,7 +98,6 @@ implicit val decRR24: EntityDecoder[IO, Results[FullIngredientSet]] = jsonOf[IO,
 
 implicit val decRR42: Decoder[Results[FullIngredient]] = deriveDecoder
 implicit val encRR42: Encoder[Results[FullIngredient]] = deriveEncoder
-implicit val decRR242: EntityDecoder[IO, Results[FullIngredient]] = jsonOf[IO, Results[FullIngredient]]
 
 implicit val decISL: Decoder[Results[String]] = deriveDecoder
 implicit val encISL: Encoder[Results[String]] = deriveEncoder
@@ -137,8 +142,19 @@ enum Settings:
 object Settings:
   def fromString(s: String): Option[Settings] = {
     s match
-      case "TestLocal" => Some(Settings.TestLocal)
-      case "DevLocal" => Some(Settings.DevLocal)
-      case "DevDocker" => Some(Settings.DevDocker)
+      case "testLocal" => Some(Settings.TestLocal)
+      case "devLocal" => Some(Settings.DevLocal)
+      case "devDocker" => Some(Settings.DevDocker)
       case _ => None
   }
+
+def getSettings(): Option[Settings] = sys.env.get("SETTINGS").map(Settings.fromString).flatten
+
+def fileLogHandler(le: LogEvent): Unit = {
+  val settings = getSettings()
+  val logString = time.LocalDateTime.now().toString + ": " + le.sql + "\n"
+  val logFile = "logs/log_" + settings.toString
+  Files.writeString(Paths.get(logFile), logString, StandardOpenOption.APPEND)
+}
+
+implicit val logHandler: LogHandler = LogHandler(fileLogHandler)
