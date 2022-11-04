@@ -1,39 +1,40 @@
 package com.chrisgoldammer.cocktails
 
-import cats.effect.{IO}
-import cats.data.{Kleisli, OptionT}
-
-import org.http4s.dsl.io.*
-import org.http4s.server.*
-import org.http4s.implicits.*
-import org.http4s.headers.Authorization
-import org.http4s.{BasicCredentials, Request, Response}
-import org.http4s.syntax.header.*
-import org.http4s.circe.CirceEntityCodec.*
-
-import doobie.{Transactor}
-import doobie.implicits.toConnectionIOOps
-
-import _root_.io.circe.{Json}
-import _root_.io.circe.generic.auto.*
-import _root_.io.circe.parser.{parse => jsonParse}
-import _root_.io.circe.syntax.*
-import scala.io.Codec
-import scala.util.Random
-
-import javax.crypto.{Cipher, Mac}
-import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
-import org.apache.commons.codec.binary.Hex
-
 import java.time.*
 
 import scala.collection.mutable
-import tsec.passwordhashers.jca.BCrypt.syncPasswordHasher
-import tsec.passwordhashers.jca.*
+import scala.io.Codec
+import scala.util.Random
 
-import com.chrisgoldammer.cocktails.data.types.*
-import com.chrisgoldammer.cocktails.data.types.*
+import _root_.io.circe.Json
+import _root_.io.circe.generic.auto.*
+import _root_.io.circe.parser.{parse => jsonParse}
+import _root_.io.circe.syntax.*
+import cats.data.Kleisli
+import cats.data.OptionT
+import cats.effect.IO
+import doobie.Transactor
+import doobie.implicits.toConnectionIOOps
+import org.apache.commons.codec.binary.Hex
+import org.http4s.BasicCredentials
+import org.http4s.Request
+import org.http4s.Response
+import org.http4s.circe.CirceEntityCodec.*
+import org.http4s.dsl.io.*
+import org.http4s.headers.Authorization
+import org.http4s.implicits.*
+import org.http4s.server.*
+import org.http4s.syntax.header.*
+
 import com.chrisgoldammer.cocktails.cryptocore.*
+import com.chrisgoldammer.cocktails.data.types.*
+
+import javax.crypto.Cipher
+import javax.crypto.Mac
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
+import tsec.passwordhashers.jca.*
+import tsec.passwordhashers.jca.BCrypt.syncPasswordHasher
 
 def toEither[A, B](a: Option[A], b: B): Either[B, A] =
   Either.cond(a.isDefined, a.get, b)

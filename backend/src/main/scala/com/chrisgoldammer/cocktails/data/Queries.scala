@@ -1,16 +1,21 @@
 package com.chrisgoldammer.cocktails.data
 
-import doobie.{Fragments, ConnectionIO, HPS, HC}
-import doobie.implicits.toSqlInterpolator
+import cats.data.NonEmptyList
 import cats.implicits.toFoldableOps
-import fs2.Stream
 import cats.syntax.traverse.*
+import doobie.ConnectionIO
+import doobie.Fragments
+import doobie.HC
+import doobie.HPS
 import doobie.hi.connection
+import doobie.implicits.toSqlInterpolator
 import doobie.postgres.*
 import doobie.postgres.implicits.*
-import com.chrisgoldammer.cocktails.data.types.*
-import cats.data.{NonEmptyList}
+
 import com.chrisgoldammer.cocktails.cryptocore.*
+import com.chrisgoldammer.cocktails.data.types.*
+
+import fs2.Stream
 
 val createUsers =
   """

@@ -1,30 +1,32 @@
 package com.chrisgoldammer.cocktails
 
-import doobie.postgres.*
-import doobie.postgres.implicits.*
-
-import cats.effect.{IO, Resource}
-import cats.MonoidK.ops.toAllMonoidKOps
-import cats.data.{OptionT, Kleisli}
-import org.http4s.*
-import org.http4s.server.*
-import org.http4s.circe.jsonOf
 import _root_.io.circe.*
 import _root_.io.circe.generic.semiauto.*
 import _root_.io.circe.syntax.*
-import org.http4s.dsl.io.*
-import org.http4s.implicits.*
-import org.http4s.client.dsl.io.*
-import org.http4s.ember.server.*
+import cats.MonoidK.ops.toAllMonoidKOps
+import cats.data.Kleisli
+import cats.data.OptionT
+import cats.effect.IO
+import cats.effect.Resource
+import doobie.postgres.*
+import doobie.postgres.implicits.*
+import org.http4s.*
 import org.http4s.circe.jsonEncoder
-import com.comcast.ip4s.{ipv4, port}
+import org.http4s.circe.jsonOf
+import org.http4s.client.dsl.io.*
+import org.http4s.dsl.io.*
+import org.http4s.ember.server.*
 import org.http4s.headers.Origin
+import org.http4s.implicits.*
+import org.http4s.server.*
 import org.http4s.server.middleware._
 
 import com.chrisgoldammer.cocktails.*
 import com.chrisgoldammer.cocktails.cryptocore.*
-import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
+import com.chrisgoldammer.cocktails.data.types.*
+import com.comcast.ip4s.ipv4
+import com.comcast.ip4s.port
 
 case class AppParams(db: DBSetup, auth: AuthBackend = AuthBackend.Doobie)
 

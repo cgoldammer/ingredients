@@ -1,14 +1,17 @@
 package com.chrisgoldammer.cocktails.data
 
-import doobie.util.ExecutionContexts
-
 import java.util.UUID.randomUUID
+
 import scala.concurrent.ExecutionContext.Implicits.global
+
 import doobie.postgres.*
 import doobie.postgres.implicits.*
-import com.chrisgoldammer.cocktails.data.types.*
+import doobie.util.ExecutionContexts
+import org.http4s.BasicCredentials
+import org.http4s.Request
+
 import com.chrisgoldammer.cocktails.data.*
-import org.http4s.{BasicCredentials, Request}
+import com.chrisgoldammer.cocktails.data.types.*
 
 val homeIngredients = List(
   "Gin",

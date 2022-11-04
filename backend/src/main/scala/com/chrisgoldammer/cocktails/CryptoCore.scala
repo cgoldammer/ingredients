@@ -1,26 +1,28 @@
 package com.chrisgoldammer.cocktails.cryptocore
 
-import cats.data.{Kleisli, OptionT}
-import cats.effect.IO
-import com.chrisgoldammer.cocktails.data.types.*
-import org.apache.commons.codec.binary.Hex
-import org.http4s.{BasicCredentials, Request}
-import tsec.passwordhashers.jca.*
-
+import java.time
 import java.util.UUID.randomUUID
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
+
 import scala.collection.mutable
 import scala.util.Random
-import doobie.{ConnectionIO}
-import doobie.implicits.toSqlInterpolator
+
+import cats.data.Kleisli
+import cats.data.OptionT
+import cats.effect.IO
+import doobie.ConnectionIO
 import doobie.hi.connection
+import doobie.implicits.toSqlInterpolator
 import doobie.postgres.*
 import doobie.postgres.implicits.*
+import org.apache.commons.codec.binary.Hex
+import org.http4s.BasicCredentials
+import org.http4s.Request
 
-import java.time
+import com.chrisgoldammer.cocktails.data.types.*
 
-import java.util.UUID.randomUUID
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+import tsec.passwordhashers.jca.*
 
 case class PrivateKey(key: Array[Byte])
 

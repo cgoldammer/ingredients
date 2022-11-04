@@ -1,30 +1,34 @@
 package com.chrisgoldammer.cocktails.data.types
 
-import doobie.{LogHandler, Read}
-import doobie.util.{ExecutionContexts}
-import cats.effect.{IO}
-import java.nio.file.{Files, Paths, StandardOpenOption}
-
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.time
 import java.util.UUID.randomUUID
-import scala.concurrent.ExecutionContext.Implicits.global
-import doobie.postgres.implicits.*
 
-import _root_.io.circe.{Decoder, Encoder, Json}
-import _root_.io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import _root_.io.circe.Decoder
+import _root_.io.circe.Encoder
+import _root_.io.circe.Json
 import _root_.io.circe.generic.auto.*
-import io.circe.syntax.EncoderOps
+import _root_.io.circe.generic.semiauto.deriveDecoder
+import _root_.io.circe.generic.semiauto.deriveEncoder
+import _root_.io.circe.syntax.EncoderOps
+import cats.effect.IO
+import doobie.LogHandler
+import doobie.Read
+import doobie.postgres.implicits.*
+import doobie.util.ExecutionContexts
 import doobie.util.log.LogEvent
 import org.http4s.EntityDecoder
+import org.http4s.circe.jsonOf
+import org.http4s.client.dsl.io.*
 import org.http4s.dsl.io.*
 import org.http4s.implicits.*
-import org.http4s.client.dsl.io.*
-import org.http4s.circe.jsonOf
 
-import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.time
-
-import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.*
+import com.chrisgoldammer.cocktails.data.types.*
 
 case class StoredElement[T](id: Int, element: T)
 

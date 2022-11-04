@@ -1,37 +1,38 @@
 package com.chrisgoldammer.cocktails
 
-import cats.effect.{IO}
-import junit.framework.TestSuite
-import org.http4s.{
-  Status,
-  Method,
-  Headers,
-  Request,
-  Response,
-  EntityDecoder,
-  EntityEncoder,
-  Credentials,
-  AuthScheme,
-  BasicCredentials
-}
-import org.http4s.implicits.uri
-import munit.CatsEffectSuite
-import org.http4s.headers.*
-import org.typelevel.ci.*
+import java.util.concurrent.Executors
+
+import scala.util.Random
+
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import cats.implicits.catsSyntaxFlatMapOps
 import doobie.implicits.toConnectionIOOps
 import doobie.util.ExecutionContexts
-import cats.effect.unsafe.implicits.global
-import java.util.concurrent.Executors
-import scala.util.Random
-import org.http4s.client.{Client, JavaNetClientBuilder}
-import sun.net.www.http.HttpClient
+import org.http4s.AuthScheme
+import org.http4s.BasicCredentials
+import org.http4s.Credentials
+import org.http4s.EntityDecoder
+import org.http4s.EntityEncoder
+import org.http4s.Headers
+import org.http4s.Method
+import org.http4s.Request
+import org.http4s.Response
+import org.http4s.Status
+import org.http4s.client.Client
+import org.http4s.client.JavaNetClientBuilder
+import org.http4s.headers.*
+import org.http4s.implicits.uri
+import org.typelevel.ci.*
 
+import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
-import com.chrisgoldammer.cocktails.cryptocore.*
 
+import junit.framework.TestSuite
+import munit.CatsEffectSuite
 import munit.FunSuite
+import sun.net.www.http.HttpClient
 
 def resetDB(dbSetup: DBSetup) = {
   val dt = DataTools(dbSetup)
@@ -142,20 +143,19 @@ class DataTests extends CatsEffectSuite:
   }
 
   test("Ingredient sets with logged-in non-owner are empty") {
-    assert(true)
-//    resetDB(dbSetup)
-//    insertDB(dbSetup)
-//    val app = getAppForTesting()
-//
-//    val user = getRandomUser()
-//    val tokenOption = getToken(app, user, isLogin = false)
-//    val headers = tokenOption.fold(Headers.empty)(getHeaderFromToken)
-//
-//    var ingredientsRequest: Request[IO] =
-//      Request[IO](Method.GET, uri"/ingredient_sets", headers = headers)
-//    val request = app.run(ingredientsRequest)
-//    def bodyCondition(a: Results[FullIngredientSet]): Boolean = a.data.size == 0
-//    assert(check[Results[FullIngredientSet]](request, Status.Ok, bodyCondition))
+    resetDB(dbSetup)
+    insertDB(dbSetup)
+    val app = getAppForTesting()
+
+    val user = getRandomUser()
+    val tokenOption = getToken(app, user, isLogin = false)
+    val headers = tokenOption.fold(Headers.empty)(getHeaderFromToken)
+
+    var ingredientsRequest: Request[IO] =
+      Request[IO](Method.GET, uri"/ingredient_sets", headers = headers)
+    val request = app.run(ingredientsRequest)
+    def bodyCondition(a: Results[FullIngredientSet]): Boolean = a.data.size == 0
+    assert(check[Results[FullIngredientSet]](request, Status.Ok, bodyCondition))
   }
 
   def ingredientSetsCheck(

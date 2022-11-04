@@ -1,9 +1,12 @@
 package com.chrisgoldammer.cocktails
 
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.ExitCode
+import cats.effect.IO
+import cats.effect.IOApp
+
+import com.chrisgoldammer.cocktails.*
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
-import com.chrisgoldammer.cocktails.*
 
 object Main extends IOApp.Simple:
   val settings = getSettings()

@@ -1,22 +1,24 @@
 package com.chrisgoldammer.cocktails.data
 
-import doobie.{ConnectionIO, Transactor}
-import doobie.implicits.toSqlInterpolator
-import doobie.implicits.toConnectionIOOps
-import doobie.util.ExecutionContexts
-import cats.data.{NonEmptyList}
-import cats.effect.{IO}
-import cats.implicits.toTraverseOps
-import cats.implicits.catsSyntaxFlatMapOps
-import cats.implicits.catsSyntaxApplicativeId
-
 import java.util.UUID.randomUUID
-import scala.concurrent.ExecutionContext.Implicits.global
-import doobie.postgres.implicits.*
 
-import com.chrisgoldammer.cocktails.data.types.*
-import com.chrisgoldammer.cocktails.data.*
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import cats.data.NonEmptyList
+import cats.effect.IO
+import cats.implicits.catsSyntaxApplicativeId
+import cats.implicits.catsSyntaxFlatMapOps
+import cats.implicits.toTraverseOps
+import doobie.ConnectionIO
+import doobie.Transactor
+import doobie.implicits.toConnectionIOOps
+import doobie.implicits.toSqlInterpolator
+import doobie.postgres.implicits.*
+import doobie.util.ExecutionContexts
+
 import com.chrisgoldammer.cocktails.cryptocore.*
+import com.chrisgoldammer.cocktails.data.*
+import com.chrisgoldammer.cocktails.data.types.*
 
 def camel2underscores(x: String) = {
   "_?[A-Z][a-z\\d]+".r
