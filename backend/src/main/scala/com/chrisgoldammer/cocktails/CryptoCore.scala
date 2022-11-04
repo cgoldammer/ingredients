@@ -12,8 +12,8 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import scala.collection.mutable
 import scala.util.Random
-import doobie.*
-import doobie.implicits.*
+import doobie.{ConnectionIO}
+import doobie.implicits.toSqlInterpolator
 import doobie.hi.connection
 import doobie.postgres.*
 import doobie.postgres.implicits.*
@@ -26,7 +26,8 @@ case class PrivateKey(key: Array[Byte])
 
 case class CryptoBits(key: PrivateKey) {
 
-  def validatePassword(signature: String, nonce: String, raw: String): Boolean = constantTimeEquals(signature, sign(nonce + "-" + raw))
+  def validatePassword(signature: String, nonce: String, raw: String): Boolean =
+    constantTimeEquals(signature, sign(nonce + "-" + raw))
 
   def sign(message: String): String = {
     val mac = Mac.getInstance("HmacSHA1")
@@ -66,16 +67,19 @@ val user = AuthUser(id = "fff", name = "TestUser")
 
 def getUuid() = randomUUID().toString
 
-case class CreatedUserData(id: String, name: String, hash: String) {
-}
+case class CreatedUserData(id: Int, uuid: String, name: String, hash: String) {}
 
-def toAuthUser(that: CreatedUserData): AuthUser = AuthUser(that.id, that.name)
+def toAuthUser(that: CreatedUserData): AuthUser = AuthUser(that.uuid, that.name)
 
-val createdUser = CreatedUserData(user.id, user.name, "$s0$e0801$jSIPEy4Ow8LouWdRNmEydA==$4M2oXnkqIPtT8VcU1LU+kDdgwbV893W9UvPi4oWH/A4=")
+val createdUser = CreatedUserData(
+  1,
+  "UUID1234",
+  user.name,
+  "$s0$e0801$jSIPEy4Ow8LouWdRNmEydA==$4M2oXnkqIPtT8VcU1LU+kDdgwbV893W9UvPi4oWH/A4="
+)
 
 val password = "helloworld"
 val userCreationData = BasicCredentials(user.name, password)
-
 
 trait BackingStore {
   def asString(): String
@@ -98,9 +102,6 @@ object AuthHelpers {
   def hashPassword(pass: String): String = SCrypt.hashpwUnsafe(pass.getBytes())
 }
 
-
-
-
 def doobieBackingStore(): BackingStore = {
   val bStore = new BackingStore {
     val storageMap = mutable.HashMap.empty[String, CreatedUserData]
@@ -108,22 +109,34 @@ def doobieBackingStore(): BackingStore = {
     def getRandom(): String = Random.alphanumeric.take(20).mkString("")
 
     def asString(): String = storageMap.toString()
-    def getCreated(c: BasicCredentials): CreatedUserData = CreatedUserData(getRandom(), c.username, AuthHelpers.hashPassword(c.password))
+//    def getCreated(c: BasicCredentials): CreatedUserData = CreatedUserData(
+//      getRandom(),
+//      c.username,
+//      AuthHelpers.hashPassword(c.password)
+//    )
 
     def put(elem: BasicCredentials): ConnectionIO[Option[CreatedUserData]] = {
-      val cu = getCreated(elem)
-      val name = cu.name
+      val hash = AuthHelpers.hashPassword(elem.password)
+      val name = elem.username
       val uuid = getUuid()
-      val hash = cu.hash
       for {
-        p <- sql"insert into users (name, uuid, hash, is_admin) values ($name, $uuid, $hash, false)".update.withUniqueGeneratedKeys[String]("name")
-      } yield Some(cu)
+        p <-
+          sql"insert into users (name, uuid, hash, is_admin) values ($name, $uuid, $hash, false)".update
+            .withUniqueGeneratedKeys[CreatedUserData](
+              "id",
+              "uuid",
+              "name",
+              "hash"
+            )
+      } yield Some(p)
     }
 
-    def get(id: String): ConnectionIO[Option[CreatedUserData]] =
-    {
+    def get(id: String): ConnectionIO[Option[CreatedUserData]] = {
       for {
-        p <- sql"select uuid, name, hash from users where name=$id".query[CreatedUserData].to[List].map(_.headOption)
+        p <- sql"select id, uuid, name, hash from users where name=$id"
+          .query[CreatedUserData]
+          .to[List]
+          .map(_.headOption)
       } yield p
     }
 //

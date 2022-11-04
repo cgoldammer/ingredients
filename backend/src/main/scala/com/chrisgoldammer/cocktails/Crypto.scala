@@ -1,44 +1,39 @@
 package com.chrisgoldammer.cocktails
 
-import cats.*
-import cats.effect.*
-import cats.implicits.*
-import cats.data.*
-import org.http4s.*
+import cats.effect.{IO}
+import cats.data.{Kleisli, OptionT}
+
 import org.http4s.dsl.io.*
 import org.http4s.server.*
-import org.http4s.implicits._
+import org.http4s.implicits.*
+import org.http4s.headers.Authorization
+import org.http4s.{BasicCredentials, Request, Response}
+import org.http4s.syntax.header.*
+import org.http4s.circe.CirceEntityCodec.*
 
-import com.chrisgoldammer.cocktails.data.types.*
-import com.chrisgoldammer.cocktails.cryptocore.*
-import doobie.*
-import doobie.implicits._
+import doobie.{Transactor}
+import doobie.implicits.toConnectionIOOps
 
 import _root_.io.circe.{Json}
-import _root_.io.circe.generic.auto._
+import _root_.io.circe.generic.auto.*
 import _root_.io.circe.parser.{parse => jsonParse}
-import _root_.io.circe.syntax._
+import _root_.io.circe.syntax.*
 import scala.io.Codec
 import scala.util.Random
-import org.http4s.headers.Cookie
-import org.http4s.syntax.header.*
-import org.http4s.headers.Authorization
-import org.http4s.circe.CirceEntityCodec._
 
 import javax.crypto.{Cipher, Mac}
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 import org.apache.commons.codec.binary.Hex
 
 import java.time.*
-import cats.data.OptionT
-import cats.Applicative.*
 
 import scala.collection.mutable
 import tsec.passwordhashers.jca.BCrypt.syncPasswordHasher
-import org.http4s.headers.Authorization
-import org.http4s.BasicCredentials
 import tsec.passwordhashers.jca.*
+
 import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.cryptocore.*
 
 def toEither[A, B](a: Option[A], b: B): Either[B, A] =
   Either.cond(a.isDefined, a.get, b)
@@ -137,7 +132,7 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
 
 def checkUser(pass: String)(storedUser: CreatedUserData): Option[AuthUser] = {
   val isMatch = SCryptUtil.check(pass.getBytes(), storedUser.hash)
-  Option.when(isMatch)(AuthUser(storedUser.id, storedUser.name))
+  Option.when(isMatch)(AuthUser(storedUser.uuid, storedUser.name))
 }
 
 def getCredentials(request: Request[IO]): Option[BasicCredentials] = {

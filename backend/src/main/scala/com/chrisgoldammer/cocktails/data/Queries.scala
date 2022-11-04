@@ -1,15 +1,15 @@
 package com.chrisgoldammer.cocktails.data
 
-import doobie.*
-import doobie.implicits.*
-import cats.implicits.*
+import doobie.{Fragments, ConnectionIO, HPS, HC}
+import doobie.implicits.toSqlInterpolator
+import cats.implicits.toFoldableOps
 import fs2.Stream
 import cats.syntax.traverse.*
 import doobie.hi.connection
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 import com.chrisgoldammer.cocktails.data.types.*
-import cats.data.*
+import cats.data.{NonEmptyList}
 import com.chrisgoldammer.cocktails.cryptocore.*
 
 val createUsers =
@@ -93,7 +93,7 @@ CREATE TABLE ingredient_sets (
 id SERIAL,
 name VARCHAR NOT NULL UNIQUE,
 uuid VARCHAR NOT NULL UNIQUE,
-user_id INT,
+user_id INT NOT NULL,
 PRIMARY KEY(id),
 CONSTRAINT fk_ingredientset_user FOREIGN KEY(user_id) REFERENCES users(id)
 )
@@ -123,22 +123,29 @@ val createStrings: List[String] = List(
   createIngredientSetsIngredients
 )
 
-
-
-def dropString(tableName: String): String = f"DROP TABLE IF EXISTS $tableName%s"
-def tableNames = List("ingredient_set_ingredients", "ingredient_sets",
-  "ingredient_tags", "tags", "recipe_ingredients", "recipes", "ingredients", "user_data", "users")
+def dropString(tableName: String): String =
+  f"DROP TABLE IF EXISTS $tableName%s CASCADE"
+def tableNames = List(
+  "ingredient_set_ingredients",
+  "ingredient_sets",
+  "ingredient_tags",
+  "tags",
+  "recipe_ingredients",
+  "recipes",
+  "ingredients",
+  "user_data",
+  "users"
+)
 // def stringToSqlBasic(sqlString: String) = ???
-def updater(sqlString: String) : Stream[ConnectionIO, Unit] = HC.updateWithGeneratedKeys(List())(sqlString, HPS.set(()), 512)
+def updater(sqlString: String): Stream[ConnectionIO, Unit] =
+  HC.updateWithGeneratedKeys(List())(sqlString, HPS.set(()), 512)
 def stringToSqlBasic(sqlString: String) = updater(sqlString).compile.drain
-val dropTables: ConnectionIO[Unit] = tableNames.traverse_ {
-  table => stringToSqlBasic(dropString(table))
+val dropTables: ConnectionIO[Unit] = tableNames.traverse_ { table =>
+  stringToSqlBasic(dropString(table))
 }
 
-
-
-val createTables: ConnectionIO[Unit] = createStrings.traverse_ {
-  sqlString => stringToSqlBasic(sqlString)
+val createTables: ConnectionIO[Unit] = createStrings.traverse_ { sqlString =>
+  stringToSqlBasic(sqlString)
 }
 
 val recipeIngredientDataQuery =
@@ -149,39 +156,55 @@ JOIN recipes r ON ri.recipe_id=r.id
 JOIN ingredients i ON ri.ingredient_id=i.id
 """.stripMargin
 
-def insertIngredientSet(name: String): ConnectionIO[StoredElement[IngredientSet]] = {
+def insertIngredientSet(
+    name: String,
+    userId: Int
+): ConnectionIO[StoredElement[IngredientSet]] = {
   val uuid = getUuid()
-  sql"INSERT INTO ingredient_sets (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
+  sql"INSERT INTO ingredient_sets (name, uuid, user_id) values ($name, $uuid, $userId)".update
+    .withUniqueGeneratedKeys("id", "name", "uuid")
 }
 
-def insertIngredientSetIngredient(setId: Int, ingredientId: Int): ConnectionIO[StoredElement[IngredientSetIngredient]] = {
-  sql"INSERT INTO ingredient_set_ingredients (ingredient_set_id, ingredient_id) values ($setId, $ingredientId)"
-    .update.withUniqueGeneratedKeys("id", "ingredient_set_id", "ingredient_id")
+def insertIngredientSetIngredient(
+    setId: Int,
+    ingredientId: Int
+): ConnectionIO[StoredElement[IngredientSetIngredient]] = {
+  sql"INSERT INTO ingredient_set_ingredients (ingredient_set_id, ingredient_id) values ($setId, $ingredientId)".update
+    .withUniqueGeneratedKeys("id", "ingredient_set_id", "ingredient_id")
 }
 
-def insertIngredientTag(ingredientId: Int, tagId: Int): ConnectionIO[StoredElement[IngredientTag]] = {
-  sql"INSERT INTO ingredient_tags (ingredient_id, tag_id) values ($ingredientId, $tagId)".update.withUniqueGeneratedKeys("id", "ingredient_id", "tag_id")
+def insertIngredientTag(
+    ingredientId: Int,
+    tagId: Int
+): ConnectionIO[StoredElement[IngredientTag]] = {
+  sql"INSERT INTO ingredient_tags (ingredient_id, tag_id) values ($ingredientId, $tagId)".update
+    .withUniqueGeneratedKeys("id", "ingredient_id", "tag_id")
 }
 
 def insertTag(name: String): ConnectionIO[StoredElement[Tag]] = {
-  sql"INSERT INTO tags (name) values ($name)".update.withUniqueGeneratedKeys("id", "name")
+  sql"INSERT INTO tags (name) values ($name)".update
+    .withUniqueGeneratedKeys("id", "name")
 }
 
 def insertIngredient(name: String): ConnectionIO[StoredElement[Ingredient]] = {
   val uuid = getUuid()
-  sql"INSERT INTO ingredients (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
+  sql"INSERT INTO ingredients (name, uuid) values ($name, $uuid)".update
+    .withUniqueGeneratedKeys("id", "name", "uuid")
 }
 
-def insertRecipeIngredient(recipeId: Int, ingredientId: Int): ConnectionIO[StoredElement[RecipeIngredient]] = {
-  sql"INSERT INTO recipe_ingredients (recipe_id, ingredient_id) values ($recipeId, $ingredientId)"
-    .update.withUniqueGeneratedKeys("id", "recipe_id", "ingredient_id")
+def insertRecipeIngredient(
+    recipeId: Int,
+    ingredientId: Int
+): ConnectionIO[StoredElement[RecipeIngredient]] = {
+  sql"INSERT INTO recipe_ingredients (recipe_id, ingredient_id) values ($recipeId, $ingredientId)".update
+    .withUniqueGeneratedKeys("id", "recipe_id", "ingredient_id")
 }
 
 def insertRecipe(name: String): ConnectionIO[StoredElement[Recipe]] = {
   val uuid = getUuid()
-  sql"INSERT INTO recipes (name, uuid) values ($name, $uuid)".update.withUniqueGeneratedKeys("id", "name", "uuid")
+  sql"INSERT INTO recipes (name, uuid) values ($name, $uuid)".update
+    .withUniqueGeneratedKeys("id", "name", "uuid")
 }
-
 
 def searchQuery(ingredientUuids: NonEmptyList[String]) = {
   val inFragment = Fragments.in(fr"i.uuid", ingredientUuids)
@@ -240,5 +263,3 @@ with base AS (
 SELECT id, min(name) as name, min(uuid) as uuid, array_agg(ingredient_uuid) as ingredient_uuids
 FROM base group by id
 """
-
-
