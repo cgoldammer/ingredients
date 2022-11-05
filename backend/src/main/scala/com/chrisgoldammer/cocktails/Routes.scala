@@ -118,6 +118,8 @@ def openRoutes(dt: DataTools, af: AuthFunctions) = {
 def jsonApp(ap: AppParams): Http4sApp = {
   val dt = DataTools(ap.db)
   val af = AuthFunctions(ap.auth, ap.db)
+//  val mwFall: AuthMiddleware[IO, AuthUser] =
+//    AuthMiddleware.withFallThrough(authUser(af))
   openRoutes(dt, af) <+> middleware(af)(authedRoutes(dt))
 }.orNotFound
 

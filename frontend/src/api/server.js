@@ -150,7 +150,7 @@ export const handlers = [
     const firstHalf = getRange(parseInt(data.length / 2));
     const firstHalfSet = firstHalf.map((i) => data[i].uuid);
     const ingredientSets = {
-      data: [{ name: "firstHalf", uuid: "123", ingredients: firstHalfSet }],
+      data: [{ name: "firstHalf", uuid: "123", ingredients: firstHalfSet}],
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredientSets));
   }),

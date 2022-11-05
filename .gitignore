@@ -21,3 +21,4 @@ temp
 .bsp
 project/
 target/
+backend/logs

@@ -64,6 +64,7 @@ def getAppForTesting(): Http4sApp = {
 def parseResponse(r: IO[Response[IO]]): Option[String] = {
   val res = r.unsafeRunSync()
   val body = res.as[String].unsafeRunSync()
+  print(res.status)
   res.status match
     case Status.Ok => Some(body)
     case _         => None
@@ -81,6 +82,7 @@ def getToken(
   val registerIO = app.run(registerRequest)
   try {
     val token = parseResponse(registerIO)
+    println("Register sends: " + token.toString)
     return token
   } catch {
     case e: org.http4s.MalformedMessageBodyFailure => {
@@ -179,23 +181,23 @@ class AuthTests extends CatsEffectSuite:
   val blockingPool = Executors.newFixedThreadPool(5)
   val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
 
-  test("A user cannot login without registering first") {
-    assert(withoutRegisterALoginDoesNotReturnAToken())
-  }
-
-  test("A user can login after registering first") {
-    assert(afterRegisterALoginReturnsAToken())
-  }
-
-  test(
-    "After registering, a user credentials stay valid when app is reloaded"
-  ) {
-    assert(newUserPersistsAfterAppReload())
-  }
-
-  test("After registering, we can send get user data from just the token") {
-    assert(afterRegisteringOneCanSendTokenRequest())
-  }
+//  test("A user cannot login without registering first") {
+//    assert(withoutRegisterALoginDoesNotReturnAToken())
+//  }
+//
+//  test("A user can login after registering first") {
+//    assert(afterRegisterALoginReturnsAToken())
+//  }
+//
+//  test(
+//    "After registering, a user credentials stay valid when app is reloaded"
+//  ) {
+//    assert(newUserPersistsAfterAppReload())
+//  }
+//
+//  test("After registering, we can send get user data from just the token") {
+//    assert(afterRegisteringOneCanSendTokenRequest())
+//  }
 
   test("After using the fixtures, the fixture user login creates a token") {
     resetDB(dbSetup)
@@ -203,12 +205,14 @@ class AuthTests extends CatsEffectSuite:
     val app = getAppForTesting()
     val userFromFixturesWithSet = user0
     val tokenOption = getToken(app, userFromFixturesWithSet, isLogin = true)
+    println("\nToken:" + tokenOption.toString)
+//    print(tokenOption)
     assert(tokenOption.nonEmpty)
   }
 
-  test("Resetting DB prevents a user from logging in") {
-    assert(resettingDBPreventsLogin())
-  }
+//  test("Resetting DB prevents a user from logging in") {
+//    assert(resettingDBPreventsLogin())
+//  }
 
   def tokenUserResponse(token: String, app: Http4sApp): AuthUser = {
     var getUserRequest: Request[IO] = Request[IO](

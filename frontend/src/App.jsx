@@ -17,17 +17,17 @@ export function App() {
       <Box>
         <Box sx={{ my: 2 }}>
           <LoginView/>
-          {/*<Routes>*/}
-          {/*  <Route*/}
-          {/*    path="/"*/}
-          {/*    element={*/}
-          {/*      <div>*/}
-          {/*        <IngredientsView />*/}
-          {/*        <RecipesPossibleView />*/}
-          {/*      </div>*/}
-          {/*    }*/}
-          {/*  />*/}
-          {/*</Routes>*/}
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <div>
+                  <IngredientsView />
+                  <RecipesPossibleView />
+                </div>
+              }
+            />
+          </Routes>
         </Box>
       </Box>
     </ThemeProvider>

@@ -117,13 +117,14 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
     request =>
 
       val header = request.headers.get[Authorization].toList.headOption
+      println("HEADER:" + header.toString)
       val messageEither = header match
         case None => Right("No header found")
         case Some(h) =>
           crypto
             .validateSignedToken(h.credentials.toString.replace("Bearer ", ""))
             .toRight("Token invalid")
-
+      println("Decoded:" + messageEither.toString)
       messageEither match
         case Left(error) => IO(Left(error))
         case Right(userId) =>

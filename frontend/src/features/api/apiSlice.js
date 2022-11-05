@@ -21,7 +21,7 @@ export const apiSlice = createApi({
       return headers
     },
   }),
-  tagTypes: ["User", "Ingredient", "Recipe"],
+  tagTypes: ["User", "Ingredient", "Recipe", "IngredientSet"],
   credentials: 'include',
   endpoints: (builder) => ({
     getTags: builder.query({
@@ -40,6 +40,7 @@ export const apiSlice = createApi({
     }),
     getIngredientSets: builder.query({
       query: () => "/ingredient_sets",
+      providesTags: ['IngredientSet']
     }),
     getRecipes: builder.query({
       query: () => "/recipes",
@@ -60,12 +61,13 @@ export const apiSlice = createApi({
       ],
     }),
     registerUser: builder.mutation({
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'IngredientSet'],
       query: (data) => {
-        const {username, password} = data;
+        const {username, password, isLogin} = data;
         console.log("Data received:" + username + password)
+        const url = isLogin ? "/login" : "/register"
         return ({
-          url: "/register",
+          url: url,
           method: "POST",
           headers: {'authorization': 'Basic ' + base64.encode(username + ":" + password)}
         })

@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "devMock": "NODE_ENV=devMock webpack-dev-server --config ./webpack.dev.js --mode development",
     "devLocal": "NODE_ENV=devLocal webpack-dev-server --config ./webpack.dev.js --mode development",
     "devServer": "NODE_ENV=devServer webpack-dev-server --config ./webpack.dev.js --mode development",
     "devDocker": "NODE_ENV=devDocker webpack-dev-server --config ./webpack.dev.js --mode development",

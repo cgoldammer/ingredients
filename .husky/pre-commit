@@ -1,7 +1,15 @@
-#!/bin/sh
+#!/bin/bash
+set -e
+
 . "$(dirname "$0")/_/husky.sh"
 
 cd frontend
 npm run eslint
 npm run prettier
 npm test
+
+cd ..
+
+cd backend
+scalafmt
+sbt 'testOnly *AuthTests' &&  sbt 'testOnly *DataTests'

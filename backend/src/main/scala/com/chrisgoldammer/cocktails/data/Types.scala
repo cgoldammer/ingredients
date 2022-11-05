@@ -196,7 +196,8 @@ def getSettings(): Option[Settings] =
 def fileLogHandler(le: LogEvent): Unit = {
   val settings = getSettings()
   val logString = time.LocalDateTime.now().toString + ": " + le.sql + "\n"
-  val logFile = "logs/log_" + settings.toString
+  val logFile =
+    "logs/log_" + settings.toString.replace('(', '_').replace(')', '_')
   Files.writeString(Paths.get(logFile), logString, StandardOpenOption.APPEND)
 }
 
