@@ -4,7 +4,7 @@ val LogbackVersion = "1.2.6"
 val MunitCatsEffectVersion = "1.0.6"
 //lazy val DoobieVersion = "1.0-dbf0a76-20220527T014435Z-SNAPSHOT"
 lazy val DoobieVersion = "1.0.0-RC2"
-val ScalaVersion = "3.1.2"
+val ScalaVersion = "3.2.1"
 
 lazy val root = (project in file("."))
   .settings(
@@ -43,6 +43,9 @@ libraryDependencies ++= Seq(
   "io.github.jmcardon" %% "tsec-common" % tsecV,
   "io.github.jmcardon" %% "tsec-password" % tsecV
 )
+
+libraryDependencies += "io.circe" %% "circe-yaml" % "0.14.2"
+resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 // lazy val example = taskKey[Unit]("setupData")
 // fullRunTask(example, Compile, "com.chrisgoldammer.cocktails.data.CallMe")

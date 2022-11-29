@@ -1,0 +1,32 @@
+boulevardier:
+  name: Boulevardier
+  ingredients:
+    - Bourbon
+    - Dry Vermouth
+    - Campari
+  description: The Whiskey sibling of the Negroni
+
+old_fashioned:
+  name: Old Fashioned
+  ingredients:
+    - Bourbon
+    - Sugar
+    - Bitters
+  description: The classic Whisky cocktail
+
+white_lady:
+  name: White Lady
+  ingredients:
+    - Gin
+    - Orange Liquour
+    - Lemon Juice
+    - Egg White
+  description: TODO
+
+negroni:
+  name: Negroni
+  ingredients:
+    - Gin
+    - Campari
+    - Sweet Vermouth
+  description: TODO
