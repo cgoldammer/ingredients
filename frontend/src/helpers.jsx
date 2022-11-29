@@ -6,13 +6,10 @@ import { createTheme } from "@mui/material";
 
 export const boxFormat = {
   display: "grid",
-  gridTemplateColumns: "repeat(2, 1fr)",
   boxShadow: 2,
   marginTop: 2,
   marginBottom: 2,
   padding: 2,
-  width: 500,
-  height: 300,
   ":hover": {
     cursor: "pointer",
   },
@@ -44,5 +41,3 @@ export const getRandomSample = (arr, size) => {
   }
   return shuffled.slice(0, size);
 };
-
-

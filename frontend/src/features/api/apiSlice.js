@@ -1,28 +1,31 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import base64 from "base-64"
+import base64 from "base-64";
 const url = process.env.BACKENDURL;
 console.log("Backend: " + url);
 
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery(
-    { baseUrl: url
-    , prepareHeaders: (headers, { getState, endpoint }) => {
-        const mutations = getState().api.mutations
-        const registerMutations = Object.values(mutations).filter(m => m.endpointName == "registerUser")
-      if (registerMutations.length > 0){
-        const token = registerMutations[0].data
-        console.log("Setting auth header: " + token)
-        console.log("Endpoint:" + endpoint)
+  baseQuery: fetchBaseQuery({
+    baseUrl: url,
+    prepareHeaders: (headers, { getState, endpoint }) => {
+      const mutations = getState().api.mutations;
+      const registerMutations = Object.values(mutations).filter(
+        (m) => m.endpointName == "registerUser"
+      );
+      if (registerMutations.length > 0) {
+        const token = registerMutations[0].data;
         if (token && endpoint != "registerUser") {
-          headers.set('authorization', `Bearer ${token.replace('Bearer ', '')}`)
+          headers.set(
+            "authorization",
+            `Bearer ${token.replace("Bearer ", "")}`
+          );
         }
       }
-      return headers
+      return headers;
     },
   }),
-  tagTypes: ["User", "Ingredient", "Recipe", "IngredientSet"],
-  credentials: 'include',
+  tagTypes: ["User", "Ingredient", "Recipe", "IngredientSet", "Tag"],
+  credentials: "include",
   endpoints: (builder) => ({
     getTags: builder.query({
       query: () => "/tags",
@@ -40,7 +43,7 @@ export const apiSlice = createApi({
     }),
     getIngredientSets: builder.query({
       query: () => "/ingredient_sets",
-      providesTags: ['IngredientSet']
+      providesTags: ["IngredientSet"],
     }),
     getRecipes: builder.query({
       query: () => "/recipes",
@@ -61,21 +64,22 @@ export const apiSlice = createApi({
       ],
     }),
     registerUser: builder.mutation({
-      invalidatesTags: ['User', 'IngredientSet'],
+      invalidatesTags: ["User", "IngredientSet"],
       query: (data) => {
-        const {username, password, isLogin} = data;
-        console.log("Data received:" + username + password)
-        const url = isLogin ? "/login" : "/register"
-        return ({
+        const { username, password, isLogin } = data;
+        const url = isLogin ? "/login" : "/register";
+        return {
           url: url,
           method: "POST",
-          headers: {'authorization': 'Basic ' + base64.encode(username + ":" + password)}
-        })
-      }
+          headers: {
+            authorization: "Basic " + base64.encode(username + ":" + password),
+          },
+        };
+      },
     }),
     getUser: builder.query({
       query: () => "/get_user",
-      providesTags: ['User']
+      providesTags: ["User"],
     }),
   }),
 });

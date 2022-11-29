@@ -8,6 +8,15 @@ var path = require('path');
 var debug = process.env.NODE_ENV !== "production";
 const webpack = require('webpack');
 
+const outputDebug = {
+  path: path.resolve(__dirname, 'lib'),
+    filename: '[name].[fullhash:8].js',
+    sourceMapFilename: '[name].[fullhash:8].map',
+    chunkFilename: '[id].[fullhash:8].js'
+}
+
+const outputNonDebug = { path: __dirname, filename: 'lib/bundle.min.js' }
+
 module.exports = {
   entry: [
     './src/index.js'
@@ -37,7 +46,7 @@ module.exports = {
     extensions: ['*', '.js', '.jsx']
   },
 	devtool: debug ? "eval-source-map" : false,
-  output: { path: __dirname, filename: debug ? 'lib/bundle.js' : 'lib/bundle.min.js' },
+  output: debug ? outputDebug : outputNonDebug,
   plugins: [
     new ReactRefreshWebpackPlugin()
   ],

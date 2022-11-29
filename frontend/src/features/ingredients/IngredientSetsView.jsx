@@ -1,24 +1,18 @@
 import React from "react";
 import { useGetIngredientSetsQuery } from "../api/apiSlice";
 
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
+import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
+
 import { useSelector, useDispatch } from "react-redux";
 import { setIngredientSet, getSelectedSet } from "../../ingredientSetsReducer";
 import { setIngredientsSelectedSimple } from "../../ingredientsReducer";
 
 export function IngredientSetsView() {
   const dispatch = useDispatch();
-  const x = useGetIngredientSetsQuery();
   const { data: ingredientSetsData } = useGetIngredientSetsQuery();
-  console.log("X");
-  console.log(x);
-  console.log(ingredientSetsData);
+
   const { data: ingredientSets } = ingredientSetsData || { data: [] };
-  console.log("Clean");
-  console.log(ingredientSets);
   const setNames = ingredientSets.map((i) => i.name);
   const selectedSet = useSelector(getSelectedSet);
 
@@ -29,25 +23,19 @@ export function IngredientSetsView() {
     dispatch(setIngredientsSelectedSimple(setChanged.ingredients));
   };
   const items = setNames.map((setName) => (
-    <MenuItem key={setName} value={setName}>
+    <Button
+      key={setName}
+      value={setName}
+      onClick={handleChange}
+      variant={selectedSet["name"] == setName ? "contained" : "outlined"}
+    >
       {setName}
-    </MenuItem>
+    </Button>
   ));
 
   return (
-    <FormControl sx={{ m: 1, minWidth: 300 }}>
-      <InputLabel id="demo-simple-select-helper-label">
-        Select set of Ingredients
-      </InputLabel>
-      <Select
-        labelId="demo-simple-select-label"
-        id="demo-simple-select"
-        value={selectedSet["name"] ?? ""}
-        label="Select set of ingredients"
-        onChange={handleChange}
-      >
-        {items}
-      </Select>
-    </FormControl>
+    <ButtonGroup label="Select set of ingredients" onChange={handleChange}>
+      {items}
+    </ButtonGroup>
   );
 }

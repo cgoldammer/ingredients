@@ -16,7 +16,8 @@ const app = (
   </React.StrictMode>
 );
 
-worker.start();
+worker.start({
+  onUnhandledRequest: "bypass",
+});
 
-ReactDOM.render(app, document.getElementById("app"));
-module.hot.accept();
+ReactDOM.render(app, document.getElementById("root"));

@@ -7,8 +7,6 @@ export const ingredientSetSelectedSlice = createSlice({
   },
   reducers: {
     setIngredientSet: (state, actions) => {
-      console.log("ACTION");
-      console.log(actions.payload);
       state.value = actions.payload;
     },
   },

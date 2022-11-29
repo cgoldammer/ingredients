@@ -3,6 +3,7 @@ import { useGetRecipesPossibleQuery } from "../api/apiSlice";
 import { RecipeView } from "./RecipeView";
 import { useSelector } from "react-redux";
 import { getIngredientsSelected } from "../../store";
+import Grid from "@mui/material/Unstable_Grid2";
 
 export function RecipesPossibleView() {
   const ingredientsSelected = useSelector(getIngredientsSelected);
@@ -10,16 +11,17 @@ export function RecipesPossibleView() {
     data: ingredientsSelected.map((i) => i.uuid),
     name: "Selected",
   };
-  console.log("POST DATA");
-  console.log(postData);
-
   const { data = { data: [] } } = useGetRecipesPossibleQuery(postData);
-  console.log("DATA IS");
-  console.log(data);
-  const divs = data.data.map(RecipeView);
+  const divs = data.data.map((recipe) => (
+    <Grid sm={10} md={5} key={recipe.uuid}>
+      {RecipeView(recipe)}
+    </Grid>
+  ));
   return (
     <div>
-      <div>{divs}</div>
+      <Grid container spacing={2}>
+        {divs}
+      </Grid>
     </div>
   );
 }

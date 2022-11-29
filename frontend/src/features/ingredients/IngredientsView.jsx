@@ -12,12 +12,12 @@ import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  setIngredientsSelected,
   removeIngredientsSelected,
   addIngredientsSelected,
 } from "../../ingredientsReducer";
 import PropTypes from "prop-types";
 import { IngredientSetsView } from "./IngredientSetsView";
+import Grid from "@mui/material/Unstable_Grid2";
 
 import { getIngredientsSelected } from "../../store";
 
@@ -46,7 +46,7 @@ export function IngredientsAdditionView() {
   const ingredientsSelected = useSelector(getIngredientsSelected);
 
   const { data = { data: [] } } = useGetIngredientsQuery() || {};
-  const { data: ingredients = [] } = data || {};
+  const { data: ingredients } = data || {};
 
   const ingredientsNotSelected = ingredients.filter(
     (v) => !ingredientsSelected.map((r) => r.uuid).includes(v.uuid)
@@ -103,6 +103,7 @@ export function IngredientsWithTagView(props) {
   const ingredientsSelected = useSelector(
     (state) => state.ingredientsSelected.values
   );
+
   const allIds = ingredients.map((i) => i.uuid);
   const ingredientsDisplayable = ingredientsSelected
     .filter((i) => allIds.includes(i.uuid))
@@ -114,20 +115,7 @@ export function IngredientsWithTagView(props) {
 
     const uuids = value.map((v) => v.uuid);
 
-    const additions = uuids.filter(
-      (v) => !ingredientsSelected.map((i) => i.uuid).includes(v.uuid)
-    );
-    const removals = ingredientsDisplayable.filter(
-      (v) => !value.map((i) => i.uuid).includes(v.uuid)
-    );
-
-    dispatch(
-      setIngredientsSelected({
-        tag: tagName,
-        additions: additions,
-        removals: removals,
-      })
-    );
+    dispatch(addIngredientsSelected(uuids));
   };
 
   return (
@@ -166,8 +154,8 @@ export function IngredientsWithTagView(props) {
 }
 
 IngredientsWithTagView.propTypes = {
-  ingredients: PropTypes.list,
-  tagName: PropTypes.String,
+  ingredients: PropTypes.array,
+  tagName: PropTypes.string,
 };
 
 const splitByTag = (ingredients, tags) => {
@@ -187,33 +175,36 @@ export function IngredientsView() {
   const { data: tagsData } = useGetTagsQuery() || {};
   const { data: tags = [] } = tagsData || {};
 
-  console.log("Ingredients for view:" + ingredients.length);
+  const ingredientsSelected = useSelector(getIngredientsSelected);
+  const ingredientsNotSelected = ingredients.filter(
+    (v) => !ingredientsSelected.map((r) => r.uuid).includes(v.uuid)
+  );
 
   var splitIngredients = splitByTag(
-    ingredients,
+    ingredientsNotSelected,
     tags.map((t) => t.name)
   );
   var vals = Object.keys(splitIngredients);
   const views = vals.map((t) => (
-    <div key={t}>
+    <Grid xs={6} key={t}>
       <IngredientsWithTagView tagName={t} ingredients={splitIngredients[t]} />
-    </div>
+    </Grid>
   ));
 
   return (
     <div>
-      <div>
-        <span>Sets: </span>
-        <IngredientSetsView />
-      </div>
-      <div>
-        <span>Selected Ingredients: </span>
-        <IngredientsSelectedView />
-      </div>
-      <div>
-        <IngredientsAdditionView />
-      </div>
-      <div>{views}</div>
+      <Grid container spacing={1}>
+        <Grid xs={2}>Sets: </Grid>
+        <Grid xs={9}>
+          <IngredientSetsView />
+        </Grid>
+        <Grid xs={2}>Selected: </Grid>
+        <Grid xs={9}>
+          <IngredientsSelectedView />
+        </Grid>
+        <Grid xs={2}>Add: </Grid>
+        <Grid xs={9}>{views}</Grid>
+      </Grid>
     </div>
   );
 }

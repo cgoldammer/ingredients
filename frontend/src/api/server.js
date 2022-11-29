@@ -1,6 +1,6 @@
 import { rest, setupWorker } from "msw";
 import { factory, manyOf, primaryKey } from "@mswjs/data";
-import faker from "faker";
+import { faker } from "@faker-js/faker";
 import seedrandom from "seedrandom";
 import { setRandom } from "txtgen";
 import { getRange, getRandomSample } from "../helpers";
@@ -11,7 +11,6 @@ const NUM_INGREDIENTS_PER_RECIPE = 2;
 const NUM_RECIPES = 5;
 const NUM_TAGS = 1;
 const NUM_TAGS_PER_INGREDIENT = 1;
-const NUM_USERS = 2;
 
 /* RNG setup */
 // Set up a seeded random number generator, so that we get
@@ -56,6 +55,7 @@ export const db = factory({
     uuid: primaryKey(String),
     name: String,
     ingredients: manyOf("ingredient"),
+    description: String,
   },
 });
 
@@ -67,30 +67,18 @@ const createTagData = () => {
 
 const createIngredientData = (tags) => {
   return {
-    uuid: faker.random.uuid(),
-    name: faker.commerce.product(),
+    uuid: faker.datatype.uuid(),
+    name: faker.helpers.unique(faker.commerce.product),
     tags: tags,
   };
 };
 
 const createFullRecipeData = (ingredients) => {
   return {
-    uuid: faker.random.uuid(),
+    uuid: faker.datatype.uuid(),
     name: faker.commerce.productName(),
     ingredients: ingredients,
-  };
-};
-
-const createUserData = () => {
-  return {
-    uuid: faker.random.uuid(),
-    name: faker.internet.userName(),
-  };
-};
-
-const serializeUser = (user) => {
-  return {
-    ...user,
+    description: faker.lorem.paragraphs(1),
   };
 };
 
@@ -113,13 +101,6 @@ const serializeTag = (tag) => {
 };
 
 const tags = getRange(NUM_TAGS).map(() => db.tag.create(createTagData()));
-
-const users = getRange(NUM_USERS).map(() => {
-  return db.user.create(createUserData())
-});
-
-console.log("Users")
-console.log(users)
 
 for (let i = 0; i < NUM_RECIPES; i++) {
   const ingredients = getRange(NUM_INGREDIENTS_PER_RECIPE).map(() => {
@@ -150,7 +131,7 @@ export const handlers = [
     const firstHalf = getRange(parseInt(data.length / 2));
     const firstHalfSet = firstHalf.map((i) => data[i].uuid);
     const ingredientSets = {
-      data: [{ name: "firstHalf", uuid: "123", ingredients: firstHalfSet}],
+      data: [{ name: "firstHalf", uuid: "123", ingredients: firstHalfSet }],
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredientSets));
   }),
@@ -170,4 +151,3 @@ export const handlers = [
 ];
 
 export const worker = setupWorker(...handlers);
-worker.printHandlers();

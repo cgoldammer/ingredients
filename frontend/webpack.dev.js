@@ -1,19 +1,19 @@
 const merge = require('webpack-merge').merge;
 const webpack = require('webpack');
 const common = require('./webpack.common.js');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const devServer = {
   static: './serve_content',
-    port: 8082,
-    host: '0.0.0.0',
-    historyApiFallback: false,
-    hot: true,
-    allowedHosts: "all",
-
-    headers: {
-    "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-      "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
+  port: 8082,
+  host: '0.0.0.0',
+  historyApiFallback: false,
+  hot: true,
+  allowedHosts: "all",
+  headers: {
+  "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+    "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
   }
 }
 
@@ -42,11 +42,23 @@ const devExports = modeVal => {
     devServer: devServer,
     mode: 'development',
     devtool: "eval-source-map",
+    entry: {
+      app: './src/index.js'
+    },
+    optimization: {
+      runtimeChunk: 'single'
+    },
     plugins: [
       new webpack.ProvidePlugin({
         process: 'process/browser',
       }),
-      new webpack.EnvironmentPlugin(features)
+
+      new webpack.EnvironmentPlugin(features),
+      new HtmlWebpackPlugin({
+        template: './serve_content/index_old.html',
+        filename: 'index.html',
+        inject: 'body'
+      })
     ]
   }
 }
