@@ -1,6 +1,7 @@
 package com.chrisgoldammer.cocktails.data
 
 import cats.data.NonEmptyList
+import cats.implicits.catsSyntaxApplicativeId
 import cats.implicits.toFoldableOps
 import cats.syntax.traverse.*
 import doobie.ConnectionIO
@@ -176,6 +177,30 @@ def insertIngredientSetIngredient(
 ): ConnectionIO[StoredElement[IngredientSetIngredient]] = {
   sql"INSERT INTO ingredient_set_ingredients (ingredient_set_id, ingredient_id) values ($setId, $ingredientId)".update
     .withUniqueGeneratedKeys("id", "ingredient_set_id", "ingredient_id")
+}
+
+def bulkInsertIngredientSetIngredientWithValues(
+    setId: Int,
+    ingredientUuids: NonEmptyList[String]
+): ConnectionIO[List[Int]] = {
+  val inFragment = Fragments.in(fr"i.uuid", ingredientUuids)
+
+  val insertSql =
+    sql"""
+    INSERT INTO ingredient_set_ingredients (ingredient_set_id, ingredient_id)
+    SELECT ? AS ingredient_set_id, ingredient_id
+    FROM ingredients WHERE uuid """ ++ inFragment
+  insertSql.update.withUniqueGeneratedKeys[List[Int]]("id")
+}
+
+def bulkInsertIngredientSetIngredient(
+    setId: Int,
+    ingredientUuids: List[String]
+): ConnectionIO[List[Int]] = {
+  NonEmptyList
+    .fromList(ingredientUuids)
+    .map(sn => bulkInsertIngredientSetIngredientWithValues(setId, sn))
+    .getOrElse(List[Int]().pure[ConnectionIO])
 }
 
 def insertIngredientTag(

@@ -199,6 +199,23 @@ def insertFromSetupDataIO(
   )
 } yield None
 
+def saveIngredientSet(
+    userId: Int,
+    name: String,
+    ingredientUuids: List[String]
+): ConnectionIO[Unit] = {
+  for {
+    setCreated <- insertIngredientSet(name, userId)
+    _ <- bulkInsertIngredientSetIngredient(setCreated.id, ingredientUuids)
+  } yield setCreated
+}
+
+//mIngredientSets
+//<- sd.ingredientSets.keys.toList.traverse(s =>
+//  insertIngredientSet(s, users.head.get.id)
+//)
+//
+
 def getTransactor(dbSetup: DBSetup): Transactor[IO] =
   Transactor.fromDriverManager[IO](
     "org.postgresql.Driver", // driver classname
@@ -219,5 +236,11 @@ class DataTools(dbSetup: DBSetup):
     getRecipesForIngredientsIO(ingredientUids).transact(xa)
   def getIngredientSets(userUuid: String): IO[List[FullIngredientSet]] =
     getIngredientSetsIO(userUuid).transact(xa)
+
+  def saveIngredientSetIO(
+      userId: Int,
+      name: String,
+      ingredientUuids: List[String]
+  ): IO[Unit] = saveIngredientSet(userId, name, ingredientUuids).transact(xa)
 
 object DataTools {}

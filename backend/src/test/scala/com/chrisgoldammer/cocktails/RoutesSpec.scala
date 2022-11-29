@@ -113,10 +113,38 @@ def check[A](
   statusCheck && bodyCheck
 }
 
+class DataTestAuth extends CatsEffectSuite:
+  val dbSetup = Settings.TestLocal.getSetup()
+  val blockingPool = Executors.newFixedThreadPool(5)
+  val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
+
+//  test("I can insert ingredient sets by uuid list") {
+//    resetDB(dbSetup)
+//    insertDB(dbSetup)
+//    val app = getAppForTesting()
+//
+//    val userFromFixturesWithSet = user0
+//    val tokenOption = getToken(app, userFromFixturesWithSet, isLogin = true)
+//    val headers = tokenOption.fold(Headers.empty)(getHeaderFromToken)
+//
+//    /*
+//    Todo:
+//    Get ingredient uuids from db
+//    Turn user id + uuids into a `case class addSetData`
+//    POST this
+//
+//    Then check that both set and ingredients are stored.
+//     */
+//
+//    addIngredientSetData = ???
+//
+//    val req = POST(addIngredientSetData.asJson, uri"/saveIngredientSet")
+//
+//  }
+
 class DataTests extends CatsEffectSuite:
 
   val dbSetup = Settings.TestLocal.getSetup()
-
   val blockingPool = Executors.newFixedThreadPool(5)
   val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
 
