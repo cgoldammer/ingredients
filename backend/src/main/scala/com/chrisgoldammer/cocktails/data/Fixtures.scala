@@ -1,17 +1,21 @@
 package com.chrisgoldammer.cocktails.data
 
 import java.util.UUID.randomUUID
-
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 import doobie.util.ExecutionContexts
-import org.http4s.BasicCredentials
-import org.http4s.Request
-
+import org.http4s.{BasicCredentials, EntityDecoder, Request}
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
+import _root_.io.circe.yaml.parser
+import cats.effect.IO
+import io.circe.parser.parser
+import cats.implicits.catsSyntaxEither
+import io.circe.Decoder
+import io.circe.generic.semiauto.deriveDecoder
+
+import scala.io.Source
 
 val homeIngredients = List(
   "Gin",
@@ -46,7 +50,20 @@ val ingredientData: List[IngredientDataRaw] = List(
   IngredientDataRaw("Lemon Juice", List("Juice")),
   IngredientDataRaw("Egg White", List("Other"))
 )
-val recipeNames = Map(
+
+val yaml = Source.fromResource("./fixtures_recipes.yaml").getLines.mkString("\n")
+
+val json = parser.parse(yaml)
+case class RecipeData(name: String, ingredients: List[String], description: String)
+
+implicit val decRD: Decoder[RecipeData] = deriveDecoder
+
+val recipeData : List[RecipeData] = json
+  .leftMap(err => err: io.circe.ParsingFailure)
+  .flatMap(_.as[Map[String, RecipeData]])
+  .valueOr(throw _).values.toList
+
+val recipeNames: Map[String, List[String]] = Map(
   "Boulevardier" -> List("Bourbon", "Dry Vermouth", "Campari"),
   "Old Fashioned" -> List("Bourbon", "Sugar", "Bitters"),
   "White Lady" -> List("Gin", "Orange Liquour", "Lemon Juice", "Egg White"),
@@ -57,13 +74,13 @@ val user0 = BasicCredentials("testUser", "testPassword")
 
 case class SetupData(
     ingredientData: List[IngredientDataRaw],
-    recipeNames: Map[String, List[String]],
+    recipeData: List[RecipeData],
     ingredientSets: Map[String, List[String]],
     users: List[BasicCredentials]
 )
 val setupDataSimple = SetupData(
   ingredientData = ingredientData,
-  recipeNames = recipeNames,
+  recipeData = recipeData,
   ingredientSets = ingredientSets,
   users = List(user0)
 )

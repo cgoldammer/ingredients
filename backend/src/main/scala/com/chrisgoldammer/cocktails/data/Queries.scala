@@ -56,6 +56,7 @@ CREATE TABLE recipes (
 id SERIAL,
 name VARCHAR NOT NULL UNIQUE,
 uuid VARCHAR NOT NULL UNIQUE,
+description VARCHAR,
 PRIMARY KEY(id)
 )
 """
@@ -230,10 +231,10 @@ def insertRecipeIngredient(
     .withUniqueGeneratedKeys("id", "recipe_id", "ingredient_id")
 }
 
-def insertRecipe(name: String): ConnectionIO[StoredElement[Recipe]] = {
+def insertRecipe(name: String, description: String): ConnectionIO[StoredElement[Recipe]] = {
   val uuid = getUuid()
-  sql"INSERT INTO recipes (name, uuid) values ($name, $uuid)".update
-    .withUniqueGeneratedKeys("id", "name", "uuid")
+  sql"INSERT INTO recipes (name, uuid, description) values ($name, $uuid, $description)".update
+    .withUniqueGeneratedKeys("id", "name", "uuid", "description")
 }
 
 def searchQuery(ingredientUuids: NonEmptyList[String]) = {

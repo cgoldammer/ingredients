@@ -159,19 +159,19 @@ def insertFromSetupDataIO(
     }
   )
 
-  mRecipes <- sd.recipeNames.keys.toList.traverse(insertRecipe)
-//
-  ids: Map[Int, Int] = for {
-    (recipeName, recipeIngredientNames) <- sd.recipeNames
-    recipeIngredientName <- recipeIngredientNames
+  mRecipes <- sd.recipeData.traverse((rd: RecipeData) => insertRecipe(rd.name, rd.description))
+
+  ids: List[(Int, Int)] = for {
+    rd <- sd.recipeData
+    recipeIngredientName <- rd.ingredients
   } yield {
-    val recipeId = getRecipeByName(mRecipes.toList, recipeName).id
+    val recipeId = getRecipeByName(mRecipes.toList, rd.name).id
     val ingredientId =
       getIngredientByName(mIngredients, recipeIngredientName).id
     (recipeId, ingredientId)
   }
 
-  mRecipeIngredients <- ids.toList.traverse(x =>
+  mRecipeIngredients <- ids.traverse(x =>
     x match {
       case (recipeId: Int, ingredientId: Int) =>
         insertRecipeIngredient(recipeId, ingredientId)
@@ -207,14 +207,9 @@ def saveIngredientSet(
   for {
     setCreated <- insertIngredientSet(name, userId)
     _ <- bulkInsertIngredientSetIngredient(setCreated.id, ingredientUuids)
-  } yield setCreated
+  } yield None
 }
 
-//mIngredientSets
-//<- sd.ingredientSets.keys.toList.traverse(s =>
-//  insertIngredientSet(s, users.head.get.id)
-//)
-//
 
 def getTransactor(dbSetup: DBSetup): Transactor[IO] =
   Transactor.fromDriverManager[IO](
