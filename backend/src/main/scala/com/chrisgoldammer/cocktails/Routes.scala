@@ -21,6 +21,7 @@ import org.http4s.implicits.*
 import org.http4s.server.*
 import org.http4s.server.middleware._
 
+
 import com.chrisgoldammer.cocktails.*
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.*
@@ -73,7 +74,12 @@ def authedRoutes(dt: DataTools): AuthedRoutes[AuthUser, IO] =
         resp <- Ok(ing)
       } yield resp
     }
-
+    case req @ POST -> Root / "add_ingredient_set" as user => for {
+      isl <- req.req.as[InsertIngredientSetData]
+      _ <- IO(println("user decoded: " + user.toString))
+      res <- dt.bulkCreateIngredientSetIO(setName=isl.setName, user.id, isl.ingredientUuids)
+      resp <- Ok(res.asJson)
+    }  yield  resp
   }
 
 def openRoutes(dt: DataTools, af: AuthFunctions) = {

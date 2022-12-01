@@ -159,7 +159,9 @@ def insertFromSetupDataIO(
     }
   )
 
-  mRecipes <- sd.recipeData.traverse((rd: RecipeData) => insertRecipe(rd.name, rd.description))
+  mRecipes <- sd.recipeData.traverse((rd: RecipeData) =>
+    insertRecipe(rd.name, rd.description)
+  )
 
   ids: List[(Int, Int)] = for {
     rd <- sd.recipeData
@@ -199,17 +201,16 @@ def insertFromSetupDataIO(
   )
 } yield None
 
-def saveIngredientSet(
-    userId: Int,
-    name: String,
-    ingredientUuids: List[String]
-): ConnectionIO[Unit] = {
-  for {
-    setCreated <- insertIngredientSet(name, userId)
-    _ <- bulkInsertIngredientSetIngredient(setCreated.id, ingredientUuids)
-  } yield None
-}
-
+//def saveIngredientSet(
+//    userId: Int,
+//    name: String,
+//    ingredientUuids: List[String]
+//): ConnectionIO[Unit] = {
+//  for {
+//    setCreated <- insertIngredientSet(name, userId)
+//    _ <- bulkInsertIngredientSetIngredient(setCreated.id, ingredientUuids)
+//  } yield None
+//}
 
 def getTransactor(dbSetup: DBSetup): Transactor[IO] =
   Transactor.fromDriverManager[IO](
@@ -232,10 +233,16 @@ class DataTools(dbSetup: DBSetup):
   def getIngredientSets(userUuid: String): IO[List[FullIngredientSet]] =
     getIngredientSetsIO(userUuid).transact(xa)
 
-  def saveIngredientSetIO(
-      userId: Int,
-      name: String,
-      ingredientUuids: List[String]
-  ): IO[Unit] = saveIngredientSet(userId, name, ingredientUuids).transact(xa)
+//  def saveIngredientSetIO(
+//      userId: Int,
+//      name: String,
+//      ingredientUuids: List[String]
+//  ): IO[Unit] = saveIngredientSet(userId, name, ingredientUuids).transact(xa)
+
+  def bulkCreateIngredientSetIO(
+                                 setName: String,
+                                 userUuid: String,
+                           ingredientUuids: List[String]
+                         ): IO[Int] = bulkCreateIngredientSet(setName, userUuid, ingredientUuids).transact(xa)
 
 object DataTools {}

@@ -24,7 +24,21 @@ import org.http4s.client.JavaNetClientBuilder
 import org.http4s.headers.*
 import org.http4s.implicits.uri
 import org.typelevel.ci.*
+import org.http4s.dsl.io.POST
+import org.http4s.client.dsl.io.*
+import org.http4s.circe.jsonEncoder
+import org.http4s.circe.CirceEntityCodec.circeEntityDecoder
 
+
+import _root_.io.circe.Decoder
+import _root_.io.circe.Encoder
+import _root_.io.circe.Json
+import _root_.io.circe.generic.auto.*
+import _root_.io.circe.generic.semiauto.deriveDecoder
+import _root_.io.circe.generic.semiauto.deriveEncoder
+import _root_.io.circe.syntax.EncoderOps
+
+import doobie.implicits.toSqlInterpolator
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
@@ -33,6 +47,10 @@ import junit.framework.TestSuite
 import munit.CatsEffectSuite
 import munit.FunSuite
 import sun.net.www.http.HttpClient
+
+import _root_.io.circe.*
+import _root_.io.circe.generic.semiauto.*
+import _root_.io.circe.syntax.*
 
 def resetDB(dbSetup: DBSetup) = {
   val dt = DataTools(dbSetup)
@@ -64,7 +82,6 @@ def getAppForTesting(): Http4sApp = {
 def parseResponse(r: IO[Response[IO]]): Option[String] = {
   val res = r.unsafeRunSync()
   val body = res.as[String].unsafeRunSync()
-  print(res.status)
   res.status match
     case Status.Ok => Some(body)
     case _         => None
@@ -82,7 +99,6 @@ def getToken(
   val registerIO = app.run(registerRequest)
   try {
     val token = parseResponse(registerIO)
-    println("Register sends: " + token.toString)
     return token
   } catch {
     case e: org.http4s.MalformedMessageBodyFailure => {
@@ -118,29 +134,54 @@ class DataTestAuth extends CatsEffectSuite:
   val blockingPool = Executors.newFixedThreadPool(5)
   val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
 
-//  test("I can insert ingredient sets by uuid list") {
-//    resetDB(dbSetup)
-//    insertDB(dbSetup)
-//    val app = getAppForTesting()
-//
-//    val userFromFixturesWithSet = user0
-//    val tokenOption = getToken(app, userFromFixturesWithSet, isLogin = true)
-//    val headers = tokenOption.fold(Headers.empty)(getHeaderFromToken)
-//
-//    /*
-//    Todo:
-//    Get ingredient uuids from db
-//    Turn user id + uuids into a `case class addSetData`
-//    POST this
-//
-//    Then check that both set and ingredients are stored.
-//     */
-//
-//    addIngredientSetData = ???
-//
-//    val req = POST(addIngredientSetData.asJson, uri"/saveIngredientSet")
-//
-//  }
+  test("I can insert ingredient sets by uuid list") {
+    resetDB(dbSetup)
+    insertDB(dbSetup)
+    val dt = DataTools(dbSetup)
+    val app = getAppForTesting()
+
+    val user = user0
+    val userName = user.username
+    val tokenOption = getToken(app, user, isLogin = true)
+    assert(tokenOption.nonEmpty)
+    val headers = tokenOption.fold(Headers.empty)(getHeaderFromToken)
+
+    val countIng = getCount("ingredient_set_ingredients")
+    val countSet = getCount("ingredient_sets")
+
+
+    def getCounts(): (Int, Int) = {
+      val q = for {
+        set <- countSet
+        ing <- countIng
+      } yield (set, ing)
+      q.transact(dt.xa).unsafeRunSync()
+    }
+
+    val (setBefore, ingBefore) = getCounts()
+    val ingredientIds: List[String] = sql"""SELECT uuid FROM ingredients""".query[String].to[List].transact(dt.xa).unsafeRunSync()
+    val addIngredientSetData = InsertIngredientSetData("Test", ingredientIds)
+    val req = POST(addIngredientSetData.asJson, uri"/add_ingredient_set", headers)
+    val res : Int = app.run(req).flatMap(_.as[Int]).unsafeRunSync()
+    val (setAfter, ingAfter) = getCounts()
+
+    assert(setBefore + 1 == setAfter)
+    assert(ingBefore + ingredientIds.size == ingAfter)
+  }
+
+class HandlerTests extends CatsEffectSuite:
+
+  val dbSetup = Settings.TestLocal.getSetup()
+  val blockingPool = Executors.newFixedThreadPool(5)
+  val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
+  val dt = DataTools(dbSetup)
+
+  test("getCount works with existing table") {
+    resetDB(dbSetup)
+    insertDB(dbSetup)
+    val counts : Int = getCount("ingredients").transact(dt.xa).unsafeRunSync()
+    assert(counts > 0)
+  }
 
 class DataTests extends CatsEffectSuite:
 
@@ -233,8 +274,6 @@ class AuthTests extends CatsEffectSuite:
     val app = getAppForTesting()
     val userFromFixturesWithSet = user0
     val tokenOption = getToken(app, userFromFixturesWithSet, isLogin = true)
-    println("\nToken:" + tokenOption.toString)
-//    print(tokenOption)
     assert(tokenOption.nonEmpty)
   }
 

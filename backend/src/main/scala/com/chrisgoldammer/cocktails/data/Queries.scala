@@ -5,18 +5,20 @@ import cats.implicits.catsSyntaxApplicativeId
 import cats.implicits.toFoldableOps
 import cats.syntax.traverse.*
 import doobie.ConnectionIO
+import doobie.PreparedStatementIO
 import doobie.Fragments
 import doobie.HC
 import doobie.HPS
+import doobie.Update
 import doobie.hi.connection
 import doobie.implicits.toSqlInterpolator
 import doobie.postgres.*
 import doobie.postgres.implicits.*
+import cats.effect.IO
+import fs2.Stream
 
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.types.*
-
-import fs2.Stream
 
 val createUsers =
   """
@@ -98,7 +100,7 @@ val createIngredientSets =
   """
 CREATE TABLE ingredient_sets (
 id SERIAL,
-name VARCHAR NOT NULL UNIQUE,
+name VARCHAR NOT NULL,
 uuid VARCHAR NOT NULL UNIQUE,
 user_id INT NOT NULL,
 PRIMARY KEY(id),
@@ -183,25 +185,38 @@ def insertIngredientSetIngredient(
 def bulkInsertIngredientSetIngredientWithValues(
     setId: Int,
     ingredientUuids: NonEmptyList[String]
-): ConnectionIO[List[Int]] = {
+): ConnectionIO[Int] = {
   val inFragment = Fragments.in(fr"i.uuid", ingredientUuids)
 
   val insertSql =
     sql"""
     INSERT INTO ingredient_set_ingredients (ingredient_set_id, ingredient_id)
-    SELECT ? AS ingredient_set_id, ingredient_id
-    FROM ingredients WHERE uuid """ ++ inFragment
-  insertSql.update.withUniqueGeneratedKeys[List[Int]]("id")
+    SELECT $setId AS ingredient_set_id, id AS ingredient_id
+    FROM ingredients i WHERE """ ++ inFragment
+  insertSql.update.run
 }
+
+def bulkCreateIngredientSet(
+    setName: String, userUuid: String, ingredientUuids: List[String]): ConnectionIO[Int] = for {
+  userIdOption <- getUserIdByUuid(userUuid)
+  ids <- userIdOption match {
+    case Some(userId) => for {
+      insertedSet <- insertIngredientSet(setName, userId)
+      ids <- bulkInsertIngredientSetIngredient(insertedSet.id, ingredientUuids)
+//      ids = List()
+    } yield ids
+    case None => 0.pure[ConnectionIO]
+  }
+} yield ids
 
 def bulkInsertIngredientSetIngredient(
     setId: Int,
     ingredientUuids: List[String]
-): ConnectionIO[List[Int]] = {
+): ConnectionIO[Int] = {
   NonEmptyList
     .fromList(ingredientUuids)
     .map(sn => bulkInsertIngredientSetIngredientWithValues(setId, sn))
-    .getOrElse(List[Int]().pure[ConnectionIO])
+    .getOrElse(0.pure[ConnectionIO])
 }
 
 def insertIngredientTag(
@@ -231,11 +246,18 @@ def insertRecipeIngredient(
     .withUniqueGeneratedKeys("id", "recipe_id", "ingredient_id")
 }
 
-def insertRecipe(name: String, description: String): ConnectionIO[StoredElement[Recipe]] = {
+def insertRecipe(
+    name: String,
+    description: String
+): ConnectionIO[StoredElement[Recipe]] = {
   val uuid = getUuid()
   sql"INSERT INTO recipes (name, uuid, description) values ($name, $uuid, $description)".update
     .withUniqueGeneratedKeys("id", "name", "uuid", "description")
 }
+
+
+def getUserIdByUuid(uuid: String): ConnectionIO[Option[Int]] =
+  sql"""SELECT id FROM users WHERE uuid=$uuid""".query[Int].to[List].map(_.headOption)
 
 def searchQuery(ingredientUuids: NonEmptyList[String]) = {
   val inFragment = Fragments.in(fr"i.uuid", ingredientUuids)
@@ -294,3 +316,9 @@ with base AS (
 SELECT id, min(name) as name, min(uuid) as uuid, array_agg(ingredient_uuid) as ingredient_uuids
 FROM base group by id
 """
+
+def getCount(tableName: String): ConnectionIO[Int] = {
+  val sqlString = f"SELECT count(*) FROM $tableName"
+  val sql = HC.stream[(Int)](sqlString, ().pure[PreparedStatementIO], 512)
+  sql.compile.toList.map(_.head)
+}

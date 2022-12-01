@@ -108,6 +108,8 @@ case class MFullRecipe(
     ingredients: List[StoredElement[Ingredient]]
 )
 
+case class InsertIngredientSetData(setName: String, ingredientUuids: List[String])
+
 case class Results[T](data: List[T], name: String = "Default")
 
 case class IngredientDataRaw(name: String, IngredientTagNames: List[String])
@@ -137,6 +139,11 @@ implicit val decRR24: EntityDecoder[IO, Results[FullIngredientSet]] =
 
 implicit val decRR42: Decoder[Results[FullIngredient]] = deriveDecoder
 implicit val encRR42: Encoder[Results[FullIngredient]] = deriveEncoder
+
+implicit val decISD: Decoder[InsertIngredientSetData] = deriveDecoder
+implicit val encISD: Encoder[InsertIngredientSetData] = deriveEncoder
+implicit val decISD2: EntityDecoder[IO, InsertIngredientSetData] =
+  jsonOf[IO, InsertIngredientSetData]
 
 implicit val decISL: Decoder[Results[String]] = deriveDecoder
 implicit val encISL: Encoder[Results[String]] = deriveEncoder
