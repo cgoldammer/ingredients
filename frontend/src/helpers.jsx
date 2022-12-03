@@ -39,5 +39,19 @@ export const getRandomSample = (arr, size) => {
     shuffled[index] = shuffled[i];
     shuffled[i] = temp;
   }
+
   return shuffled.slice(0, size);
+};
+
+export const getRandomSampleShare = (arr, share) =>
+  getRandomSample(arr, Math.floor(arr.length * share));
+
+const valuesNotFoundInRight = (a, b) => a.filter((e) => !b.includes(e));
+
+export const listElementsAreIdentical = (a, b) => {
+  const valuesNotFound =
+    a.length > b.length
+      ? valuesNotFoundInRight(a, b)
+      : valuesNotFoundInRight(b, a);
+  return valuesNotFound.length == 0;
 };

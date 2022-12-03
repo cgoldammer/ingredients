@@ -81,6 +81,18 @@ export const apiSlice = createApi({
       query: () => "/get_user",
       providesTags: ["User"],
     }),
+    addIngredientSet: builder.mutation({
+      invalidatesTags: ["IngredientSet"],
+      query: (data) => {
+        console.log("DATA");
+        console.log(data);
+        return {
+          url: "/add_ingredient_set",
+          method: "POST",
+          body: data,
+        };
+      },
+    }),
   }),
 });
 
@@ -92,6 +104,7 @@ export const {
   useGetRecipesPossibleQuery,
   useRegisterUserMutation,
   useGetUserQuery,
+  useAddIngredientSetMutation,
 } = apiSlice;
 
 /* Login process:

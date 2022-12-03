@@ -3,7 +3,7 @@ import { factory, manyOf, primaryKey } from "@mswjs/data";
 import { faker } from "@faker-js/faker";
 import seedrandom from "seedrandom";
 import { setRandom } from "txtgen";
-import { getRange, getRandomSample } from "../helpers";
+import { getRange, getRandomSample, getRandomSampleShare } from "../helpers";
 
 // Add an extra delay to all endpoints, so loading spinners show up.
 const ARTIFICIAL_DELAY_MS = 1;
@@ -11,6 +11,7 @@ const NUM_INGREDIENTS_PER_RECIPE = 2;
 const NUM_RECIPES = 5;
 const NUM_TAGS = 1;
 const NUM_TAGS_PER_INGREDIENT = 1;
+const NUM_SETS = 3;
 
 /* RNG setup */
 // Set up a seeded random number generator, so that we get
@@ -57,6 +58,10 @@ export const db = factory({
     ingredients: manyOf("ingredient"),
     description: String,
   },
+  ingredientSet: {
+    name: primaryKey(String),
+    ingredients: Array,
+  },
 });
 
 const createTagData = () => {
@@ -79,6 +84,16 @@ const createFullRecipeData = (ingredients) => {
     name: faker.commerce.productName(),
     ingredients: ingredients,
     description: faker.lorem.paragraphs(1),
+  };
+};
+
+const createIngredientSet = (
+  ingredientUuids,
+  name = faker.helpers.unique(faker.commerce.product)
+) => {
+  return {
+    name: name,
+    ingredients: ingredientUuids,
   };
 };
 
@@ -110,6 +125,12 @@ for (let i = 0; i < NUM_RECIPES; i++) {
   db.fullRecipe.create(createFullRecipeData(ingredients));
 }
 
+for (let i = 0; i < NUM_SETS; i++) {
+  const ingredients = db.ingredient.getAll().map((i) => i.uuid);
+  const newSet = createIngredientSet(getRandomSampleShare(ingredients, 0.5));
+  db.ingredientSet.create(newSet);
+}
+
 export const handlers = [
   rest.get("/fakeApi/ingredients", (req, res, ctx) => {
     const ingredients = {
@@ -124,16 +145,8 @@ export const handlers = [
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(tags));
   }),
   rest.get("/fakeApi/ingredient_sets", (req, res, ctx) => {
-    const ingredientsData = {
-      data: db.ingredient.getAll().map(serializeIngredient),
-    };
-    const { data = [] } = ingredientsData || [];
-    const firstHalf = getRange(parseInt(data.length / 2));
-    const firstHalfSet = firstHalf.map((i) => data[i].uuid);
-    const ingredientSets = {
-      data: [{ name: "firstHalf", uuid: "123", ingredients: firstHalfSet }],
-    };
-    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(ingredientSets));
+    const sets = db.ingredientSet.getAll();
+    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json({ data: sets }));
   }),
   rest.post("/fakeApi/recipes_possible", (req, res, ctx) => {
     const recipes = {
@@ -141,12 +154,17 @@ export const handlers = [
     };
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(recipes));
   }),
-
   rest.post("/fakeApi/register", (req, res, ctx) => {
     return res(ctx.json("Basic tokenFromServer"));
   }),
   rest.get("/fakeApi/get_user", (req, res, ctx) => {
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(db.user.getAll()[0]));
+  }),
+  rest.post("/fakeApi/add_ingredient_set", async (req, res, ctx) => {
+    const testResponseData = ["test"];
+    const { name, ingredients } = await req.json();
+    db.ingredientSet.create(createIngredientSet(ingredients, name));
+    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(testResponseData));
   }),
 ];
 
