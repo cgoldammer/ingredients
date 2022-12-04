@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import {
   useGetIngredientSetsQuery,
   useAddIngredientSetMutation,
-  useRegisterUserMutation,
 } from "../api/apiSlice";
 
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import ButtonGroup from "@mui/material/ButtonGroup";
+import Grid from "@mui/material/Unstable_Grid2";
 
 import { useSelector, useDispatch } from "react-redux";
 import { setIngredientSet, getSelectedSet } from "../../ingredientSetsReducer";
@@ -27,14 +27,11 @@ export function SaveSetView() {
   };
   const submit = () => {
     saveSet({
-      name: name,
-      ingredients: ingredientsSelected.map((i) => i.uuid),
+      setName: name,
+      ingredientUuids: ingredientsSelected.map((i) => i.uuid),
     }).then(() => {
       console.log("DATA:" + name);
       console.log(ingredientSets);
-      // const set = ingredientSets.filter((i) => i.name == name)[0];
-      // console.log("SET:");
-      // console.log(set);
       dispatch(setIngredientSet(name));
     });
   };
@@ -45,7 +42,6 @@ export function SaveSetView() {
         value={name}
         onChange={handleChange}
       ></TextField>
-      <div>Data: {data != undefined ? JSON.stringify(data) : "nothing"} </div>
       <Button onClick={submit}>Save</Button>
     </div>
   );
@@ -53,13 +49,14 @@ export function SaveSetView() {
 
 export function IngredientSetsView() {
   const dispatch = useDispatch();
-  const { data: ingredientSetsData } = useGetIngredientSetsQuery();
+  const skip = useSelector((state) => state.userData.token == undefined);
+  const { data: ingredientSetsData } = useGetIngredientSetsQuery(undefined, {
+    skip,
+  });
   const { data: ingredientSets } = ingredientSetsData || { data: [] };
 
   const setNames = ingredientSets.map((i) => i.name);
   const selectedSet = useSelector(getSelectedSet);
-  console.log("SELECTED SET");
-  console.log(selectedSet);
   const ingredientsSelected = useSelector(getIngredientsSelected);
 
   const handleChange = (event) => {
@@ -96,12 +93,13 @@ export function IngredientSetsView() {
   const saveButton = ingredientsChanged ? <SaveSetView /> : <div></div>;
 
   return (
-    <div>
-      <ButtonGroup label="Select set of ingredients" onChange={handleChange}>
-        {items}
-      </ButtonGroup>
-
-      {saveButton}
-    </div>
+    <Grid container spacing={1}>
+      <Grid md={9}>
+        <ButtonGroup label="Select set of ingredients" onChange={handleChange}>
+          {items}
+        </ButtonGroup>
+      </Grid>
+      <Grid md={2}>{saveButton}</Grid>
+    </Grid>
   );
 }

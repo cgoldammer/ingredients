@@ -2,6 +2,7 @@ import { configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
 import { apiSlice } from "./features/api/apiSlice";
 import ingredientsSelectedReducer from "./ingredientsReducer";
 import ingredientSetSelectedReducer from "./ingredientSetsReducer";
+import userReducer from "./userReducer";
 import recipesReducer from "./recipeReducer";
 const listenerMiddleware = createListenerMiddleware();
 
@@ -11,6 +12,7 @@ export const store = configureStore({
     ingredientsSelected: ingredientsSelectedReducer,
     ingredientsSetsSelected: ingredientSetSelectedReducer,
     recipes: recipesReducer,
+    userData: userReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()

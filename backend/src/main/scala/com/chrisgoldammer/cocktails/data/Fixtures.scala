@@ -43,6 +43,7 @@ val ingredientData: List[IngredientDataRaw] = List(
   IngredientDataRaw("Gin", List("Strong")),
   IngredientDataRaw("Vodka", List("Strong")),
   IngredientDataRaw("Bourbon", List("Strong")),
+  IngredientDataRaw("Rye Whiskey", List("Strong")),
   IngredientDataRaw("Orange Liquour", List("Liquour")),
   IngredientDataRaw("Rye", List("Strong")),
   IngredientDataRaw("Scotch", List("Strong")),
@@ -53,13 +54,12 @@ val ingredientData: List[IngredientDataRaw] = List(
   IngredientDataRaw("Sugar", List("Sugar")),
   IngredientDataRaw("Bitters", List("Bitter")),
   IngredientDataRaw("Lemon Juice", List("Juice")),
-  IngredientDataRaw("Egg White", List("Other"))
+  IngredientDataRaw("Egg White", List("Other")),
+  IngredientDataRaw("Tequila", List("Strong"))
 )
 
 val yaml =
-  Source.fromResource("./fixtures_recipes.yaml").getLines.mkString("\n")
-
-val json = parser.parse(yaml)
+  Source.fromResource("fixtures_recipes.yaml").getLines.mkString("\n")
 case class RecipeData(
     name: String,
     ingredients: List[String],
@@ -68,19 +68,12 @@ case class RecipeData(
 
 implicit val decRD: Decoder[RecipeData] = deriveDecoder
 
-val recipeData: List[RecipeData] = json
+val recipeData: List[RecipeData] = parser.parse(yaml)
   .leftMap(err => err: io.circe.ParsingFailure)
   .flatMap(_.as[Map[String, RecipeData]])
   .valueOr(throw _)
   .values
   .toList
-
-val recipeNames: Map[String, List[String]] = Map(
-  "Boulevardier" -> List("Bourbon", "Dry Vermouth", "Campari"),
-  "Old Fashioned" -> List("Bourbon", "Sugar", "Bitters"),
-  "White Lady" -> List("Gin", "Orange Liquour", "Lemon Juice", "Egg White"),
-  "Negroni" -> List("Gin", "Campari", "Sweet Vermouth")
-)
 
 val user0 = BasicCredentials("testUser", "testPassword")
 

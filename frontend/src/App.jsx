@@ -10,12 +10,12 @@ import { useGetUserQuery } from "./features/api/apiSlice";
 import { Route, Routes } from "react-router-dom";
 
 import { theme } from "./helpers";
+import { useSelector } from "react-redux";
 
 /* The main app, which pulls in all the other windows. */
 export function App() {
-  var { error: userError } = useGetUserQuery();
-  userError = userError || { status: 200 };
-  const login = userError.status != 200 ? <LoginView /> : <div></div>;
+  const hasUser = useSelector((state) => state.userData.token != undefined);
+  const login = !hasUser ? <LoginView /> : <div></div>;
   return (
     <ThemeProvider theme={theme}>
       <Box>

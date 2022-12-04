@@ -120,7 +120,7 @@ export function IngredientsWithTagView(props) {
 
   return (
     <div>
-      <FormControl sx={{ m: 1, width: 300 }}>
+      <FormControl sx={{ m: 1, width: 150 }}>
         <InputLabel id="demo-multiple-chip-label">{tagName}</InputLabel>
         <Select
           labelId="demo-multiple-chip-label"
@@ -186,7 +186,7 @@ export function IngredientsView() {
   );
   var vals = Object.keys(splitIngredients);
   const views = vals.map((t) => (
-    <Grid xs={6} key={t}>
+    <Grid xs={4} key={t}>
       <IngredientsWithTagView tagName={t} ingredients={splitIngredients[t]} />
     </Grid>
   ));
@@ -203,7 +203,9 @@ export function IngredientsView() {
           <IngredientsSelectedView />
         </Grid>
         <Grid xs={2}>Add: </Grid>
-        <Grid xs={9}>{views}</Grid>
+        <Grid xs={9}>
+          <Grid container>{views}</Grid>
+        </Grid>
       </Grid>
     </div>
   );

@@ -1,24 +1,25 @@
 package com.chrisgoldammer.cocktails.data
 
 import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.implicits.catsSyntaxApplicativeId
 import cats.implicits.toFoldableOps
 import cats.syntax.traverse.*
 import doobie.ConnectionIO
-import doobie.PreparedStatementIO
 import doobie.Fragments
 import doobie.HC
 import doobie.HPS
+import doobie.PreparedStatementIO
 import doobie.Update
 import doobie.hi.connection
 import doobie.implicits.toSqlInterpolator
 import doobie.postgres.*
 import doobie.postgres.implicits.*
-import cats.effect.IO
-import fs2.Stream
 
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.types.*
+
+import fs2.Stream
 
 val createUsers =
   """
@@ -197,14 +198,21 @@ def bulkInsertIngredientSetIngredientWithValues(
 }
 
 def bulkCreateIngredientSet(
-    setName: String, userUuid: String, ingredientUuids: List[String]): ConnectionIO[Int] = for {
+    setName: String,
+    userUuid: String,
+    ingredientUuids: List[String]
+): ConnectionIO[Int] = for {
   userIdOption <- getUserIdByUuid(userUuid)
   ids <- userIdOption match {
-    case Some(userId) => for {
-      insertedSet <- insertIngredientSet(setName, userId)
-      ids <- bulkInsertIngredientSetIngredient(insertedSet.id, ingredientUuids)
+    case Some(userId) =>
+      for {
+        insertedSet <- insertIngredientSet(setName, userId)
+        ids <- bulkInsertIngredientSetIngredient(
+          insertedSet.id,
+          ingredientUuids
+        )
 //      ids = List()
-    } yield ids
+      } yield ids
     case None => 0.pure[ConnectionIO]
   }
 } yield ids
@@ -255,9 +263,11 @@ def insertRecipe(
     .withUniqueGeneratedKeys("id", "name", "uuid", "description")
 }
 
-
 def getUserIdByUuid(uuid: String): ConnectionIO[Option[Int]] =
-  sql"""SELECT id FROM users WHERE uuid=$uuid""".query[Int].to[List].map(_.headOption)
+  sql"""SELECT id FROM users WHERE uuid=$uuid"""
+    .query[Int]
+    .to[List]
+    .map(_.headOption)
 
 def searchQuery(ingredientUuids: NonEmptyList[String]) = {
   val inFragment = Fragments.in(fr"i.uuid", ingredientUuids)
@@ -282,12 +292,18 @@ def searchQuery(ingredientUuids: NonEmptyList[String]) = {
       FROM recipe_ingredients
       GROUP BY recipe_id
     )
-    SELECT r.id, name, uuid
+    SELECT
+      r.name, r.uuid, r.description
+    , i.name, i.uuid
     FROM recipes r
     JOIN recipeNumberIngredients rni
     ON r.id=rni.recipe_id
     JOIN recipeNumberFound rnf
     ON r.id=rnf.recipe_id
+    JOIN recipe_ingredients ri
+    ON r.id=ri.recipe_id
+    JOIN ingredients i
+    ON ri.ingredient_id=i.id
     WHERE num_ing_found=num_ing_total
     """
 }

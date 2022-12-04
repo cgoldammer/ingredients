@@ -12,11 +12,15 @@ import {
   Radio,
 } from "@mui/material";
 import { useRegisterUserMutation, useGetUserQuery } from "./api/apiSlice";
+import { setToken } from "../userReducer";
+import { useDispatch, useSelector } from "react-redux";
 
 export function LoginView() {
-  const [password, setPassword] = useState("defaultpass");
-  const [username, setUserName] = useState("defaultuser");
-  const [isLogin, setIsLogin] = useState(false);
+  const [password, setPassword] = useState("testPassword");
+  const [username, setUserName] = useState("testUser");
+  const [isLogin, setIsLogin] = useState(true);
+  const dispatch = useDispatch();
+  const userToken = useSelector((state) => state.userData.token);
 
   const {
     data: userData,
@@ -73,7 +77,11 @@ export function LoginView() {
         type="submit"
         color="primary"
         variant="contained"
-        onClick={() => registerUser({ username, password, isLogin })}
+        onClick={() =>
+          registerUser({ username, password, isLogin }).then((data) => {
+            dispatch(setToken(data.data));
+          })
+        }
       >
         {isLogin ? "Login" : "Register"}
       </Button>
@@ -87,8 +95,7 @@ export function LoginView() {
       <div>
         <div>User token: {data}</div>
         <div>
-          get_user HTTP status: {userError2.status}{" "}
-          {JSON.stringify(userError2.data)}{" "}
+          get_user HTTP status: {userError2.status} Token: {userToken}
         </div>
         <div>
           User when logging in via token:{" "}

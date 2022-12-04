@@ -31,7 +31,7 @@ def getUuid() = randomUUID().toString
 
 def recipeIngredientToIngredient(ri: FullRecipeData): Ingredient = {
   ri match {
-    case FullRecipeData(_, _, ingredientName, ingredientUuid) =>
+    case FullRecipeData(_, _, _, ingredientName, ingredientUuid) =>
       Ingredient(ingredientName, ingredientUuid)
   }
 }
@@ -39,7 +39,7 @@ def recipeIngredientToIngredient(ri: FullRecipeData): Ingredient = {
 def createFullRecipes(rid: List[FullRecipeData]): List[FullRecipe] = {
   val grouped = rid.groupBy(_.name)
   grouped.toList.map { case (name, ri) =>
-    FullRecipe(name, ri(0).uuid, ri.map(recipeIngredientToIngredient))
+    FullRecipe(name, ri(0).uuid, ri(0).description, ri.map(recipeIngredientToIngredient))
   }
 }
 
@@ -70,19 +70,14 @@ def getSetByName(
 ): StoredElement[IngredientSet] =
   sIngredientSets.groupBy(_.element.name).transform((k, v) => v.head)(name)
 
-def getMRecipesForIngredientsIO(
-    ingredientUids: List[String]
-): ConnectionIO[List[StoredElement[Recipe]]] =
-  NonEmptyList
-    .fromList(ingredientUids)
-    .map(sn => searchQuery(sn).query[StoredElement[Recipe]].to[List])
-    .getOrElse(List().pure[ConnectionIO])
-
 def getRecipesForIngredientsIO(
     ingredientUids: List[String]
-): ConnectionIO[List[Recipe]] = for {
-  m <- getMRecipesForIngredientsIO(ingredientUids)
-} yield m.map(_.element)
+): ConnectionIO[List[FullRecipe]] =
+  NonEmptyList
+    .fromList(ingredientUids)
+    .map(sn => searchQuery(sn).query[FullRecipeData].to[List]
+      .map(createFullRecipes))
+    .getOrElse(List().pure[ConnectionIO])
 
 def getMFullIngredientFromData(
     md: MFullIngredientData
@@ -132,6 +127,7 @@ def insertFromSetupDataIO(
     sd: SetupData,
     bStore: BackingStore
 ): ConnectionIO[Unit] = for {
+
 
   users <- sd.users.traverse(bStore.put)
 
@@ -185,20 +181,14 @@ def insertFromSetupDataIO(
   )
 
   ids = for {
-    (setName, setIngredientNames) <- sd.ingredientSets
+    (setName, setIngredientNames) <- sd.ingredientSets.toList
     ingredientName <- setIngredientNames
   } yield {
     val setId = getSetByName(mIngredientSets.toList, setName).id
     val ingredientId = getIngredientByName(mIngredients, ingredientName).id
     (setId, ingredientId)
   }
-
-  mIngredientSetIngredients <- ids.toList.traverse(x =>
-    x match {
-      case (setId: Int, ingredientId: Int) =>
-        insertIngredientSetIngredient(setId, ingredientId)
-    }
-  )
+  mIngredientSetIngredients <- ids.traverse((setId: Int, ingredientId: Int) =>insertIngredientSetIngredient(setId, ingredientId))
 } yield None
 
 //def saveIngredientSet(
@@ -221,6 +211,7 @@ def getTransactor(dbSetup: DBSetup): Transactor[IO] =
   )
 
 class DataTools(dbSetup: DBSetup):
+  println(setupDataSimple.recipeData)
   val xa: Transactor[IO] = getTransactor(dbSetup)
 
   def getTags(): IO[List[Tag]] = getTagsIO().transact(xa)
@@ -228,7 +219,7 @@ class DataTools(dbSetup: DBSetup):
   def getFullRecipes(): IO[List[FullRecipe]] = getFullRecipesIO().transact(xa)
   def getIngredients(): IO[List[FullIngredient]] =
     getIngredientsIO().transact(xa)
-  def getRecipesForIngredients(ingredientUids: List[String]): IO[List[Recipe]] =
+  def getRecipesForIngredients(ingredientUids: List[String]): IO[List[FullRecipe]] =
     getRecipesForIngredientsIO(ingredientUids).transact(xa)
   def getIngredientSets(userUuid: String): IO[List[FullIngredientSet]] =
     getIngredientSetsIO(userUuid).transact(xa)
@@ -240,9 +231,10 @@ class DataTools(dbSetup: DBSetup):
 //  ): IO[Unit] = saveIngredientSet(userId, name, ingredientUuids).transact(xa)
 
   def bulkCreateIngredientSetIO(
-                                 setName: String,
-                                 userUuid: String,
-                           ingredientUuids: List[String]
-                         ): IO[Int] = bulkCreateIngredientSet(setName, userUuid, ingredientUuids).transact(xa)
+      setName: String,
+      userUuid: String,
+      ingredientUuids: List[String]
+  ): IO[Int] =
+    bulkCreateIngredientSet(setName, userUuid, ingredientUuids).transact(xa)
 
 object DataTools {}

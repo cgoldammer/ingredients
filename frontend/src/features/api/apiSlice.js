@@ -8,18 +8,9 @@ export const apiSlice = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: url,
     prepareHeaders: (headers, { getState, endpoint }) => {
-      const mutations = getState().api.mutations;
-      const registerMutations = Object.values(mutations).filter(
-        (m) => m.endpointName == "registerUser"
-      );
-      if (registerMutations.length > 0) {
-        const token = registerMutations[0].data;
-        if (token && endpoint != "registerUser") {
-          headers.set(
-            "authorization",
-            `Bearer ${token.replace("Bearer ", "")}`
-          );
-        }
+      const token = getState().userData.token;
+      if (token != undefined && endpoint != "registerUser") {
+        headers.set("authorization", token);
       }
       return headers;
     },

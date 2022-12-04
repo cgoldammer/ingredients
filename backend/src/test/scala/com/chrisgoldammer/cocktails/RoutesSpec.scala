@@ -4,10 +4,21 @@ import java.util.concurrent.Executors
 
 import scala.util.Random
 
+import _root_.io.circe.*
+import _root_.io.circe.Decoder
+import _root_.io.circe.Encoder
+import _root_.io.circe.Json
+import _root_.io.circe.generic.auto.*
+import _root_.io.circe.generic.semiauto.*
+import _root_.io.circe.generic.semiauto.deriveDecoder
+import _root_.io.circe.generic.semiauto.deriveEncoder
+import _root_.io.circe.syntax.*
+import _root_.io.circe.syntax.EncoderOps
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import cats.implicits.catsSyntaxFlatMapOps
 import doobie.implicits.toConnectionIOOps
+import doobie.implicits.toSqlInterpolator
 import doobie.util.ExecutionContexts
 import org.http4s.AuthScheme
 import org.http4s.BasicCredentials
@@ -19,26 +30,17 @@ import org.http4s.Method
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Status
+import org.http4s.circe.CirceEntityCodec.circeEntityDecoder
+import org.http4s.circe.jsonEncoder
 import org.http4s.client.Client
 import org.http4s.client.JavaNetClientBuilder
+import org.http4s.client.dsl.io.*
+import org.http4s.dsl.io.{POST, GET}
 import org.http4s.headers.*
 import org.http4s.implicits.uri
 import org.typelevel.ci.*
-import org.http4s.dsl.io.POST
-import org.http4s.client.dsl.io.*
-import org.http4s.circe.jsonEncoder
-import org.http4s.circe.CirceEntityCodec.circeEntityDecoder
 
 
-import _root_.io.circe.Decoder
-import _root_.io.circe.Encoder
-import _root_.io.circe.Json
-import _root_.io.circe.generic.auto.*
-import _root_.io.circe.generic.semiauto.deriveDecoder
-import _root_.io.circe.generic.semiauto.deriveEncoder
-import _root_.io.circe.syntax.EncoderOps
-
-import doobie.implicits.toSqlInterpolator
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
@@ -47,10 +49,6 @@ import junit.framework.TestSuite
 import munit.CatsEffectSuite
 import munit.FunSuite
 import sun.net.www.http.HttpClient
-
-import _root_.io.circe.*
-import _root_.io.circe.generic.semiauto.*
-import _root_.io.circe.syntax.*
 
 def resetDB(dbSetup: DBSetup) = {
   val dt = DataTools(dbSetup)
@@ -149,7 +147,6 @@ class DataTestAuth extends CatsEffectSuite:
     val countIng = getCount("ingredient_set_ingredients")
     val countSet = getCount("ingredient_sets")
 
-
     def getCounts(): (Int, Int) = {
       val q = for {
         set <- countSet
@@ -159,10 +156,15 @@ class DataTestAuth extends CatsEffectSuite:
     }
 
     val (setBefore, ingBefore) = getCounts()
-    val ingredientIds: List[String] = sql"""SELECT uuid FROM ingredients""".query[String].to[List].transact(dt.xa).unsafeRunSync()
+    val ingredientIds: List[String] = sql"""SELECT uuid FROM ingredients"""
+      .query[String]
+      .to[List]
+      .transact(dt.xa)
+      .unsafeRunSync()
     val addIngredientSetData = InsertIngredientSetData("Test", ingredientIds)
-    val req = POST(addIngredientSetData.asJson, uri"/add_ingredient_set", headers)
-    val res : Int = app.run(req).flatMap(_.as[Int]).unsafeRunSync()
+    val req =
+      POST(addIngredientSetData.asJson, uri"/add_ingredient_set", headers)
+    val res: Int = app.run(req).flatMap(_.as[Int]).unsafeRunSync()
     val (setAfter, ingAfter) = getCounts()
 
     assert(setBefore + 1 == setAfter)
@@ -179,7 +181,7 @@ class HandlerTests extends CatsEffectSuite:
   test("getCount works with existing table") {
     resetDB(dbSetup)
     insertDB(dbSetup)
-    val counts : Int = getCount("ingredients").transact(dt.xa).unsafeRunSync()
+    val counts: Int = getCount("ingredients").transact(dt.xa).unsafeRunSync()
     assert(counts > 0)
   }
 
@@ -199,6 +201,24 @@ class DataTests extends CatsEffectSuite:
     def bodyCondition(a: Results[Ingredient]): Boolean = a.data.size > 0
 
     assert(check[Results[Ingredient]](request, Status.Ok, bodyCondition))
+  }
+
+  test("I can get possible recipes") {
+    resetDB(dbSetup)
+    insertDB(dbSetup)
+    val app = getAppForTesting()
+    val request = app.run(Request[IO](Method.GET, uri"/ingredients"))
+    val ingredients = request.flatMap(_.as[Results[Ingredient]]).unsafeRunSync()
+    assert(ingredients.data.size > 0)
+
+    val possibleInput: Results[String] = Results(data = ingredients.data.map(i => i.uuid), name="ingredients")
+    print("POSSIBLE")
+    print(possibleInput)
+
+    val requestPossible = app.run(POST(possibleInput.asJson, uri"/recipes_possible"))
+    val recipesPossible = requestPossible.flatMap(_.as[Results[FullRecipe]]).unsafeRunSync()
+    assert(recipesPossible.data.size > 0)
+
   }
 
   test("Ingredient sets require login") {

@@ -16,7 +16,9 @@ export function RecipeView(props) {
           <Typography variant="h5">{name}</Typography>
           <List> {ingredientsView}</List>
         </Grid>
-        <Grid xs={5}> {description.substring(0, 110)} </Grid>
+        <Grid xs={5}>
+          <Typography>{description.substring(0, 110)} </Typography>
+        </Grid>
       </Grid>
     </Box>
   );
