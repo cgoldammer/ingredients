@@ -14,22 +14,21 @@ import {
 import { useRegisterUserMutation, useGetUserQuery } from "./api/apiSlice";
 import { setToken } from "../userReducer";
 import { useDispatch, useSelector } from "react-redux";
+import { hasUserTokenSelector } from "../store";
 
 export function LoginView() {
   const [password, setPassword] = useState("testPassword");
   const [username, setUserName] = useState("testUser");
   const [isLogin, setIsLogin] = useState(true);
   const dispatch = useDispatch();
-  const userToken = useSelector((state) => state.userData.token);
+  const hasUserToken = useSelector(hasUserTokenSelector);
 
   const {
     data: userData,
     isFetching: isFetchingUser,
     error: userError,
   } = useGetUserQuery();
-  const [registerUser, { data, error }] = useRegisterUserMutation();
-  const userData2 = userData || { name: "NOT" };
-  const userError2 = userError || { status: 200, data: "nothing" };
+  const [registerUser, { error: registerError }] = useRegisterUserMutation();
 
   return (
     <Grid>
@@ -93,13 +92,12 @@ export function LoginView() {
         Do you have an account ?<Link href="#">Sign Up</Link>
       </Typography>
       <div>
-        <div>User token: {data}</div>
-        <div>
-          get_user HTTP status: {userError2.status} Token: {userToken}
-        </div>
+        <div>{userError != undefined ? userError.status : ""}</div>
         <div>
           User when logging in via token:{" "}
-          {isFetchingUser || error ? "Not loaded yet" : userData2.name}{" "}
+          {userData == undefined
+            ? "Not loaded yet"
+            : userData.name + " - Token: " + hasUserToken}
         </div>
       </div>
     </Grid>

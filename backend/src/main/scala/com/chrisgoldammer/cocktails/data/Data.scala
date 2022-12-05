@@ -39,7 +39,12 @@ def recipeIngredientToIngredient(ri: FullRecipeData): Ingredient = {
 def createFullRecipes(rid: List[FullRecipeData]): List[FullRecipe] = {
   val grouped = rid.groupBy(_.name)
   grouped.toList.map { case (name, ri) =>
-    FullRecipe(name, ri(0).uuid, ri(0).description, ri.map(recipeIngredientToIngredient))
+    FullRecipe(
+      name,
+      ri(0).uuid,
+      ri(0).description,
+      ri.map(recipeIngredientToIngredient)
+    )
   }
 }
 
@@ -75,8 +80,12 @@ def getRecipesForIngredientsIO(
 ): ConnectionIO[List[FullRecipe]] =
   NonEmptyList
     .fromList(ingredientUids)
-    .map(sn => searchQuery(sn).query[FullRecipeData].to[List]
-      .map(createFullRecipes))
+    .map(sn =>
+      searchQuery(sn)
+        .query[FullRecipeData]
+        .to[List]
+        .map(createFullRecipes)
+    )
     .getOrElse(List().pure[ConnectionIO])
 
 def getMFullIngredientFromData(
@@ -127,7 +136,6 @@ def insertFromSetupDataIO(
     sd: SetupData,
     bStore: BackingStore
 ): ConnectionIO[Unit] = for {
-
 
   users <- sd.users.traverse(bStore.put)
 
@@ -188,7 +196,9 @@ def insertFromSetupDataIO(
     val ingredientId = getIngredientByName(mIngredients, ingredientName).id
     (setId, ingredientId)
   }
-  mIngredientSetIngredients <- ids.traverse((setId: Int, ingredientId: Int) =>insertIngredientSetIngredient(setId, ingredientId))
+  mIngredientSetIngredients <- ids.traverse((setId: Int, ingredientId: Int) =>
+    insertIngredientSetIngredient(setId, ingredientId)
+  )
 } yield None
 
 //def saveIngredientSet(
@@ -219,7 +229,9 @@ class DataTools(dbSetup: DBSetup):
   def getFullRecipes(): IO[List[FullRecipe]] = getFullRecipesIO().transact(xa)
   def getIngredients(): IO[List[FullIngredient]] =
     getIngredientsIO().transact(xa)
-  def getRecipesForIngredients(ingredientUids: List[String]): IO[List[FullRecipe]] =
+  def getRecipesForIngredients(
+      ingredientUids: List[String]
+  ): IO[List[FullRecipe]] =
     getRecipesForIngredientsIO(ingredientUids).transact(xa)
   def getIngredientSets(userUuid: String): IO[List[FullIngredientSet]] =
     getIngredientSetsIO(userUuid).transact(xa)

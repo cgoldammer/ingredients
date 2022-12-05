@@ -35,11 +35,11 @@ import org.http4s.circe.jsonEncoder
 import org.http4s.client.Client
 import org.http4s.client.JavaNetClientBuilder
 import org.http4s.client.dsl.io.*
-import org.http4s.dsl.io.{POST, GET}
+import org.http4s.dsl.io.GET
+import org.http4s.dsl.io.POST
 import org.http4s.headers.*
 import org.http4s.implicits.uri
 import org.typelevel.ci.*
-
 
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.*
@@ -211,12 +211,13 @@ class DataTests extends CatsEffectSuite:
     val ingredients = request.flatMap(_.as[Results[Ingredient]]).unsafeRunSync()
     assert(ingredients.data.size > 0)
 
-    val possibleInput: Results[String] = Results(data = ingredients.data.map(i => i.uuid), name="ingredients")
-    print("POSSIBLE")
-    print(possibleInput)
+    val possibleInput: Results[String] =
+      Results(data = ingredients.data.map(i => i.uuid), name = "ingredients")
 
-    val requestPossible = app.run(POST(possibleInput.asJson, uri"/recipes_possible"))
-    val recipesPossible = requestPossible.flatMap(_.as[Results[FullRecipe]]).unsafeRunSync()
+    val requestPossible =
+      app.run(POST(possibleInput.asJson, uri"/recipes_possible"))
+    val recipesPossible =
+      requestPossible.flatMap(_.as[Results[FullRecipe]]).unsafeRunSync()
     assert(recipesPossible.data.size > 0)
 
   }

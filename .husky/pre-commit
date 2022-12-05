@@ -12,4 +12,4 @@ cd ..
 
 cd backend
 scalafmt
-sbt 'testOnly *AuthTests' &&  sbt 'testOnly *DataTests'
+sbt 'testOnly *AuthTests' &&  sbt 'testOnly *DataTests' && sbt 'testOnly *HandlerTests'

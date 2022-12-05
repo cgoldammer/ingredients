@@ -18,9 +18,8 @@ import { listElementsAreIdentical } from "../../helpers";
 export function SaveSetView() {
   const ingredientsSelected = useSelector(getIngredientsSelected);
   const dispatch = useDispatch();
-  const { data: ingredientSetsData } = useGetIngredientSetsQuery();
-  const { data: ingredientSets } = ingredientSetsData || { data: [] };
-  const [saveSet, { data, isSuccess }] = useAddIngredientSetMutation();
+  const { data: ingredientSets } = useGetIngredientSetsQuery();
+  const [saveSet] = useAddIngredientSetMutation();
   const [name, setName] = useState("");
   const handleChange = (e) => {
     setName(e.target.value);

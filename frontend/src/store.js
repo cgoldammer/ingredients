@@ -34,3 +34,7 @@ export const getIngredientsSelected = (state) => {
   }
   return [];
 };
+
+export const getUserTokenSelector = (state) => state.userData.token;
+export const hasUserTokenSelector = (state) =>
+  getUserTokenSelector(state) != undefined;

@@ -75,7 +75,12 @@ implicit val sReadIngredientTag: Read[StoredElement[IngredientTag]] =
     new StoredElement(id, IngredientTag(ingredientId, tagId))
   }
 
-case class FullRecipe(name: String, uuid: String, description: String, ingredients: List[Ingredient])
+case class FullRecipe(
+    name: String,
+    uuid: String,
+    description: String,
+    ingredients: List[Ingredient]
+)
 case class FullRecipeData(
     name: String,
     uuid: String,

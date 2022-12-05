@@ -68,7 +68,8 @@ case class RecipeData(
 
 implicit val decRD: Decoder[RecipeData] = deriveDecoder
 
-val recipeData: List[RecipeData] = parser.parse(yaml)
+val recipeData: List[RecipeData] = parser
+  .parse(yaml)
   .leftMap(err => err: io.circe.ParsingFailure)
   .flatMap(_.as[Map[String, RecipeData]])
   .valueOr(throw _)

@@ -170,10 +170,11 @@ const splitByTag = (ingredients, tags) => {
 };
 
 export function IngredientsView() {
-  const { data: ingredientsData } = useGetIngredientsQuery() || {};
-  const { data: ingredients = [] } = ingredientsData || {};
-  const { data: tagsData } = useGetTagsQuery() || {};
-  const { data: tags = [] } = tagsData || {};
+  const { data: ingredientsData, isSuccess: isSuccessIngredients } =
+    useGetIngredientsQuery();
+  const ingredients = isSuccessIngredients ? ingredientsData.data : [];
+  const { data: tagsData, isSuccess: isSuccessTags } = useGetTagsQuery();
+  const tags = isSuccessTags ? tagsData.data : [];
 
   const ingredientsSelected = useSelector(getIngredientsSelected);
   const ingredientsNotSelected = ingredients.filter(

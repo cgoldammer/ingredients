@@ -157,6 +157,9 @@ export const handlers = [
   rest.post("/fakeApi/register", (req, res, ctx) => {
     return res(ctx.json("Basic tokenFromServer"));
   }),
+  rest.post("/fakeApi/login", (req, res, ctx) => {
+    return res(ctx.json("Basic tokenFromServer"));
+  }),
   rest.get("/fakeApi/get_user", (req, res, ctx) => {
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(db.user.getAll()[0]));
   }),

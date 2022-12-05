@@ -5,16 +5,16 @@ import { RecipesPossibleView } from "./features/recipes/RecipesPossibleView";
 import { LoginView } from "./features/LoginView";
 
 import { ThemeProvider, Box } from "@mui/material";
-import { useGetUserQuery } from "./features/api/apiSlice";
 
 import { Route, Routes } from "react-router-dom";
 
 import { theme } from "./helpers";
 import { useSelector } from "react-redux";
+import { hasUserTokenSelector } from "./store";
 
 /* The main app, which pulls in all the other windows. */
 export function App() {
-  const hasUser = useSelector((state) => state.userData.token != undefined);
+  const hasUser = useSelector(hasUserTokenSelector);
   const login = !hasUser ? <LoginView /> : <div></div>;
   return (
     <ThemeProvider theme={theme}>

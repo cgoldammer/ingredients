@@ -23,7 +23,7 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
       "org.tpolecat" %% "doobie-hikari" % DoobieVersion
     ),
-    testFrameworks += new TestFramework("munit.Framework"),
+    testFrameworks += new TestFramework("munit.Framework")
 //    resourceDirectory := resourceDirectory += baseDirectory { _ / "src" }
   )
 
@@ -58,5 +58,3 @@ TaskKey[Unit]("setupData") := (runMain in Compile)
 scalacOptions ++= Seq( // use ++= to add to existing options
   "-Ykind-projector"
 )
-
-
