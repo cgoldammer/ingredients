@@ -56,6 +56,8 @@ export function IngredientSetsView() {
 
   const setNames = ingredientSets.map((i) => i.name);
   const selectedSet = useSelector(getSelectedSet);
+  console.log("SELECTED");
+  console.log(selectedSet);
   const ingredientsSelected = useSelector(getIngredientsSelected);
 
   const handleChange = (event) => {

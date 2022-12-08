@@ -165,9 +165,12 @@ export const handlers = [
   }),
   rest.post("/fakeApi/add_ingredient_set", async (req, res, ctx) => {
     const testResponseData = ["test"];
-    const { name, ingredients } = await req.json();
-    db.ingredientSet.create(createIngredientSet(ingredients, name));
-    return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(testResponseData));
+    const { setName, ingredientUuids } = await req.json();
+    db.ingredientSet.create(createIngredientSet(ingredientUuids, setName));
+    return await res(
+      ctx.delay(ARTIFICIAL_DELAY_MS),
+      ctx.json(testResponseData)
+    );
   }),
 ];
 
