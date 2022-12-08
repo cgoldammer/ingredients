@@ -75,8 +75,6 @@ export const apiSlice = createApi({
     addIngredientSet: builder.mutation({
       invalidatesTags: ["IngredientSet"],
       query: (data) => {
-        console.log("DATA AIS");
-        console.log(data);
         return {
           url: "/add_ingredient_set",
           method: "POST",

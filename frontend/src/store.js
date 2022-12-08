@@ -5,14 +5,6 @@ import ingredientSetSelectedReducer from "./ingredientSetsReducer";
 import userReducer from "./userReducer";
 import recipesReducer from "./recipeReducer";
 const listenerMiddleware = createListenerMiddleware();
-import { createStore, applyMiddleware, compose } from "redux";
-
-// const composeEnhancers =
-//   typeof window === "object" && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
-//     ? window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({
-//         // Specify extension’s options like name, actionsDenylist, actionsCreators, serialize...
-//       })
-//     : compose;
 
 const reducer = {
   [apiSlice.reducerPath]: apiSlice.reducer,
@@ -26,11 +18,6 @@ const middleware = (getDefaultMiddleware) =>
   getDefaultMiddleware()
     .prepend(listenerMiddleware.middleware)
     .concat(apiSlice.middleware);
-
-const composeEnhancers =
-  (typeof window !== "undefined" &&
-    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) ||
-  compose;
 
 export const store = configureStore({
   reducer: reducer,

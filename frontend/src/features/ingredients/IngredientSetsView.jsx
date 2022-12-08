@@ -29,8 +29,6 @@ export function SaveSetView() {
       setName: name,
       ingredientUuids: ingredientsSelected.map((i) => i.uuid),
     }).then(() => {
-      console.log("DATA:" + name);
-      console.log(ingredientSets);
       dispatch(setIngredientSet(name));
     });
   };
@@ -56,8 +54,6 @@ export function IngredientSetsView() {
 
   const setNames = ingredientSets.map((i) => i.name);
   const selectedSet = useSelector(getSelectedSet);
-  console.log("SELECTED");
-  console.log(selectedSet);
   const ingredientsSelected = useSelector(getIngredientsSelected);
 
   const handleChange = (event) => {
@@ -67,13 +63,10 @@ export function IngredientSetsView() {
     dispatch(setIngredientsSelectedSimple(setChanged.ingredients));
   };
 
-  const ingredientsChanged =
-    selectedSet != undefined &&
-    selectedSet.ingredients != undefined &&
-    !listElementsAreIdentical(
-      selectedSet.ingredients,
-      ingredientsSelected.map((i) => i.uuid)
-    );
+  const ingredientsChanged = !listElementsAreIdentical(
+    selectedSet != undefined ? selectedSet.ingredients : [],
+    ingredientsSelected.map((i) => i.uuid)
+  );
 
   const buttonSelected = (setName) =>
     selectedSet != undefined &&
