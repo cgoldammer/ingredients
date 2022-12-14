@@ -5,9 +5,7 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.time
 import java.util.UUID.randomUUID
-
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import _root_.io.circe.Decoder
 import _root_.io.circe.Encoder
 import _root_.io.circe.Json
@@ -26,9 +24,13 @@ import org.http4s.circe.jsonOf
 import org.http4s.client.dsl.io.*
 import org.http4s.dsl.io.*
 import org.http4s.implicits.*
-
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
+import _root_.io.circe.yaml.parser
+import cats.implicits.catsSyntaxEither
+
+
+import scala.io.Source
 
 case class StoredElement[T](id: Int, element: T)
 
@@ -177,13 +179,17 @@ implicit val decJS: EntityDecoder[IO, Json] = jsonOf[IO, Json]
 case class DBSetup(
     port: Int = 5432,
     serverName: String = "localhost",
-    dbName: String = "ingradients_dev"
+    dbName: String = "ingredients_dev",
+    password: Option[String],
+    user: String = "postgres"
 ) {
-  def getConnString(): String = s"jdbc:postgresql://$serverName:$port/$dbName"
+  def getConnString(): String = {
+    return s"jdbc:postgresql://$serverName:$port/$dbName"
+  }
 }
 
 enum Settings:
-  case TestLocal, DevLocal, DevDocker
+  case TestLocal, DevLocal, DevDocker, Prod
 
   def toStringLower(): String = camel2underscores(this.toString())
   def toDBName(): String = this.toStringLower().split('_')(0)
@@ -192,9 +198,10 @@ enum Settings:
     val dbName = "ingredients_" + this.toDBName()
 
     this match
-      case TestLocal => DBSetup(dbName = dbName)
-      case DevLocal  => DBSetup(dbName = dbName)
-      case DevDocker => DBSetup(dbName = dbName, serverName = "postgres2")
+      case TestLocal => DBSetup(dbName = dbName, password=None  )
+      case DevLocal  => DBSetup(dbName = dbName, password=None )
+      case DevDocker => DBSetup(dbName = dbName, serverName = "postgres2", password=None )
+      case Prod => DBSetup(dbName=dbName, serverName = secrets.postgresAwsUrl, password=Some(secrets.postgresAwsPassword))
   }
 
 object Settings:
@@ -218,3 +225,17 @@ def fileLogHandler(le: LogEvent): Unit = {
 }
 
 implicit val logHandler: LogHandler = LogHandler(fileLogHandler)
+
+case class Secrets(
+                    postgresAwsPassword: String,
+                    postgresAwsUrl: String,
+                    cryptocorePrivatekey: String
+                  )
+
+implicit val decS: Decoder[Secrets] = deriveDecoder
+
+val secrets: Secrets = parser
+  .parse(Source.fromResource("secrets.yaml").getLines.mkString("\n"))
+  .leftMap(err => err: io.circe.ParsingFailure)
+  .flatMap(_.as[Secrets])
+  .valueOr(throw _)

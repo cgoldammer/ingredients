@@ -45,7 +45,7 @@ case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
     "org.postgresql.Driver", // driver classname
     db.getConnString(),
     "postgres", // user
-    "" // password
+    db.password.getOrElse("") // password
   )
 
   def verifyUserExists(c: BasicCredentials): IO[Option[AuthUser]] = for {
@@ -147,5 +147,5 @@ def getCredentials(request: Request[IO]): Option[BasicCredentials] = {
 }
 
 val key = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
-val crypto = CryptoBits(key)
+val crypto = CryptoBits(PrivateKey(Codec.toUTF8(secrets.cryptocorePrivatekey)))
 val clock = java.time.Clock.systemUTC

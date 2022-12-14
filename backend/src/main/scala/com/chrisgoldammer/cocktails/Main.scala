@@ -14,11 +14,17 @@ object Main extends IOApp.Simple:
   val ap = AppParams(dbSetup)
   def run: IO[Unit] = server(ap).use(_ => IO.never).as(ExitCode.Success)
 
-object DataMain extends IOApp.Simple:
+object DataSetupDevMain extends IOApp.Simple:
   def run: IO[Unit] = {
     val settings = getSettings()
     val dbSetup = settings.getOrElse(Settings.DevLocal).getSetup()
     val dt = DataTools(dbSetup)
-    println(dbSetup)
     dt.setup()
+  }
+
+object DataSetupProdMain extends IOApp.Simple:
+  def run: IO[Unit] = {
+    val dbSetup = Settings.Prod.getSetup()
+    val dt = DataTools(dbSetup)
+    dt.setup(setupData=None)
   }

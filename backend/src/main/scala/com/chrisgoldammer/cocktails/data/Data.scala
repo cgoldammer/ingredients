@@ -129,8 +129,13 @@ object ItemType extends Enumeration {
 def getIngredientsDataIO(): ConnectionIO[List[MFullIngredientData]] =
   getIngredientsQuery.query[MFullIngredientData].to[List]
 
-def setupIO(sd: SetupData): ConnectionIO[Unit] =
-  dropTables >> createTables >> insertFromSetupDataIO(sd, doobieBackingStore())
+def setupIO(sdo: Option[SetupData]): ConnectionIO[Unit] = {
+  val inserter = sdo match {
+    case Some(sd) => insertFromSetupDataIO(sd, doobieBackingStore())
+    case None => ().pure[ConnectionIO]
+  }
+  dropTables >> createTables >> inserter
+}
 
 def insertFromSetupDataIO(
     sd: SetupData,
@@ -201,16 +206,6 @@ def insertFromSetupDataIO(
   )
 } yield None
 
-//def saveIngredientSet(
-//    userId: Int,
-//    name: String,
-//    ingredientUuids: List[String]
-//): ConnectionIO[Unit] = {
-//  for {
-//    setCreated <- insertIngredientSet(name, userId)
-//    _ <- bulkInsertIngredientSetIngredient(setCreated.id, ingredientUuids)
-//  } yield None
-//}
 
 def getTransactor(dbSetup: DBSetup): Transactor[IO] =
   Transactor.fromDriverManager[IO](
@@ -225,7 +220,7 @@ class DataTools(dbSetup: DBSetup):
   val xa: Transactor[IO] = getTransactor(dbSetup)
 
   def getTags(): IO[List[Tag]] = getTagsIO().transact(xa)
-  def setup(): IO[Unit] = setupIO(setupDataSimple).transact(xa)
+  def setup(setupData:Option[SetupData]=Some(setupDataSimple)): IO[Unit] = setupIO(setupData).transact(xa)
   def getFullRecipes(): IO[List[FullRecipe]] = getFullRecipesIO().transact(xa)
   def getIngredients(): IO[List[FullIngredient]] =
     getIngredientsIO().transact(xa)
@@ -235,12 +230,6 @@ class DataTools(dbSetup: DBSetup):
     getRecipesForIngredientsIO(ingredientUids).transact(xa)
   def getIngredientSets(userUuid: String): IO[List[FullIngredientSet]] =
     getIngredientSetsIO(userUuid).transact(xa)
-
-//  def saveIngredientSetIO(
-//      userId: Int,
-//      name: String,
-//      ingredientUuids: List[String]
-//  ): IO[Unit] = saveIngredientSet(userId, name, ingredientUuids).transact(xa)
 
   def bulkCreateIngredientSetIO(
       setName: String,

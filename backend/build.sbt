@@ -27,6 +27,8 @@ lazy val root = (project in file("."))
 //    resourceDirectory := resourceDirectory += baseDirectory { _ / "src" }
   )
 
+Test / parallelExecution := false
+
 libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-circe" % Http4sVersion
 )
@@ -53,6 +55,11 @@ resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 TaskKey[Unit]("setupData") := (runMain in Compile)
   .toTask(" com.chrisgoldammer.cocktails.data.CallMe")
+  .value
+
+
+TaskKey[Unit]("setupDBDev") := (runMain in Compile)
+  .toTask(" com.chrisgoldammer.cocktails.DataSetupDevMain")
   .value
 
 scalacOptions ++= Seq( // use ++= to add to existing options

@@ -58,8 +58,6 @@ val ingredientData: List[IngredientDataRaw] = List(
   IngredientDataRaw("Tequila", List("Strong"))
 )
 
-val yaml =
-  Source.fromResource("fixtures_recipes.yaml").getLines.mkString("\n")
 case class RecipeData(
     name: String,
     ingredients: List[String],
@@ -69,7 +67,7 @@ case class RecipeData(
 implicit val decRD: Decoder[RecipeData] = deriveDecoder
 
 val recipeData: List[RecipeData] = parser
-  .parse(yaml)
+  .parse(Source.fromResource("fixtures_recipes.yaml").getLines.mkString("\n"))
   .leftMap(err => err: io.circe.ParsingFailure)
   .flatMap(_.as[Map[String, RecipeData]])
   .valueOr(throw _)
@@ -90,3 +88,5 @@ val setupDataSimple = SetupData(
   ingredientSets = ingredientSets,
   users = List(user0)
 )
+
+

@@ -92,7 +92,7 @@ trait BackingStore {
 }
 
 enum AuthBackend:
-  case Doobie, Local
+  case Doobie
 
   def getBackingStore(): BackingStore = {
     this match
