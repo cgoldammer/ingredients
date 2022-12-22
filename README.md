@@ -1,8 +1,8 @@
 # Ingredients App
 
-This is mainly a way for me to build an app with a decent deployment framework.
+This is a way of storing recipes that are made up of ingredients, and then summarizing this data in a useful way.
 
-Feedback appreciated!
+For now, it's focused on cocktails. So I can ask: "What are the cocktails I can make with the ingredients I have at home".
 
 # Build modes
 
