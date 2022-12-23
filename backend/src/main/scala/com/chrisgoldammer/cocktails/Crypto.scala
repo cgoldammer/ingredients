@@ -39,14 +39,15 @@ import tsec.passwordhashers.jca.BCrypt.syncPasswordHasher
 def toEither[A, B](a: Option[A], b: B): Either[B, A] =
   Either.cond(a.isDefined, a.get, b)
 
-case class AuthFunctions(ab: AuthBackend, db: DBSetup) {
+
+
+
+case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
   val backend = ab.getBackingStore()
-  val xa: Transactor[IO] = Transactor.fromDriverManager[IO](
-    "org.postgresql.Driver", // driver classname
-    db.getConnString(),
-    "postgres", // user
-    db.password.getOrElse("") // password
-  )
+  println("Connecting to:")
+  println(dbSetup.getConnString())
+  println("Password: " + dbSetup.password.getOrElse(""))
+  val xa: Transactor[IO] = getTransactor(dbSetup)
 
   def verifyUserExists(c: BasicCredentials): IO[Option[AuthUser]] = for {
     storedUser <- backend.get(c.username).transact(xa)

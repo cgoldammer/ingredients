@@ -1,5 +1,9 @@
-import React from "react";
-import { useGetTagsQuery, useGetIngredientsQuery } from "../api/apiSlice";
+import React, { useState } from "react";
+import {
+  useGetTagsQuery,
+  useGetIngredientsQuery,
+  useGetIngredientSetsQuery,
+} from "../api/apiSlice";
 import { Box } from "@mui/material";
 
 import { useTheme } from "@mui/material/styles";
@@ -14,12 +18,17 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   removeIngredientsSelected,
   addIngredientsSelected,
+  setIngredientsSelectedSimple,
 } from "../../ingredientsReducer";
 import PropTypes from "prop-types";
-import { IngredientSetsView } from "./IngredientSetsView";
+import { IngredientSetsView, SaveSetView } from "./IngredientSetsView";
 import Grid from "@mui/material/Unstable_Grid2";
 
 import { getIngredientsSelected } from "../../store";
+import { getSelectedSet, setIngredientSet } from "../../ingredientSetsReducer";
+import { listElementsAreIdentical } from "../../helpers";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import { RecipeView } from "../recipes/RecipeView";
 
 function getStyles(name, personName, theme) {
   return {
@@ -96,7 +105,7 @@ export function IngredientsSelectedView() {
   return <div>{buttons}</div>;
 }
 
-export function IngredientsWithTagView(props) {
+export function IngredientAdditionView(props) {
   const dispatch = useDispatch();
   const theme = useTheme();
   const { tagName, ingredients } = props;
@@ -144,7 +153,7 @@ export function IngredientsWithTagView(props) {
               value={ingredient}
               style={getStyles(name, name, theme)}
             >
-              {ingredient.name}
+              {ingredient.name}: {ingredient.numberRecipes}
             </MenuItem>
           ))}
         </Select>
@@ -153,44 +162,84 @@ export function IngredientsWithTagView(props) {
   );
 }
 
-IngredientsWithTagView.propTypes = {
+IngredientAdditionView.propTypes = {
   ingredients: PropTypes.array,
   tagName: PropTypes.string,
 };
 
-const splitByTag = (ingredients, tags) => {
-  const findIngredients = (tag) =>
-    ingredients.filter((ingredient) =>
-      ingredient.tags.map((t) => t.name).includes(tag)
-    );
-  return tags.reduce(
-    (obj, x) => Object.assign(obj, { [x]: findIngredients(x) }),
-    {}
+export function SelectTagsView(props) {
+  const { tags, selectedTags, setSelectedTags } = props;
+
+  const clickedOn = (tagName) => {
+    var newSelection = [];
+    if (isSelected(tagName)) {
+      newSelection = selectedTags.filter((i) => i.name != tagName);
+    } else {
+      const tagAdded = tags.filter((i) => i.name == tagName)[0];
+      newSelection = [...newSelection, tagAdded];
+    }
+    setSelectedTags(newSelection);
+  };
+
+  const isSelected = (tagName) =>
+    selectedTags.filter((t) => t.name == tagName).length > 0;
+
+  const items = tags
+    .map((t) => t.name)
+    .map((tagName) => (
+      <Button
+        key={tagName}
+        value={tagName}
+        onClick={() => clickedOn(tagName)}
+        variant={isSelected(tagName) ? "contained" : "outlined"}
+      >
+        {tagName}
+      </Button>
+    ));
+
+  return (
+    <Grid container spacing={1}>
+      <Grid md={9}>
+        <ButtonGroup label="Filter by Tag">{items}</ButtonGroup>
+      </Grid>
+    </Grid>
   );
+}
+
+SelectTagsView.propTypes = {
+  tags: PropTypes.array,
+  selectedTags: PropTypes.array,
+  setSelectedTags: PropTypes.func,
 };
 
 export function IngredientsView() {
   const { data: ingredientsData, isSuccess: isSuccessIngredients } =
     useGetIngredientsQuery();
   const ingredients = isSuccessIngredients ? ingredientsData.data : [];
-  const { data: tagsData, isSuccess: isSuccessTags } = useGetTagsQuery();
-  const tags = isSuccessTags ? tagsData.data : [];
 
   const ingredientsSelected = useSelector(getIngredientsSelected);
-  const ingredientsNotSelected = ingredients.filter(
-    (v) => !ingredientsSelected.map((r) => r.uuid).includes(v.uuid)
-  );
 
-  var splitIngredients = splitByTag(
-    ingredientsNotSelected,
-    tags.map((t) => t.name)
+  const { data: tagsData, isSuccess: isSuccessTags } = useGetTagsQuery();
+  const tags = isSuccessTags ? tagsData.data : [];
+  const [selectedTags, setSelectedTags] = useState([]);
+
+  const ingredientsSelectable = ingredients
+    .filter((i) => !ingredientsSelected.map((r) => r.uuid).includes(i.uuid))
+
+    .filter((i) =>
+      selectedTags.length == 0
+        ? true
+        : selectedTags
+            .map((t) => t.name)
+            .filter((t) => i.tags.map((t) => t.name).includes(t)).length > 0
+    );
+
+  const addView = (
+    <IngredientAdditionView
+      tagName="Pick one"
+      ingredients={ingredientsSelectable}
+    />
   );
-  var vals = Object.keys(splitIngredients);
-  const views = vals.map((t) => (
-    <Grid xs={4} key={t}>
-      <IngredientsWithTagView tagName={t} ingredients={splitIngredients[t]} />
-    </Grid>
-  ));
 
   return (
     <div>
@@ -199,13 +248,22 @@ export function IngredientsView() {
         <Grid xs={9}>
           <IngredientSetsView />
         </Grid>
+        <Grid xs={2}>Total: </Grid>
+        <Grid xs={9}>{ingredients.length}</Grid>
         <Grid xs={2}>Selected: </Grid>
         <Grid xs={9}>
           <IngredientsSelectedView />
         </Grid>
         <Grid xs={2}>Add: </Grid>
         <Grid xs={9}>
-          <Grid container>{views}</Grid>
+          <Grid container>
+            <SelectTagsView
+              tags={tags}
+              selectedTags={selectedTags}
+              setSelectedTags={setSelectedTags}
+            />
+          </Grid>
+          <Grid container>{addView}</Grid>
         </Grid>
       </Grid>
     </div>

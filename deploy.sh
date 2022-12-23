@@ -3,17 +3,16 @@ set -e
 
 echo "Starting deploy"
 ssh bizpersonal 'rm -rf ~/code/; mkdir -p ~/code/'
+ssh bizpersonal 'rm -rf ~/code/temp; mkdir -p ~/code/temp'
+echo "Starting sync"
 rsync --exclude-from=.rsyncignore -r . bizpersonal:~/code
-echo "Deploy completed"
+
 
 ## RUN IF FLAG = full
-## ssh business "
-##   cd ~/code/dockerfiles
-##   docker build . -f Dockerfile-scala --target backend-step2-built2 --tag backend-step2-built2
-##   cd ..
-##   docker build . -f Dockerfile-scala --target backend-step2-built2 --tag backend-step2-built2
-## "
-ssh bizpersonal 'cd ~/code; docker-compose build'
+# Echo "Building initial images"
+# ssh bizpersonal 'bash ~/code/scripts/build_docker.sh'
 
-
-
+echo "Setting up folders on containers"
+ssh bizpersonal 'cd code; docker-compose build; docker-compose up --no-start'
+ssh bizpersonal 'bash ~/code/copy_setup.sh'
+echo "Deploy completed"

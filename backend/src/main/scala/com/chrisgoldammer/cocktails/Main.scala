@@ -25,6 +25,9 @@ object DataSetupDevMain extends IOApp.Simple:
 object DataSetupProdMain extends IOApp.Simple:
   def run: IO[Unit] = {
     val dbSetup = Settings.Prod.getSetup()
+    println("DBSetup completd")
+    println(dbSetup.password)
+    println(dbSetup.getConnString())
     val dt = DataTools(dbSetup)
     dt.setup(setupData=None)
   }

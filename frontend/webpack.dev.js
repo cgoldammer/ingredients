@@ -2,6 +2,7 @@ const merge = require('webpack-merge').merge;
 const webpack = require('webpack');
 const common = require('./webpack.common.js');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
 
 const devServer = {
   static: './serve_content',
@@ -24,11 +25,13 @@ const getUrl = modeVal => {
   if (modeVal == "devLocal") return "http://127.0.0.1:8080/"
   if (modeVal == "devServer") return "http://127.0.0.1:8200/"
   if (modeVal == "devDocker") return "http://127.0.0.1:8300/"
+  if (modeVal == "prod") return "http://52.22.180.212:8080/"
 }
 
 const getFeatures = modeVal => {
-  const url = getUrl(modeVal)
-  return {BACKENDURL: url}
+  return {
+    BACKENDURL: getUrl(modeVal),
+    RUNMODE: modeVal}
 }
 
 const devExports = modeVal => {
@@ -52,7 +55,7 @@ const devExports = modeVal => {
       new webpack.ProvidePlugin({
         process: 'process/browser',
       }),
-
+      new ReactRefreshWebpackPlugin(),
       new webpack.EnvironmentPlugin(features),
       new HtmlWebpackPlugin({
         template: './serve_content/index_old.html',

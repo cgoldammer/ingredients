@@ -26,6 +26,13 @@ export function App() {
               path="/"
               element={
                 <div>
+                  <div>
+                    Thanks to{" "}
+                    <a href={"https://www.thecocktaildb.com/"}>
+                      The Cocktail DB
+                    </a>{" "}
+                    for their data!
+                  </div>
                   <IngredientsView />
                   <RecipesPossibleView />
                 </div>

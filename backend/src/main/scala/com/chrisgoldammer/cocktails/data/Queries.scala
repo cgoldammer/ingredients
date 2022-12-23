@@ -309,15 +309,21 @@ def searchQuery(ingredientUuids: NonEmptyList[String]) = {
 }
 
 val getIngredientsQuery = sql"""
-  with base AS (
-    SELECT i.id, i.name, i.uuid, t.name AS tag_name
+  with counts AS (
+    SELECT ingredient_id, COUNT(distinct recipe_id) AS number_recipes
+    FROM recipe_ingredients
+    GROUP BY ingredient_id
+), base AS (
+    SELECT i.id, min(i.name) as name, min(uuid) as uuid, array_remove(array_agg(t.name), NULL) as tags
     FROM ingredients i
-    JOIN ingredient_tags it on i.id = it.ingredient_id
-    JOIN tags t ON it.tag_id = t.id)
+     LEFT JOIN ingredient_tags it on i.id = it.ingredient_id
+     LEFT JOIN tags t ON it.tag_id = t.id
+    GROUP BY i.id)
   SELECT
-    id, min(name) as name, min(uuid) as uuid, array_agg(tag_name) as tags
-    FROM base
-    group by id
+    b.*, number_recipes FROM base b
+    JOIN counts c
+    ON b.id=c.ingredient_id
+    ORDER BY number_recipes DESC
   """
 
 def getIngredientsSetsStoredQuery(userUuid: String) = sql"""

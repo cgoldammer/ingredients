@@ -1,4 +1,4 @@
-const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+
 
 require.extensions['.css'] = () => {
   return;
@@ -45,9 +45,11 @@ module.exports = {
   resolve: {
     extensions: ['*', '.js', '.jsx']
   },
+  experiments: {
+    topLevelAwait: true
+  },
 	devtool: debug ? "eval-source-map" : false,
   output: debug ? outputDebug : outputNonDebug,
   plugins: [
-    new ReactRefreshWebpackPlugin()
   ],
 };

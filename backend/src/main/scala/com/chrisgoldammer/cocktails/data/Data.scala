@@ -92,7 +92,7 @@ def getMFullIngredientFromData(
     md: MFullIngredientData
 ): StoredElement[FullIngredient] = {
   val tags = md.tags.map(t => Tag(t))
-  val ingredient = FullIngredient(name = md.name, uuid = md.uuid, tags = tags)
+  val ingredient = FullIngredient(name = md.name, uuid = md.uuid, tags = tags, numberRecipes=md.numberRecipes)
   StoredElement(md.id, ingredient)
 }
 
@@ -206,21 +206,11 @@ def insertFromSetupDataIO(
   )
 } yield None
 
-
-def getTransactor(dbSetup: DBSetup): Transactor[IO] =
-  Transactor.fromDriverManager[IO](
-    "org.postgresql.Driver", // driver classname
-    dbSetup.getConnString(),
-    "postgres", // user
-    "" // password
-  )
-
 class DataTools(dbSetup: DBSetup):
-  println(setupDataSimple.recipeData)
   val xa: Transactor[IO] = getTransactor(dbSetup)
 
   def getTags(): IO[List[Tag]] = getTagsIO().transact(xa)
-  def setup(setupData:Option[SetupData]=Some(setupDataSimple)): IO[Unit] = setupIO(setupData).transact(xa)
+  def setup(setupData:Option[SetupData]=Some(setupDataDB)): IO[Unit] = setupIO(setupData).transact(xa)
   def getFullRecipes(): IO[List[FullRecipe]] = getFullRecipesIO().transact(xa)
   def getIngredients(): IO[List[FullIngredient]] =
     getIngredientsIO().transact(xa)

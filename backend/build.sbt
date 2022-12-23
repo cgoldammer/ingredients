@@ -50,18 +50,8 @@ libraryDependencies ++= Seq(
 libraryDependencies += "io.circe" %% "circe-yaml" % "0.14.2"
 resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
-// lazy val example = taskKey[Unit]("setupData")
-// fullRunTask(example, Compile, "com.chrisgoldammer.cocktails.data.CallMe")
-
-TaskKey[Unit]("setupData") := (runMain in Compile)
-  .toTask(" com.chrisgoldammer.cocktails.data.CallMe")
-  .value
-
-
-TaskKey[Unit]("setupDBDev") := (runMain in Compile)
-  .toTask(" com.chrisgoldammer.cocktails.DataSetupDevMain")
-  .value
-
 scalacOptions ++= Seq( // use ++= to add to existing options
   "-Ykind-projector"
 )
+
+test in assembly := {}

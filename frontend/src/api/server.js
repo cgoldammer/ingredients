@@ -50,6 +50,7 @@ export const db = factory({
   ingredient: {
     uuid: primaryKey(String),
     name: String,
+    numberRecipes: Number,
     tags: manyOf("tag"),
   },
   fullRecipe: {
@@ -74,6 +75,7 @@ const createIngredientData = (tags) => {
   return {
     uuid: faker.datatype.uuid(),
     name: faker.helpers.unique(faker.commerce.product),
+    numberRecipes: faker.datatype.number(10),
     tags: tags,
   };
 };

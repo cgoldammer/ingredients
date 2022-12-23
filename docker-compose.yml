@@ -1,15 +1,35 @@
 version: "3.9"
 
 services:
-  scala:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - app_dev
+      - scala_prod
+    command: bash -c 'nginx -g "daemon off;"'
+
+  app_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile-app
+    ports:
+      - "8082:8082"
+    command: npm run devDocker
+    working_dir: /frontend
+
+  scala_prod:
     build:
       context: .
       dockerfile: Dockerfile-scala
-    depends_on: 
+    depends_on:
       - postgres2
     ports:
-      - "8300:8080"
-    command: bash -c "export SETTINGS=DevDocker; sbt 'runMain com.chrisgoldammer.cocktails.DataMain'; sbt 'runMain com.chrisgoldammer.cocktails.Main'"
+      - "8080:8080"
+    command: bash -c "export SETTINGS=prod; sbt 'runMain com.chrisgoldammer.cocktails.DataSetupProdMain'; sbt 'assembly'; java -cp target/scala-3.2.1/cocktails-assembly-0.0.2.jar com.chrisgoldammer.cocktails.Main"
 
   postgres2:
     build: 
@@ -22,14 +42,14 @@ services:
     ports:
       - "5433:5432"
 
-  app:
-    build:
+  postgres2:
+    build: 
       context: .
-      dockerfile: Dockerfile-app
+      dockerfile: Dockerfile-postgres
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: postgres
+      POSTGRES_DB: ingredients_dev
     ports:
-      - "8082:8082"
-    command: npm run devDocker
-    working_dir: /frontend
-    depends_on:
-      - postgres2
-      - scala
+      - "5433:5432"
+

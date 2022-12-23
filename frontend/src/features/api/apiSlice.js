@@ -58,9 +58,9 @@ export const apiSlice = createApi({
       invalidatesTags: ["User", "IngredientSet"],
       query: (data) => {
         const { username, password, isLogin } = data;
-        const url = isLogin ? "/login" : "/register";
+        const urlLogin = isLogin ? "/login" : "/register";
         return {
-          url: url,
+          url: urlLogin,
           method: "POST",
           headers: {
             authorization: "Basic " + base64.encode(username + ":" + password),

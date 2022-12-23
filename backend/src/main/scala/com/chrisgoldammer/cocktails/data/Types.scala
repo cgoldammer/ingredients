@@ -1,4 +1,5 @@
-package com.chrisgoldammer.cocktails.data.types
+package com.chrisgoldammer.cocktails.data.
+types
 
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -28,7 +29,8 @@ import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
 import _root_.io.circe.yaml.parser
 import cats.implicits.catsSyntaxEither
-
+import doobie.Transactor
+import doobie.implicits.toConnectionIOOps
 
 import scala.io.Source
 
@@ -90,7 +92,7 @@ case class FullRecipeData(
     ingredientName: String,
     ingredientUuid: String
 )
-case class FullIngredient(name: String, uuid: String, tags: List[Tag])
+case class FullIngredient(name: String, uuid: String, tags: List[Tag], numberRecipes: Int)
 
 case class FullIngredientSet(
     name: String,
@@ -107,7 +109,8 @@ case class MFullIngredientData(
     id: Int,
     name: String,
     uuid: String,
-    tags: List[String]
+    tags: List[String],
+    numberRecipes: Int
 )
 case class MFullRecipe(
     id: Int,
@@ -210,18 +213,32 @@ object Settings:
       case "testLocal" => Some(Settings.TestLocal)
       case "devLocal"  => Some(Settings.DevLocal)
       case "devDocker" => Some(Settings.DevDocker)
+      case "prod"      => Some(Settings.Prod)
       case _           => None
   }
 
 def getSettings(): Option[Settings] =
   sys.env.get("SETTINGS").map(Settings.fromString).flatten
 
+def getTransactor(dbSetup: DBSetup) = {
+  Transactor.fromDriverManager[IO](
+    "org.postgresql.Driver", // driver classname
+    dbSetup.getConnString(),
+    "postgres", // user
+    dbSetup.password.getOrElse("") // password
+  )
+}
+
 def fileLogHandler(le: LogEvent): Unit = {
   val settings = getSettings()
   val logString = time.LocalDateTime.now().toString + ": " + le.sql + "\n"
   val logFile =
     "logs/log_" + settings.toString.replace('(', '_').replace(')', '_')
-  Files.writeString(Paths.get(logFile), logString, StandardOpenOption.APPEND)
+  val path = Paths.get(logFile)
+  if (!Files.exists(path)){
+    Files.createFile(path)
+  }
+  Files.writeString(path, logString, StandardOpenOption.APPEND)
 }
 
 implicit val logHandler: LogHandler = LogHandler(fileLogHandler)

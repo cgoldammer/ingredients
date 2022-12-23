@@ -6,7 +6,7 @@
 
 # Pull base image
 ARG BASE_IMAGE_TAG
-FROM openjdk:${BASE_IMAGE_TAG:-8u332-jdk-bullseye}
+FROM openjdk:21-ea-1-jdk-bullseye
 
 # Env variables
 ARG SCALA_VERSION
@@ -80,4 +80,4 @@ RUN \
 ## -w /home/sbtuser
 WORKDIR /root  
 
-CMD sbt
+# CMD sbt
