@@ -1,0 +1,67 @@
+
+  scala_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile-scala
+    depends_on: 
+      - postgres2
+    ports:
+      - "8300:8080"
+    command: bash -c "export SETTINGS=devDocker; sbt 'runMain com.chrisgoldammer.cocktails.DataSetupDevMain'; sbt 'runMain com.chrisgoldammer.cocktails.Main'"
+
+  scala_prod:
+    build:
+      context: .
+      dockerfile: Dockerfile-scala
+    ports:
+      - "8080:8080"
+    command: bash -c "export SETTINGS=prod; sbt 'runMain com.chrisgoldammer.cocktails.DataSetupProdMain'; sbt 'assembly'; java -cp target/scala-3.2.1/cocktails-assembly-0.0.2.jar com.chrisgoldammer.cocktails.Main"
+
+  postgres2:
+    build: 
+      context: .
+      dockerfile: Dockerfile-postgres
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: postgres
+      POSTGRES_DB: ingredients_dev
+    ports:
+      - "5433:5432"
+
+  app_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile-app
+    ports:
+      - "8082:8082"
+    command: npm run devDocker
+    working_dir: /frontend
+    depends_on:
+      - postgres2
+      - scala_dev
+
+
+
+  app_prod:
+    # image: 407176235352.dkr.ecr.us-east-1.amazonaws.com/business:app_prod
+    build:
+      context: .
+      dockerfile: Dockerfile-app-prod
+
+  nginx:
+    image: 407176235352.dkr.ecr.us-east-1.amazonaws.com/business:nginx
+    build:
+      context: .
+      dockerfile: Dockerfile-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - app_prod
+    volumes:
+      - myvolume:/usr/share/nginx/html
+    command: bash -c 'cp /usr/share/nginx/html/index_prod.html /usr/share/nginx/html/index.html; nginx -g "daemon off;"'
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: us-east-1
+
