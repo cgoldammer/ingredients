@@ -44,6 +44,7 @@ import org.typelevel.ci.*
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.data.queries.*
 
 import junit.framework.TestSuite
 import munit.CatsEffectSuite
@@ -264,119 +265,143 @@ class DataTests extends CatsEffectSuite:
     check[Results[FullIngredientSet]](request, status, bodyCondition)
   }
 
+def getLoginRequest(isLogin: Boolean, user: BasicCredentials): Request[IO] = {
+  val url = if (isLogin) uri"/login" else uri"/register"
+  val authHeader = Authorization(user)
+  Request[IO](Method.POST, url, headers = Headers(authHeader))
+}
+
+def getUserResponseFromToken(token: String, app: Http4sApp): Option[AuthUser] = {
+  var getUserRequest: Request[IO] = Request[IO](
+    Method.GET,
+    uri"/get_user",
+    headers = getHeaderFromToken(token)
+  )
+  val requestIO = app.run(getUserRequest)
+  try {
+    val userResponse = requestIO.flatMap(_.as[AuthUser]).unsafeRunSync()
+    Some(userResponse)
+  } catch {
+    case e: Exception => None
+  }
+}
+
+
 class AuthTests extends CatsEffectSuite:
 
   val dbSetup = Settings.TestLocal.getSetup()
-
   val blockingPool = Executors.newFixedThreadPool(5)
   val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
 
-//  test("A user cannot login without registering first") {
-//    assert(withoutRegisterALoginDoesNotReturnAToken())
-//  }
-//
-//  test("A user can login after registering first") {
-//    assert(afterRegisterALoginReturnsAToken())
-//  }
-//
-//  test(
-//    "After registering, a user credentials stay valid when app is reloaded"
-//  ) {
-//    assert(newUserPersistsAfterAppReload())
-//  }
-//
-//  test("After registering, we can send get user data from just the token") {
-//    assert(afterRegisteringOneCanSendTokenRequest())
-//  }
+  def registerAndThenLoginToken(user: BasicCredentials, app: Http4sApp): Option[String] = {
+    val user = getRandomUser()
+    val registerRequest: Request[IO] = getLoginRequest(false, user)
+    app.run(registerRequest).unsafeRunSync()
+    getToken(app, user, true)
+  }
+
+  def hasLoginToken(app: Http4sApp, user: BasicCredentials) = getToken(app, user, isLogin = true).nonEmpty
+
+  test("A user cannot login without registering first") {
+    val app = getAppForTesting()
+    val user = getRandomUser()
+    assert(!hasLoginToken(app, user))
+  }
+
+  test("A user can login after registering first") {
+    val app = getAppForTesting()
+    val user = getRandomUser()
+    val registerRequest: Request[IO] = getLoginRequest(isLogin=false, user)
+    app.run(registerRequest).unsafeRunSync()
+    assert(hasLoginToken(app, user))
+  }
+
+  test("User credentials stay valid when app is reloaded") {
+    val app = getAppForTesting()
+    val user = getRandomUser()
+    val registerRequest: Request[IO] = getLoginRequest(false, user)
+    app.run(registerRequest).unsafeRunSync()
+
+    val app2 = getAppForTesting()
+    assert(hasLoginToken(app2, user))
+  }
+
+  test("After registering, we can get user data from just token") {
+    val app = getAppForTesting()
+    val user = getRandomUser()
+    val tokenOption = getToken(app, user, isLogin = false)
+    assert(true)
+    val userNameOption = tokenOption.map(token => getUserResponseFromToken(token, app)).flatten.map(_.name)
+    assert(userNameOption == Some(user.username))
+  }
 
   test("After using the fixtures, the fixture user login creates a token") {
     resetDB(dbSetup)
     insertDB(dbSetup)
     val app = getAppForTesting()
     val userFromFixturesWithSet = user0
-    val tokenOption = getToken(app, userFromFixturesWithSet, isLogin = true)
-    assert(tokenOption.nonEmpty)
+    assert(hasLoginToken(app, userFromFixturesWithSet))
   }
 
-//  test("Resetting DB prevents a user from logging in") {
-//    assert(resettingDBPreventsLogin())
-//  }
-
-  def tokenUserResponse(token: String, app: Http4sApp): AuthUser = {
-    var getUserRequest: Request[IO] = Request[IO](
-      Method.GET,
-      uri"/get_user",
-      headers = getHeaderFromToken(token)
-    )
-    val requestIO = app.run(getUserRequest)
-    return requestIO.flatMap(_.as[AuthUser]).unsafeRunSync()
-  }
-
-  def loginReturnsToken(bc: BasicCredentials, app: Http4sApp): Boolean = {
-    val authHeader = Authorization(bc)
-    var loginRequest: Request[IO] =
-      Request[IO](Method.POST, uri"/login", headers = Headers(authHeader))
-    val requestIO = app.run(loginRequest)
-    val token = requestIO.flatMap(_.as[String]).unsafeRunSync()
-    return token.startsWith(""""Bearer """)
-  }
-
-  def withoutRegisterALoginDoesNotReturnAToken(): Boolean = {
-    val app = getAppForTesting()
-    val user = getRandomUser()
-    return !loginReturnsToken(user, app)
-  }
-
-  def afterRegisterALoginReturnsAToken(): Boolean = {
-    val app = getAppForTesting()
-    val user = getRandomUser()
-    val authHeader = Authorization(user)
-    val registerRequest: Request[IO] =
-      Request[IO](Method.POST, uri"/register", headers = Headers(authHeader))
-    app.run(registerRequest).unsafeRunSync()
-    return loginReturnsToken(user, app)
-  }
-
-  def afterRegisteringOneCanSendTokenRequest(): Boolean = {
-    val app = getAppForTesting()
-    val user = getRandomUser()
-    val tokenOption = getToken(app, user, isLogin = false)
-    tokenOption.map(token => tokenUserResponse(token, app)).map(_.name) == Some(
-      user.username
-    )
-  }
-
-  def newUserPersistsAfterAppReload(): Boolean = {
-    val app = getAppForTesting()
-    val user = getRandomUser()
-
-    val authHeader = Authorization(user)
-    val registerRequest: Request[IO] =
-      Request[IO](Method.POST, uri"/register", headers = Headers(authHeader))
-    app.run(registerRequest).unsafeRunSync()
-
-    val app2 = getAppForTesting()
-    return loginReturnsToken(user, app2)
-  }
-
-  def resettingDBPreventsLogin(): Boolean = {
+  test("Resetting DB prevents login") {
     resetDB(dbSetup)
     val app = getAppForTesting()
     val user = getRandomUser()
-
-    val authHeader = Authorization(user)
-    val registerRequest: Request[IO] =
-      Request[IO](Method.POST, uri"/register", headers = Headers(authHeader))
+    val registerRequest: Request[IO] = getLoginRequest(false, user)
     app.run(registerRequest).unsafeRunSync()
 
     resetDB(dbSetup)
     val app2 = getAppForTesting()
-    return !loginReturnsToken(user, app2)
+    assert(!hasLoginToken(app2, user))
   }
+
+  test("Token authentication works after logging in, but not after logging out") {
+    val app = getAppForTesting()
+    val user = getRandomUser()
+
+    val tokenOption = registerAndThenLoginToken(user, app)
+    tokenOption match {
+      case None => assert(false)
+      case Some(token) => {
+        val user: Option[AuthUser] = getUserResponseFromToken(token, app)
+      }
+    }
+  }
+
+
+
+
+  test("Resetting DB prevents a user from logging in") {
+    resetDB(dbSetup)
+    val app = getAppForTesting()
+    val user = getRandomUser()
+    val registerRequest: Request[IO] = getLoginRequest(false, user)
+    app.run(registerRequest).unsafeRunSync()
+
+    resetDB(dbSetup)
+    val app2 = getAppForTesting()
+    val tokenOption = getToken(app2, user, isLogin = true)
+    assert(tokenOption.isEmpty)
+  }
+
+  test("A logout prevents cookie authentication") {
+    val app = getAppForTesting()
+    val user = getRandomUser()
+    val tokenOption = registerAndThenLoginToken(user, app)
+    tokenOption match {
+      case None => assert(false)
+      case Some(token) => {
+        val authHeader = Authorization(user)
+        val logoutRequest = Request[IO](Method.POST, uri"/logout", headers = getHeaderFromToken(token))
+        app.run(logoutRequest).unsafeRunSync()
+        println(getUserResponseFromToken(token, app))
+        assert(getUserResponseFromToken(token, app).isEmpty)
+      }
+    }
+  }
+
 
 // TODO: AppParams DB works as expected
-// TODO: AppParams authBackend works as expected
-
 // TODO: If I register the same user twice, I get an error
 // TODO: Send appropriate error codes if register or login go wrong
 // TODO: Send nice error messages for register and login

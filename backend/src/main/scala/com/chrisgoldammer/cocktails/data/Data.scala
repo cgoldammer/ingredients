@@ -17,8 +17,8 @@ import doobie.postgres.implicits.*
 import doobie.util.ExecutionContexts
 
 import com.chrisgoldammer.cocktails.cryptocore.*
-import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.data.queries.*
 
 def camel2underscores(x: String) = {
   "_?[A-Z][a-z\\d]+".r

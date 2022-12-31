@@ -17,7 +17,7 @@ import doobie.Transactor
 import doobie.implicits.toConnectionIOOps
 import org.apache.commons.codec.binary.Hex
 import org.http4s.BasicCredentials
-import org.http4s.Request
+import org.http4s.{Request, ContextRequest}
 import org.http4s.Response
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.dsl.io.*
@@ -28,6 +28,7 @@ import org.http4s.syntax.header.*
 
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.data.queries.*
 
 import javax.crypto.Cipher
 import javax.crypto.Mac
@@ -39,14 +40,13 @@ import tsec.passwordhashers.jca.BCrypt.syncPasswordHasher
 def toEither[A, B](a: Option[A], b: B): Either[B, A] =
   Either.cond(a.isDefined, a.get, b)
 
-
-
+val key = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
+val crypto = CryptoBits(PrivateKey(Codec.toUTF8(secrets.cryptocorePrivatekey)))
+val clock = java.time.Clock.systemUTC
+val defaultTokenError = "Token not valid"
 
 case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
   val backend = ab.getBackingStore()
-  println("Connecting to:")
-  println(dbSetup.getConnString())
-  println("Password: " + dbSetup.password.getOrElse(""))
   val xa: Transactor[IO] = getTransactor(dbSetup)
 
   def verifyUserExists(c: BasicCredentials): IO[Option[AuthUser]] = for {
@@ -54,14 +54,14 @@ case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
   } yield storedUser.map(checkUser(c.password)).flatten.headOption
 
   def verifyUserNameDoesNotExist(
-      c: BasicCredentials
-  ): IO[Option[BasicCredentials]] = for {
+                                  c: BasicCredentials
+                                ): IO[Option[BasicCredentials]] = for {
     res <- backend.get(c.username).transact(xa)
   } yield Option.when(!res.isDefined)(c)
 
   def verifyLogin(request: Request[IO]): IO[Option[AuthUser]] = for {
     res <- getCredentials(request) match
-      case None    => IO.pure(None)
+      case None => IO.pure(None)
       case Some(c) => verifyUserExists(c)
   } yield res
 
@@ -87,9 +87,19 @@ case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
   def jsonParseString(s: String): Json =
     jsonParse(raw""""$s"""").getOrElse(Json.Null)
 
-  def getBearer(user: String): Json = jsonParseString(
-    "Bearer " + crypto.signToken(user, clock.millis.toString)
+  def getBearer(user: String, expirationSeconds: Int = 1000): Json = jsonParseString(
+    "Bearer " + crypto.signUser(user, expirationSeconds, clock.millis.toString)
   )
+
+
+  val logOut: Kleisli[IO, ContextRequest[IO, AuthUser], Response[IO]] = Kleisli({ request =>
+    val token = request.req.headers.get[Authorization].toList.headOption.get.credentials.toString
+    println("INSERTING:" + token.replace("Bearer ", ""))
+    for {
+      _ <- insertTokenToDisallowList(token.replace("Bearer ", "")).transact(xa)
+      resp <- Ok("Logged out")
+    } yield resp
+  })
 
   val logIn: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
     verifyLogin(request: Request[IO]).flatMap(_ match {
@@ -113,40 +123,60 @@ case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
       }
   } yield res
 
-  val authorizeUserFromToken
-      : Kleisli[IO, Request[IO], Either[String, AuthUser]] = Kleisli({
-    request =>
+  def getCredentials(request: Request[IO]): Option[BasicCredentials] = {
 
-      val header = request.headers.get[Authorization].toList.headOption
-      println("HEADER:" + header.toString)
-      val messageEither = header match
-        case None => Right("No header found")
-        case Some(h) =>
-          crypto
-            .validateSignedToken(h.credentials.toString.replace("Bearer ", ""))
-            .toRight("Token invalid")
-      println("Decoded:" + messageEither.toString)
-      messageEither match
-        case Left(error) => IO(Left(error))
-        case Right(userId) =>
-          retrieveUser.run(userId).map(a => toEither(a, "no user found"))
-  })
+    val header = request.headers.get[Authorization].toList.headOption
+    for {
+      h <- header
+      s <- Some(BasicCredentials.apply(h.credentials.toString.split(" ")(1)))
+    } yield s
+  }
+
+  def checkUser(pass: String)(storedUser: CreatedUserData): Option[AuthUser] = {
+    val isMatch = SCryptUtil.check(pass.getBytes(), storedUser.hash)
+    Option.when(isMatch)(AuthUser(storedUser.uuid, storedUser.name))
+  }
+
+  def isInDisallowList(token: String): IO[Boolean] = inDisallowListCount(token).transact(xa).map(c => c == Some(1))
+
+  def handleToken(token: String): IO[Either[String, AuthUser]] = {
+    val disallowed: IO[Boolean] = isInDisallowList(token)
+    val userMatch: IO[Either[String, AuthUser]] = crypto.validateSignedToken(token) match
+      case None => {
+        IO(Left(defaultTokenError))
+      }
+      case Some((expirationTimeLong, userId)) => handleUserToken(expirationTimeLong, userId)
+
+    for {
+      isDisallowed <- disallowed
+      userMatchResult <- userMatch
+    } yield if (isDisallowed) Left(defaultTokenError) else userMatchResult
+  }
+
+  def handleUserTokenRequest(request: Request[IO]): IO[Either[String, AuthUser]] = {
+    val res = request.headers.get[Authorization].toList.headOption match
+      case None => IO(Left(defaultTokenError))
+      case Some(h) => for {
+        res <- handleToken(h.credentials.toString.replace("Bearer ", ""))
+      } yield res
+    res
+  }
+
+  val authorizeUserFromToken: Kleisli[IO, Request[IO], Either[String, AuthUser]] = Kleisli(handleUserTokenRequest)
+
+
+  def handleUserToken(expirationTime: Long, userId: String): IO[Either[String, AuthUser]] = {
+    val currentTime = clock.millis
+    if (currentTime <= expirationTime) {
+      retrieveUser.run(userId).map(a => toEither(a, "no user found"))
+    } else {
+      IO(Left(defaultTokenError))
+    }
+  }
 }
 
-def checkUser(pass: String)(storedUser: CreatedUserData): Option[AuthUser] = {
-  val isMatch = SCryptUtil.check(pass.getBytes(), storedUser.hash)
-  Option.when(isMatch)(AuthUser(storedUser.uuid, storedUser.name))
-}
 
-def getCredentials(request: Request[IO]): Option[BasicCredentials] = {
 
-  val header = request.headers.get[Authorization].toList.headOption
-  for {
-    h <- header
-    s <- Some(BasicCredentials.apply(h.credentials.toString.split(" ")(1)))
-  } yield s
-}
 
-val key = PrivateKey(Codec.toUTF8(Random.alphanumeric.take(20).mkString("")))
-val crypto = CryptoBits(PrivateKey(Codec.toUTF8(secrets.cryptocorePrivatekey)))
-val clock = java.time.Clock.systemUTC
+
+

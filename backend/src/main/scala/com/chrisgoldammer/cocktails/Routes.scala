@@ -52,13 +52,7 @@ def authUser(
 
 def middleware(af: AuthFunctions): AuthMiddleware[IO, AuthUser] =
   AuthMiddleware(authUser(af))
-//    case req@GET -> Root / "get_user" => for {
-//      res <- af.authorizeUserFromToken.run(req)
-//      resp <- res match
-//      case Right(au) => Ok(au.asJson)
-//      case Left(error) => Forbidden(error)
-//    } yield resp
-def authedRoutes(dt: DataTools): AuthedRoutes[AuthUser, IO] =
+def authedRoutes(dt: DataTools, af:AuthFunctions): AuthedRoutes[AuthUser, IO] =
   AuthedRoutes.of {
     case GET -> Root / "get_user" as user => {
       for {
@@ -84,6 +78,7 @@ def authedRoutes(dt: DataTools): AuthedRoutes[AuthUser, IO] =
         )
         resp <- Ok(res.asJson)
       } yield resp
+    case req @ POST -> Root / "logout" as user => af.logOut.run(req)
   }
 
 def openRoutes(dt: DataTools, af: AuthFunctions) = {
@@ -120,8 +115,6 @@ def openRoutes(dt: DataTools, af: AuthFunctions) = {
       } yield resp
     case req @ POST -> Root / "login"    => af.logIn.run(req)
     case req @ POST -> Root / "register" => af.register.run(req)
-    case req @ GET -> Root / "example"   => Ok("HELLO!")
-    case req @ GET -> Root / "example2"  => Ok(LoginResponse("hi").asJson)
   }
 }
 
@@ -130,7 +123,7 @@ def jsonApp(ap: AppParams): Http4sApp = {
   val af = AuthFunctions(ap.auth, ap.db)
 //  val mwFall: AuthMiddleware[IO, AuthUser] =
 //    AuthMiddleware.withFallThrough(authUser(af))
-  openRoutes(dt, af) <+> middleware(af)(authedRoutes(dt))
+  openRoutes(dt, af) <+> middleware(af)(authedRoutes(dt, af))
 }.orNotFound
 
 //val allowedOrigin = Origin.Host(Uri.Scheme.http, Uri.RegName("localhost"), Some(8082))

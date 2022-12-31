@@ -19,12 +19,17 @@ import org.http4s.BasicCredentials
 import org.http4s.Request
 
 import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.helpers.*
 
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import tsec.passwordhashers.jca.*
 
+val clock = java.time.Clock.systemUTC
+
 case class PrivateKey(key: Array[Byte])
+
+
 
 case class CryptoBits(key: PrivateKey) {
 
@@ -37,16 +42,23 @@ case class CryptoBits(key: PrivateKey) {
     Hex.encodeHexString(mac.doFinal(message.getBytes("utf-8")))
   }
 
-  def signToken(token: String, nonce: String): String = {
-    val joined = nonce + "-" + token
+  def signUser(userName: String, expirationSeconds: Int, nonce: String): String = {
+    val expirationTime = clock.millis + expirationSeconds * 1000
+    val joined = nonce + "-" + expirationTime.toString + "-" + userName
     sign(joined) + "-" + joined
   }
 
-  def validateSignedToken(token: String): Option[String] = {
-    token.split("-", 3) match {
-      case Array(signature, nonce, raw) => {
-        val signed = sign(nonce + "-" + raw)
-        if (constantTimeEquals(signature, signed)) Some(raw) else None
+  def validateSignedToken(token: String): Option[(Long, String)] = {
+    token.split("-") match {
+      case Array(signature, nonce, expirationTimeString, message) => {
+        val expirationTimeOpt = toLongSafe(expirationTimeString)
+        expirationTimeOpt match {
+          case None => None
+          case Some(expirationTime) => {
+            val signed = sign(nonce + "-" + expirationTimeString + "-" + message)
+            if (constantTimeEquals(signature, signed)) Some((expirationTime, message)) else None
+          }
+        }
       }
       case _ => None
     }
