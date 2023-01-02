@@ -3,7 +3,6 @@ const common = require('./webpack.common.js');
 const webpack = require('webpack');
 const { IgnorePlugin } = require('webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-npm
 const features = {BACKENDURL: 'http://52.22.180.212:8080/', RUNMODE: 'prod'}
 
 const prodExports = {

@@ -24,9 +24,9 @@ import PropTypes from "prop-types";
 import { IngredientSetsView, SaveSetView } from "./IngredientSetsView";
 import Grid from "@mui/material/Unstable_Grid2";
 
-import { getIngredientsSelected } from "../../store";
+import { getIngredientsSelected, userSelector } from "../../store";
 import { getSelectedSet, setIngredientSet } from "../../ingredientSetsReducer";
-import { listElementsAreIdentical } from "../../helpers";
+import { listElementsAreIdentical } from "../../helpers/helpers";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import { RecipeView } from "../recipes/RecipeView";
 
@@ -213,6 +213,7 @@ SelectTagsView.propTypes = {
 };
 
 export function IngredientsView() {
+  const user = useSelector(userSelector);
   const { data: ingredientsData, isSuccess: isSuccessIngredients } =
     useGetIngredientsQuery();
   const ingredients = isSuccessIngredients ? ingredientsData.data : [];
@@ -241,13 +242,22 @@ export function IngredientsView() {
     />
   );
 
-  return (
-    <div>
+  const setsView =
+    user == undefined ? (
+      <span />
+    ) : (
       <Grid container spacing={1}>
-        <Grid xs={2}>Sets: </Grid>
+        <Grid xs={2}>Sets:</Grid>
         <Grid xs={9}>
           <IngredientSetsView />
         </Grid>
+      </Grid>
+    );
+
+  return (
+    <div>
+      {setsView}
+      <Grid container spacing={1}>
         <Grid xs={2}>Total: </Grid>
         <Grid xs={9}>{ingredients.length}</Grid>
         <Grid xs={2}>Selected: </Grid>

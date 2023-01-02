@@ -14,26 +14,66 @@ import {
 import { useRegisterUserMutation, useGetUserQuery } from "./api/apiSlice";
 import { setToken } from "../userReducer";
 import { useDispatch, useSelector } from "react-redux";
-import { hasUserTokenSelector } from "../store";
+import { hasUserTokenSelector, userSelector } from "../store";
+import { apiSlice } from "./api/apiSlice";
 
-export function LoginView() {
-  const [password, setPassword] = useState("testPassword");
-  const [username, setUserName] = useState("testUser");
+export function UserView() {
+  const user = useSelector(userSelector);
+  return (
+    <div>
+      <div> Username: {user != undefined ? user.name : "No user found"}</div>
+    </div>
+  );
+}
+
+export function LoginView(props) {
+  const [password, setPassword] = useState("a");
+  const [username, setUserName] = useState("a");
   const [isLogin, setIsLogin] = useState(true);
   const dispatch = useDispatch();
   const hasUserToken = useSelector(hasUserTokenSelector);
-
+  const registerAction = (data) =>
+    new Promise((resolve, reject) => {
+      registerUser({ username, password, isLogin }).then((data) => {
+        dispatch(setToken(data.data));
+        resolve();
+      });
+    });
   const {
     data: userData,
     isFetching: isFetchingUser,
     error: userError,
-  } = useGetUserQuery();
+    refetch: refetchUser,
+  } = useGetUserQuery(undefined, { skip: !hasUserToken });
   const [registerUser, { error: registerError }] = useRegisterUserMutation();
+
+  const passwordReset = !isLogin ? (
+    <span />
+  ) : (
+    <Typography>
+      <Link href="#">Forgot password ?</Link>
+    </Typography>
+  );
 
   return (
     <Grid>
       <Grid align="center">
-        <h2>Sign In</h2>
+        <FormControl>
+          <RadioGroup
+            row
+            aria-labelledby="demo-controlled-radio-buttons-group"
+            name="controlled-radio-buttons-group"
+            value={isLogin ? "login" : "register"}
+            onChange={(e) => setIsLogin(e.target.value == "login")}
+          >
+            <FormControlLabel
+              value="register"
+              control={<Radio />}
+              label="Register"
+            />
+            <FormControlLabel value="login" control={<Radio />} label="Login" />
+          </RadioGroup>
+        </FormControl>
       </Grid>
       <TextField
         label="Username"
@@ -54,51 +94,25 @@ export function LoginView() {
         fullWidth
         required
       />
-      <FormControl>
-        <FormLabel id="demo-controlled-radio-buttons-group">
-          Login Type
-        </FormLabel>
-        <RadioGroup
-          aria-labelledby="demo-controlled-radio-buttons-group"
-          name="controlled-radio-buttons-group"
-          value={isLogin ? "login" : "register"}
-          onChange={(e) => setIsLogin(e.target.value == "login")}
+      <Grid align="center">
+        <Button
+          type="submit"
+          color="primary"
+          variant="contained"
+          onClick={() =>
+            registerAction({ username, password, isLogin }).then(() => {
+              console.log("Invalidating");
+              refetchUser();
+            })
+          }
         >
-          <FormControlLabel
-            value="register"
-            control={<Radio />}
-            label="Register"
-          />
-          <FormControlLabel value="login" control={<Radio />} label="Login" />
-        </RadioGroup>
-      </FormControl>
-      <Button
-        type="submit"
-        color="primary"
-        variant="contained"
-        onClick={() =>
-          registerUser({ username, password, isLogin }).then((data) => {
-            dispatch(setToken(data.data));
-          })
-        }
-      >
-        {isLogin ? "Login" : "Register"}
-      </Button>
-      <Typography>
-        <Link href="#">Forgot password ?</Link>
-      </Typography>
-      <Typography>
-        {" "}
-        Do you have an account ?<Link href="#">Sign Up</Link>
-      </Typography>
+          {isLogin ? "Login" : "Register"}
+        </Button>
+        {passwordReset}
+      </Grid>
+
       <div>
         <div>{userError != undefined ? userError.status : ""}</div>
-        <div>
-          User when logging in via token:{" "}
-          {userData == undefined
-            ? "Not loaded yet"
-            : userData.name + " - Token: " + hasUserToken}
-        </div>
       </div>
     </Grid>
   );

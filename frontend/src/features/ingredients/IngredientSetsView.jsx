@@ -13,7 +13,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { setIngredientSet, getSelectedSet } from "../../ingredientSetsReducer";
 import { setIngredientsSelectedSimple } from "../../ingredientsReducer";
 import { getIngredientsSelected } from "../../store";
-import { listElementsAreIdentical } from "../../helpers";
+import { listElementsAreIdentical } from "../../helpers/helpers";
 
 export function SaveSetView() {
   const ingredientsSelected = useSelector(getIngredientsSelected);

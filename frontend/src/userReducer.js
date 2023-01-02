@@ -7,7 +7,15 @@ export const userSlice = createSlice({
   },
   reducers: {
     setToken: (state, actions) => {
-      state.token = actions.payload;
+      const localStorageKey = "userToken";
+      const token = actions.payload;
+      state.token = token;
+      console.log("SETTING localstorage:" + token);
+      if (token != undefined) {
+        localStorage.setItem(localStorageKey, token);
+      } else {
+        localStorage.removeItem(localStorageKey);
+      }
     },
   },
 });

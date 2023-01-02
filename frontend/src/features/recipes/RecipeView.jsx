@@ -1,5 +1,5 @@
 import React from "react";
-import { boxFormat } from "../../helpers";
+import { boxFormat } from "../../helpers/helpers";
 import { Box, Typography, List, ListItemText } from "@mui/material";
 import PropTypes from "prop-types";
 import Grid from "@mui/material/Unstable_Grid2";

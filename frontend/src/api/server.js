@@ -3,7 +3,11 @@ import { factory, manyOf, primaryKey } from "@mswjs/data";
 import { faker } from "@faker-js/faker";
 import seedrandom from "seedrandom";
 import { setRandom } from "txtgen";
-import { getRange, getRandomSample, getRandomSampleShare } from "../helpers";
+import {
+  getRange,
+  getRandomSample,
+  getRandomSampleShare,
+} from "../helpers/helpers";
 
 // Add an extra delay to all endpoints, so loading spinners show up.
 const ARTIFICIAL_DELAY_MS = 1;
@@ -133,6 +137,8 @@ for (let i = 0; i < NUM_SETS; i++) {
   db.ingredientSet.create(newSet);
 }
 
+db.user.create({ uuid: faker.datatype.uuid(), name: "TestUser" });
+
 export const handlers = [
   rest.get("/fakeApi/ingredients", (req, res, ctx) => {
     const ingredients = {
@@ -163,6 +169,8 @@ export const handlers = [
     return res(ctx.json("Basic tokenFromServer"));
   }),
   rest.get("/fakeApi/get_user", (req, res, ctx) => {
+    console.log("Hitting getUser");
+    console.log(db.user.getAll());
     return res(ctx.delay(ARTIFICIAL_DELAY_MS), ctx.json(db.user.getAll()[0]));
   }),
   rest.post("/fakeApi/add_ingredient_set", async (req, res, ctx) => {

@@ -6,6 +6,11 @@ import userReducer from "./userReducer";
 import recipesReducer from "./recipeReducer";
 const listenerMiddleware = createListenerMiddleware();
 
+// export const updateToken(state, actions) => {
+//   const token = actions.payload;
+//   state.userData.token = token;
+// }
+
 const reducer = {
   [apiSlice.reducerPath]: apiSlice.reducer,
   ingredientsSelected: ingredientsSelectedReducer,
@@ -42,3 +47,11 @@ export const getIngredientsSelected = (state) => {
 export const getUserTokenSelector = (state) => state.userData.token;
 export const hasUserTokenSelector = (state) =>
   getUserTokenSelector(state) != undefined;
+
+export const userSelector = (state) => {
+  const res = state.api.queries["getUser(undefined)"];
+  if (res != undefined && res.status == "fulfilled" && res.data != undefined) {
+    return res.data;
+  }
+  return undefined;
+};

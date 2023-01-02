@@ -9,6 +9,7 @@ export const apiSlice = createApi({
     baseUrl: url,
     prepareHeaders: (headers, { getState, endpoint }) => {
       const token = getState().userData.token;
+      console.log("Header token in request:" + token);
       if (token != undefined && endpoint != "registerUser") {
         headers.set("authorization", token);
       }
@@ -55,7 +56,7 @@ export const apiSlice = createApi({
       ],
     }),
     registerUser: builder.mutation({
-      invalidatesTags: ["User", "IngredientSet"],
+      invalidatesTags: ["User"], //, "IngredientSet"],
       query: (data) => {
         const { username, password, isLogin } = data;
         const urlLogin = isLogin ? "/login" : "/register";
@@ -65,6 +66,15 @@ export const apiSlice = createApi({
           headers: {
             authorization: "Basic " + base64.encode(username + ":" + password),
           },
+        };
+      },
+    }),
+    logout: builder.mutation({
+      invalidatesTags: ["User", "IngredientSet"],
+      query: (data) => {
+        return {
+          url: "/logout",
+          method: "POST",
         };
       },
     }),
@@ -92,17 +102,7 @@ export const {
   useGetRecipesQuery,
   useGetRecipesPossibleQuery,
   useRegisterUserMutation,
+  useLogoutMutation,
   useGetUserQuery,
   useAddIngredientSetMutation,
 } = apiSlice;
-
-/* Login process:
-- Register -> If successful, returns token in body and logs user in
-- Login: If successful, returns token in body  and logs user in
-
-Frontend: Takes token, stores it in localstorage and in redux state. It's send along with
-any future requests, and taken from local storage upon app startup.
-
-- Any request: If it contains auth cookie (and cookie hasn't been invalidated),
-  backend infers the user from the cookie and provides relevant content.
- */
