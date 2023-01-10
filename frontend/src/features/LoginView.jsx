@@ -16,6 +16,7 @@ import { setToken } from "../userReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { hasUserTokenSelector, userSelector } from "../store";
 import { apiSlice } from "./api/apiSlice";
+import { useNavigate } from "react-router-dom";
 
 export function UserView() {
   const user = useSelector(userSelector);
@@ -39,6 +40,7 @@ export function LoginView(props) {
         resolve();
       });
     });
+  const navigate = useNavigate();
   const {
     data: userData,
     isFetching: isFetchingUser,
@@ -102,6 +104,7 @@ export function LoginView(props) {
           onClick={() =>
             registerAction({ username, password, isLogin }).then(() => {
               console.log("Invalidating");
+              navigate("/");
               refetchUser();
             })
           }

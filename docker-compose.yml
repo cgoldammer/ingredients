@@ -29,7 +29,7 @@ services:
       - postgres2
     ports:
       - "8080:8080"
-    command: bash -c "export SETTINGS=prod; sbt 'runMain com.chrisgoldammer.cocktails.DataSetupProdMain'; sbt 'assembly'; java -cp target/scala-3.2.1/cocktails-assembly-0.0.2.jar com.chrisgoldammer.cocktails.Main"
+    command: bash -c "export SETTINGS=prod; sbt 'runMain com.chrisgoldammer.cocktails.DataSetupProdInitialize'; sbt 'assembly'; java -cp target/scala-3.2.1/cocktails-assembly-0.0.2.jar com.chrisgoldammer.cocktails.Main"
 
   postgres2:
     build: 
