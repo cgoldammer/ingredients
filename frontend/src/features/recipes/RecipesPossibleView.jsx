@@ -13,15 +13,13 @@ export function RecipesPossibleView() {
   };
   const { data = { data: [] } } = useGetRecipesPossibleQuery(postData);
   const divs = data.data.map((recipe) => (
-    <Grid sm={10} md={5} key={recipe.uuid}>
+    <Grid xs={12} md={6} key={recipe.uuid}>
       {RecipeView(recipe)}
     </Grid>
   ));
   return (
     <div>
-      <Grid container spacing={2}>
-        {divs}
-      </Grid>
+      <Grid container>{divs}</Grid>
     </div>
   );
 }

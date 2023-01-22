@@ -64,10 +64,13 @@ export function TopMenu() {
   const getPagesItem = (pageData) => {
     const { name, url } = pageData;
     var item = (
-      <MenuItem key={name} onClick={handleCloseUserMenu}>
-        <RouterLink to={url}>
-          <Typography textAlign="center">{name}</Typography>
-        </RouterLink>
+      <MenuItem
+        key={name}
+        onClick={handleCloseUserMenu}
+        component={RouterLink}
+        to={url}
+      >
+        <Typography textAlign="center">{name}</Typography>
       </MenuItem>
     );
     return item;
@@ -101,15 +104,23 @@ export function TopMenu() {
   };
 
   return (
-    <AppBar position="static">
-      <Container maxWidth="xl">
-        <Toolbar disableGutters>
-          <Typography>Cocktails</Typography>
-          <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "flex" } }}>
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography
+            variant="h6"
+            sx={{
+              display: "flex",
+              fontWeight: 700,
+            }}
+          >
+            Cocktails
+          </Typography>
+          <Box sx={{ flexGrow: 1, display: "flex" }}>
             {pagesDataAll.map(getPagesItem)}
           </Box>
 
-          <Box sx={{ flexGrow: 0 }}>
+          <Box sx={{ flexGrow: 1 }}>
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                 <SettingsOutlinedIcon />
@@ -135,7 +146,7 @@ export function TopMenu() {
             </Menu>
           </Box>
         </Toolbar>
-      </Container>
-    </AppBar>
+      </AppBar>
+    </Box>
   );
 }

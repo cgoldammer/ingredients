@@ -4,16 +4,11 @@ import {
   useGetIngredientsQuery,
   useGetIngredientSetsQuery,
 } from "../api/apiSlice";
-import { Box } from "@mui/material";
 
-import { useTheme } from "@mui/material/styles";
-import OutlinedInput from "@mui/material/OutlinedInput";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
-import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
+
 import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import { useSelector, useDispatch } from "react-redux";
 import {
   removeIngredientsSelected,
@@ -21,23 +16,11 @@ import {
   setIngredientsSelectedSimple,
 } from "../../ingredientsReducer";
 import PropTypes from "prop-types";
-import { IngredientSetsView, SaveSetView } from "./IngredientSetsView";
+import { IngredientSetsView } from "./IngredientSetsView";
 import Grid from "@mui/material/Unstable_Grid2";
 
 import { getIngredientsSelected, userSelector } from "../../store";
-import { getSelectedSet, setIngredientSet } from "../../ingredientSetsReducer";
-import { listElementsAreIdentical } from "../../helpers/helpers";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import { RecipeView } from "../recipes/RecipeView";
-
-function getStyles(name, personName, theme) {
-  return {
-    fontWeight:
-      personName.indexOf(name) === -1
-        ? theme.typography.fontWeightRegular
-        : theme.typography.fontWeightMedium,
-  };
-}
+import { IngredientAdditionView } from "./IngredientAdditionView";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -49,43 +32,6 @@ const MenuProps = {
     },
   },
 };
-
-export function IngredientsAdditionView() {
-  const dispatch = useDispatch();
-  const ingredientsSelected = useSelector(getIngredientsSelected);
-
-  const { data = { data: [] } } = useGetIngredientsQuery() || {};
-  const { data: ingredients } = data || {};
-
-  const ingredientsNotSelected = ingredients.filter(
-    (v) => !ingredientsSelected.map((r) => r.uuid).includes(v.uuid)
-  );
-
-  const handleChange = (event) => {
-    dispatch(addIngredientsSelected([event.target.value.uuid]));
-  };
-
-  return (
-    <FormControl sx={{ m: 1, minWidth: 200 }}>
-      <InputLabel id="demo-simple-select-helper-label">
-        Add Ingredient
-      </InputLabel>
-      <Select
-        labelId="demo-simple-select-label"
-        id="demo-simple-select"
-        value=""
-        label="Add ingredient"
-        onChange={handleChange}
-      >
-        {ingredientsNotSelected.map((ingredient) => (
-          <MenuItem key={ingredient.uuid} value={ingredient}>
-            {ingredient.name}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
-}
 
 export function IngredientsSelectedView() {
   const dispatch = useDispatch();
@@ -104,68 +50,6 @@ export function IngredientsSelectedView() {
 
   return <div>{buttons}</div>;
 }
-
-export function IngredientAdditionView(props) {
-  const dispatch = useDispatch();
-  const theme = useTheme();
-  const { tagName, ingredients } = props;
-  const ingredientsSelected = useSelector(
-    (state) => state.ingredientsSelected.values
-  );
-
-  const allIds = ingredients.map((i) => i.uuid);
-  const ingredientsDisplayable = ingredientsSelected
-    .filter((i) => allIds.includes(i.uuid))
-    .map((i) => i.uuid);
-  const handleChange = (event) => {
-    const {
-      target: { value },
-    } = event;
-
-    const uuids = value.map((v) => v.uuid);
-
-    dispatch(addIngredientsSelected(uuids));
-  };
-
-  return (
-    <div>
-      <FormControl sx={{ m: 1, width: 150 }}>
-        <InputLabel id="demo-multiple-chip-label">{tagName}</InputLabel>
-        <Select
-          labelId="demo-multiple-chip-label"
-          id="demo-multiple-chip"
-          multiple
-          value={ingredientsDisplayable}
-          onChange={handleChange}
-          input={<OutlinedInput id="select-multiple-chip" label="Chip" />}
-          renderValue={() => (
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-              {ingredientsDisplayable.map((value) => (
-                <Chip key={value.uuid} label={value.name} />
-              ))}
-            </Box>
-          )}
-          MenuProps={MenuProps}
-        >
-          {ingredients.map((ingredient) => (
-            <MenuItem
-              key={ingredient.uuid}
-              value={ingredient}
-              style={getStyles(name, name, theme)}
-            >
-              {ingredient.name}: {ingredient.numberRecipes}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-    </div>
-  );
-}
-
-IngredientAdditionView.propTypes = {
-  ingredients: PropTypes.array,
-  tagName: PropTypes.string,
-};
 
 export function SelectTagsView(props) {
   const { tags, selectedTags, setSelectedTags } = props;
@@ -187,23 +71,19 @@ export function SelectTagsView(props) {
   const items = tags
     .map((t) => t.name)
     .map((tagName) => (
-      <Button
-        key={tagName}
-        value={tagName}
-        onClick={() => clickedOn(tagName)}
-        variant={isSelected(tagName) ? "contained" : "outlined"}
-      >
-        {tagName}
-      </Button>
+      <Grid xs={6} key={tagName}>
+        <Button
+          value={tagName}
+          onClick={() => clickedOn(tagName)}
+          variant={isSelected(tagName) ? "contained" : "outlined"}
+          fullWidth={true}
+        >
+          <Typography>{tagName}</Typography>
+        </Button>
+      </Grid>
     ));
 
-  return (
-    <Grid container spacing={1}>
-      <Grid md={9}>
-        <ButtonGroup label="Filter by Tag">{items}</ButtonGroup>
-      </Grid>
-    </Grid>
-  );
+  return <Grid container>{items}</Grid>;
 }
 
 SelectTagsView.propTypes = {
@@ -211,6 +91,8 @@ SelectTagsView.propTypes = {
   selectedTags: PropTypes.array,
   setSelectedTags: PropTypes.func,
 };
+
+const maxTags = 4;
 
 export function IngredientsView() {
   const user = useSelector(userSelector);
@@ -237,7 +119,7 @@ export function IngredientsView() {
 
   const addView = (
     <IngredientAdditionView
-      tagName="Pick one"
+      tagName="Add ingredients"
       ingredients={ingredientsSelectable}
     />
   );
@@ -246,36 +128,30 @@ export function IngredientsView() {
     user == undefined ? (
       <span />
     ) : (
-      <Grid container spacing={1}>
-        <Grid xs={2}>Sets:</Grid>
-        <Grid xs={9}>
-          <IngredientSetsView />
-        </Grid>
+      <Grid container justifyContent="center" alignItems="center" sx={{ m: 2 }}>
+        <IngredientSetsView />
       </Grid>
     );
 
   return (
-    <div>
-      {setsView}
-      <Grid container spacing={1}>
-        <Grid xs={2}>Total: </Grid>
-        <Grid xs={9}>{ingredients.length}</Grid>
-        <Grid xs={2}>Selected: </Grid>
-        <Grid xs={9}>
-          <IngredientsSelectedView />
-        </Grid>
-        <Grid xs={2}>Add: </Grid>
-        <Grid xs={9}>
-          <Grid container>
-            <SelectTagsView
-              tags={tags}
-              selectedTags={selectedTags}
-              setSelectedTags={setSelectedTags}
-            />
-          </Grid>
-          <Grid container>{addView}</Grid>
-        </Grid>
+    <Grid container justifyContent="center" alignItems="center">
+      <Grid container sx={{ mt: 2 }}>
+        {setsView}
       </Grid>
-    </div>
+      <Grid container spacing={1} justifyContent="center" alignItems="center">
+        <SelectTagsView
+          tags={tags.slice(0, maxTags)}
+          selectedTags={selectedTags}
+          setSelectedTags={setSelectedTags}
+        />
+      </Grid>
+
+      <Grid container sx={{ mt: 1 }}>
+        {addView}
+      </Grid>
+      <Grid container>
+        <IngredientsSelectedView />
+      </Grid>
+    </Grid>
   );
 }

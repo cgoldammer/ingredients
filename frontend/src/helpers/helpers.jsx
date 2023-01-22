@@ -3,6 +3,7 @@ when running in webpack-dev-server and through jest.
 Just importing twice, and using the one version that works */
 
 import { createTheme } from "@mui/material";
+import { responsiveFontSizes } from "@mui/material/styles";
 
 export const boxFormat = {
   display: "grid",
@@ -20,11 +21,13 @@ export const boxImgFormat = {
   borderRight: 1,
   borderColor: "grey.500",
 };
-export const theme = createTheme({
+let theme1 = createTheme({
   typography: {
     fontFamily: ['"Helvetica Neue"'].join(","),
   },
 });
+
+export const theme = responsiveFontSizes(theme1);
 
 export const getRange = (max) => Array.from(Array(max), (n, index) => index);
 

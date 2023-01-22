@@ -11,10 +11,10 @@ import {
 
 // Add an extra delay to all endpoints, so loading spinners show up.
 const ARTIFICIAL_DELAY_MS = 1;
-const NUM_INGREDIENTS_PER_RECIPE = 2;
+const NUM_INGREDIENTS_PER_RECIPE = 3;
 const NUM_RECIPES = 5;
-const NUM_TAGS = 1;
-const NUM_TAGS_PER_INGREDIENT = 1;
+const NUM_TAGS = 5;
+const NUM_TAGS_PER_INGREDIENT = 2;
 const NUM_SETS = 3;
 
 /* RNG setup */
@@ -71,7 +71,7 @@ export const db = factory({
 
 const createTagData = () => {
   return {
-    name: faker.commerce.productAdjective(),
+    name: faker.helpers.unique(faker.commerce.productAdjective),
   };
 };
 

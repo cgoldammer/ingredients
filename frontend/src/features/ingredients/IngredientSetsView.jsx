@@ -33,14 +33,18 @@ export function SaveSetView() {
     });
   };
   return (
-    <div>
-      <TextField
-        label="Name of set"
-        value={name}
-        onChange={handleChange}
-      ></TextField>
-      <Button onClick={submit}>Save</Button>
-    </div>
+    <Grid container>
+      <Grid xs={6}>
+        <TextField
+          label="Name of set"
+          value={name}
+          onChange={handleChange}
+        ></TextField>
+      </Grid>
+      <Grid xs={6}>
+        <Button onClick={submit}>Save</Button>
+      </Grid>
+    </Grid>
   );
 }
 
@@ -87,13 +91,13 @@ export function IngredientSetsView() {
   const saveButton = ingredientsChanged ? <SaveSetView /> : <div></div>;
 
   return (
-    <Grid container spacing={1}>
-      <Grid md={9}>
-        <ButtonGroup label="Select set of ingredients" onChange={handleChange}>
+    <Grid container justifyContent="center" alignItems="center">
+      <Grid container sx={{ m: 1 }}>
+        <ButtonGroup label="Select set" onChange={handleChange}>
           {items}
         </ButtonGroup>
       </Grid>
-      <Grid md={2}>{saveButton}</Grid>
+      <Grid container>{saveButton}</Grid>
     </Grid>
   );
 }
