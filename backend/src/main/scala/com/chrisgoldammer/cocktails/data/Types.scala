@@ -1,5 +1,4 @@
-package com.chrisgoldammer.cocktails.data.
-types
+package com.chrisgoldammer.cocktails.data.types
 
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -34,52 +33,49 @@ import doobie.implicits.toConnectionIOOps
 
 import scala.io.Source
 
-trait UniqueElement[A, S]:
-  def getUniquePart(): S
-  
 case class StoredElement[T](id: Int, element: T)
 
 case class Ingredient(name: String, uuid: String)
 implicit val sReadIngredient: Read[StoredElement[Ingredient]] =
   Read[(Int, String, String)].map { case (id, name, uuid) =>
-    new StoredElement(id, Ingredient(name, uuid))
+     StoredElement(id, Ingredient(name, uuid))
   }
 
 case class IngredientSet(name: String, uuid: String)
 implicit val sReadIngredientSet: Read[StoredElement[IngredientSet]] =
   Read[(Int, String, String)].map { case (id, name, uuid) =>
-    new StoredElement(id, IngredientSet(name, uuid))
+     StoredElement(id, IngredientSet(name, uuid))
   }
 
 case class IngredientSetIngredient(setId: Int, ingredientId: Int)
 implicit
 val sReadIngredientSetIngredient: Read[StoredElement[IngredientSetIngredient]] =
   Read[(Int, Int, Int)].map { case (id, setId, ingredientId) =>
-    new StoredElement(id, IngredientSetIngredient(setId, ingredientId))
+     StoredElement(id, IngredientSetIngredient(setId, ingredientId))
   }
 
 case class Recipe(name: String, uuid: String)
 implicit val sReadRecipe: Read[StoredElement[Recipe]] =
   Read[(Int, String, String)].map { case (id, name, uuid) =>
-    new StoredElement(id, Recipe(name, uuid))
+     StoredElement(id, Recipe(name, uuid))
   }
 
 case class RecipeIngredient(recipeId: Int, ingredientId: Int)
 implicit val sReadRecipeIngredient: Read[StoredElement[RecipeIngredient]] =
   Read[(Int, Int, Int)].map { case (id, recipeId, ingredientId) =>
-    new StoredElement(id, RecipeIngredient(recipeId, ingredientId))
+     StoredElement(id, RecipeIngredient(recipeId, ingredientId))
   }
 
 case class Tag(name: String)
 implicit val sReadTag: Read[StoredElement[Tag]] =
   Read[(Int, String)].map { case (id, name) =>
-    new StoredElement(id, Tag(name))
+     StoredElement(id, Tag(name))
   }
 
 case class IngredientTag(ingredientId: Int, tagId: Int)
 implicit val sReadIngredientTag: Read[StoredElement[IngredientTag]] =
   Read[(Int, Int, Int)].map { case (id, ingredientId, tagId) =>
-    new StoredElement(id, IngredientTag(ingredientId, tagId))
+     StoredElement(id, IngredientTag(ingredientId, tagId))
   }
 
 case class FullRecipe(
@@ -105,7 +101,7 @@ case class FullIngredientSet(
 implicit val sReadFullIngredientSet: Read[StoredElement[FullIngredientSet]] =
   Read[(Int, String, String, List[String])].map {
     case (id, name, uuid, ingredients) =>
-      new StoredElement(id, FullIngredientSet(name, uuid, ingredients))
+       StoredElement(id, FullIngredientSet(name, uuid, ingredients))
   }
 
 case class MFullIngredientData(
@@ -189,19 +185,17 @@ case class DBSetup(
     password: Option[String],
     user: String = "postgres"
 ) {
-  def getConnString(): String = {
-    return s"jdbc:postgresql://$serverName:$port/$dbName"
-  }
+  def getConnString: String = s"jdbc:postgresql://$serverName:$port/$dbName"
 }
 
 enum Settings:
   case TestLocal, DevLocal, DevDocker, Prod
 
-  def toStringLower(): String = camel2underscores(this.toString())
-  def toDBName(): String = this.toStringLower().split('_')(0)
+  def toStringLower: String = camel2underscores(this.toString())
+  def toDBName: String = this.toStringLower.split('_')(0)
 
-  def getSetup(): DBSetup = {
-    val dbName = "ingredients_" + this.toDBName()
+  def getSetup: DBSetup = {
+    val dbName = "ingredients_" + this.toDBName
 
     this match
       case TestLocal => DBSetup(dbName = dbName, password=None  )
@@ -220,20 +214,20 @@ object Settings:
       case _           => None
   }
 
-def getSettings(): Option[Settings] =
-  sys.env.get("SETTINGS").map(Settings.fromString).flatten
+def getSettings: Option[Settings] =
+  sys.env.get("SETTINGS").flatMap(Settings.fromString)
 
 def getTransactor(dbSetup: DBSetup) = {
   Transactor.fromDriverManager[IO](
     "org.postgresql.Driver", // driver classname
-    dbSetup.getConnString(),
+    dbSetup.getConnString,
     "postgres", // user
     dbSetup.password.getOrElse("") // password
   )
 }
 
 def fileLogHandler(le: LogEvent): Unit = {
-  val settings = getSettings()
+  val settings = getSettings
   val logString = time.LocalDateTime.now().toString + ": " + le.sql + "\n"
   val logFile =
     "logs/log_" + settings.toString.replace('(', '_').replace(')', '_')

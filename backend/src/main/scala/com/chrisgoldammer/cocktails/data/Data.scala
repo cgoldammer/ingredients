@@ -27,7 +27,7 @@ def camel2underscores(x: String) = {
     .mkString("_")
 }
 
-def getUuid() = randomUUID().toString
+def getUuid = randomUUID().toString
 
 def recipeIngredientToIngredient(ri: FullRecipeData): Ingredient = {
   ri match {
@@ -41,21 +41,21 @@ def createFullRecipes(rid: List[FullRecipeData]): List[FullRecipe] = {
   grouped.toList.map { case (name, ri) =>
     FullRecipe(
       name,
-      ri(0).uuid,
-      ri(0).description,
+      ri.head.uuid,
+      ri.head.description,
       ri.map(recipeIngredientToIngredient)
     )
   }
 }
 
-def getFullRecipesIO(): ConnectionIO[List[FullRecipe]] =
+def getFullRecipesIO: ConnectionIO[List[FullRecipe]] =
   recipeIngredientDataQuery
     .query[FullRecipeData]
     .to[List]
     .map(createFullRecipes)
 
-def getByProperty[T, S](storedList: List[StoredElement[T]], getProperty: (T) => S): S => StoredElement[T] =
-  uniqueVal => storedList.groupBy(se => getProperty(se.element)).transform((k, v) => v.head)(uniqueVal)
+def getByProperty[T, S](storedList: List[StoredElement[T]], getProperty: T => S): S => StoredElement[T] =
+  uniqueVal => storedList.groupBy(se => getProperty(se.element)).transform((_, v) => v.head)(uniqueVal)
 
 def getRecipesForIngredientsIO(
     ingredientUids: List[String]
@@ -78,16 +78,16 @@ def getMFullIngredientFromData(
   StoredElement(md.id, ingredient)
 }
 
-def getIngredientsIO(): ConnectionIO[List[FullIngredient]] = for {
-  ing <- getIngredientsDataIO()
+def getIngredientsIO: ConnectionIO[List[FullIngredient]] = for {
+  ing <- getIngredientsDataIO
 } yield ing.map(getMFullIngredientFromData).map(_.element)
 
-def getTagsDataIO(): ConnectionIO[List[StoredElement[Tag]]] = {
+def getTagsDataIO: ConnectionIO[List[StoredElement[Tag]]] = {
   sql"SELECT id, name FROM tags".query[StoredElement[Tag]].to[List]
 }
 
-def getTagsIO(): ConnectionIO[List[Tag]] = for {
-  tags <- getTagsDataIO()
+def getTagsIO: ConnectionIO[List[Tag]] = for {
+  tags <- getTagsDataIO
 } yield tags.map(_.element)
 
 def getIngredientSetsStoredIO(
@@ -103,12 +103,7 @@ def getIngredientSetsIO(
   is <- getIngredientSetsStoredIO(userUuid)
 } yield is.map(_.element)
 
-object ItemType extends Enumeration {
-  type ItemType = Value
-  val RECIPE, INGREDIENT = Value
-}
-
-def getIngredientsDataIO(): ConnectionIO[List[MFullIngredientData]] =
+def getIngredientsDataIO: ConnectionIO[List[MFullIngredientData]] =
   getIngredientsQuery.query[MFullIngredientData].to[List]
 
 def setupIO(sdo: Option[SetupData]): ConnectionIO[Unit] = {
@@ -130,7 +125,7 @@ def insertFromSetupDataIO(
     .flatMap(_.IngredientTagNames)
     .distinct
     .traverse(insertTag)
-  tagGetter = getByProperty(mTags.toList, _.name)
+  tagGetter = getByProperty(mTags, _.name)
   mIngredients <- sd.ingredientData.traverse(ingredient =>
     insertIngredient(ingredient.name)
   )
@@ -145,18 +140,12 @@ def insertFromSetupDataIO(
     (ingredientId, tagId)
   }
 
-  _ <- ids.traverse(x =>
-    x match {
-      case (ingredientId: Int, tagId: Int) =>
-        insertIngredientTag(ingredientId, tagId)
-    }
-  )
+  _ <- ids.traverse{case (ingredientId: Int, tagId: Int) => insertIngredientTag(ingredientId, tagId)}
 
   mRecipes <- sd.recipeData.traverse((rd: RecipeData) =>
     insertRecipe(rd.name, rd.description)
   )
-  recipeGetter = getByProperty(mRecipes.toList, _.name)
-
+  recipeGetter = getByProperty(mRecipes, _.name)
 
   ids: List[(Int, Int)] = for {
     rd <- sd.recipeData
@@ -168,12 +157,7 @@ def insertFromSetupDataIO(
     (recipeId, ingredientId)
   }
 
-  mRecipeIngredients <- ids.traverse(x =>
-    x match {
-      case (recipeId: Int, ingredientId: Int) =>
-        insertRecipeIngredient(recipeId, ingredientId)
-    }
-  )
+  _ <- ids.traverse{case (recipeId: Int, ingredientId: Int) => insertRecipeIngredient(recipeId, ingredientId)}
 
   mIngredientSets <- sd.ingredientSets.keys.toList.traverse(s =>
     insertIngredientSet(s, users.head.get.id)
@@ -187,31 +171,13 @@ def insertFromSetupDataIO(
     val setId = setGetter(setName).id
     val ingredientId = ingredientGetter(ingredientName).id
     (setId, ingredientId)
-  mIngredientSetIngredients <- ids.traverse((setId: Int, ingredientId: Int) =>
+  _ <- ids.traverse((setId: Int, ingredientId: Int) =>
     insertIngredientSetIngredient(setId, ingredientId)
   )
 } yield None
 
 class DataTools(dbSetup: DBSetup):
   val xa: Transactor[IO] = getTransactor(dbSetup)
-
-  def getTags(): IO[List[Tag]] = getTagsIO().transact(xa)
-  def setup(setupData:Option[SetupData]=Some(setupDataDB)): IO[Unit] = setupIO(setupData).transact(xa)
-  def getFullRecipes(): IO[List[FullRecipe]] = getFullRecipesIO().transact(xa)
-  def getIngredients(): IO[List[FullIngredient]] =
-    getIngredientsIO().transact(xa)
-  def getRecipesForIngredients(
-      ingredientUids: List[String]
-  ): IO[List[FullRecipe]] =
-    getRecipesForIngredientsIO(ingredientUids).transact(xa)
-  def getIngredientSets(userUuid: String): IO[List[FullIngredientSet]] =
-    getIngredientSetsIO(userUuid).transact(xa)
-
-  def bulkCreateIngredientSetIO(
-      setName: String,
-      userUuid: String,
-      ingredientUuids: List[String]
-  ): IO[Int] =
-    bulkCreateIngredientSet(setName, userUuid, ingredientUuids).transact(xa)
+  def transact[A](c: ConnectionIO[A]): IO[A] = c.transact(xa)
 
 object DataTools {}

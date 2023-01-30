@@ -3,7 +3,7 @@ package com.chrisgoldammer.cocktails
 import _root_.io.circe.*
 import _root_.io.circe.generic.semiauto.*
 import _root_.io.circe.syntax.*
-import cats.MonoidK.ops.toAllMonoidKOps
+import cats.syntax.all.toSemigroupKOps
 import cats.data.Kleisli
 import cats.data.OptionT
 import cats.effect.IO
@@ -25,6 +25,7 @@ import com.chrisgoldammer.cocktails.*
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
+import com.chrisgoldammer.cocktails.data.queries.*
 import com.comcast.ip4s.ipv4
 import com.comcast.ip4s.port
 
@@ -54,31 +55,31 @@ def middleware(af: AuthFunctions): AuthMiddleware[IO, AuthUser] =
   AuthMiddleware(authUser(af))
 def authedRoutes(dt: DataTools, af:AuthFunctions): AuthedRoutes[AuthUser, IO] =
   AuthedRoutes.of {
-    case GET -> Root / "get_user" as user => {
+    case GET -> Root / "get_user" as user =>
       for {
         resp <- Ok(user.asJson)
       } yield resp
-    }
-    case GET -> Root / "ingredient_sets" as user => {
+
+    case GET -> Root / "ingredient_sets" as user =>
       for {
         ing <- for {
-          is <- dt.getIngredientSets(user.id)
+          is <- dt.transact(getIngredientSetsIO(user.id))
         } yield Results(is, "Ingredient Sets").asJson
         resp <- Ok(ing)
       } yield resp
-    }
+
     case req @ POST -> Root / "add_ingredient_set" as user =>
       for {
         isl <- req.req.as[InsertIngredientSetData]
         _ <- IO(println("user decoded: " + user.toString))
-        res <- dt.bulkCreateIngredientSetIO(
+        res <- dt.transact(bulkCreateIngredientSet(
           setName = isl.setName,
           user.id,
           isl.ingredientUuids
-        )
+        ))
         resp <- Ok(res.asJson)
       } yield resp
-    case req @ POST -> Root / "logout" as user => af.logOut.run(req)
+    case req @ POST -> Root / "logout" as _ => af.logOut.run(req)
   }
 
 def openRoutes(dt: DataTools, af: AuthFunctions) = {
@@ -86,30 +87,30 @@ def openRoutes(dt: DataTools, af: AuthFunctions) = {
     case GET -> Root / "ingredients" =>
       for {
         ing <- for {
-          i <- dt.getIngredients()
+          i <- dt.transact(getIngredientsIO)
         } yield Results(i, "ingredients").asJson
         resp <- Ok(ing)
       } yield resp
     case GET -> Root / "tags" =>
       for {
         ing <- for {
-          tags <- dt.getTags()
+          tags <- dt.transact(getTagsIO)
         } yield Results(tags, "Tags").asJson
         resp <- Ok(ing)
       } yield resp
-    case GET -> Root / "recipes" => {
+    case GET -> Root / "recipes" =>
       for {
         ing <- for {
-          r <- dt.getFullRecipes()
+          r <- dt.transact(getFullRecipesIO)
         } yield Results(r, "Full Recipes").asJson
         resp <- Ok(ing)
       } yield resp
-    }
+
     case req @ POST -> Root / "recipes_possible" =>
       for {
         isl <- req.as[Results[String]]
         j <- for {
-          rfi <- dt.getRecipesForIngredients(isl.data)
+          rfi <- dt.transact(getRecipesForIngredientsIO(isl.data))
         } yield Results(rfi, "FullRecipes").asJson
         resp <- Ok(j)
       } yield resp
@@ -135,7 +136,7 @@ def jsonApp(ap: AppParams): Http4sApp = {
 //  .apply(jsonApp)
 
 def server(
-    ap: AppParams = AppParams(Settings.DevLocal.getSetup())
+    ap: AppParams = AppParams(Settings.DevLocal.getSetup)
 ): Resource[IO, org.http4s.server.Server] = {
   val app = jsonApp(ap)
   val withMiddleWare = CORS.policy.withAllowOriginAll(app)
