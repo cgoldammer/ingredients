@@ -93,10 +93,13 @@ export function TopMenu() {
     );
     if (url != undefined) {
       item = (
-        <MenuItem key={name} onClick={handleCloseUserMenu}>
-          <RouterLink to={url}>
-            <Typography textAlign="center">{name} </Typography>
-          </RouterLink>
+        <MenuItem
+          key={name}
+          onClick={handleCloseUserMenu}
+          component={RouterLink}
+          to={url}
+        >
+          <Typography textAlign="center">{name} </Typography>
         </MenuItem>
       );
     }
@@ -107,20 +110,12 @@ export function TopMenu() {
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
         <Toolbar>
-          <Typography
-            variant="h6"
-            sx={{
-              display: "flex",
-              fontWeight: 700,
-            }}
-          >
-            Cocktails
-          </Typography>
-          <Box sx={{ flexGrow: 1, display: "flex" }}>
+          <Typography variant="h6">Cocktails</Typography>
+          <Box sx={{ display: "flex", flexGrow: 1 }}>
             {pagesDataAll.map(getPagesItem)}
           </Box>
 
-          <Box sx={{ flexGrow: 1 }}>
+          <Box>
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                 <SettingsOutlinedIcon />

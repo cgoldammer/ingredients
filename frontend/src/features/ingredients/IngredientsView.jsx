@@ -134,11 +134,17 @@ export function IngredientsView() {
     );
 
   return (
-    <Grid container justifyContent="center" alignItems="center">
-      <Grid container sx={{ mt: 2 }}>
+    <Grid container xs={12} justifyContent="center" alignItems="center">
+      <Grid container xs={12} sx={{ mt: 2 }}>
         {setsView}
       </Grid>
-      <Grid container spacing={1} justifyContent="center" alignItems="center">
+      <Grid
+        container
+        xs={12}
+        spacing={1}
+        justifyContent="center"
+        alignItems="center"
+      >
         <SelectTagsView
           tags={tags.slice(0, maxTags)}
           selectedTags={selectedTags}
@@ -146,7 +152,12 @@ export function IngredientsView() {
         />
       </Grid>
 
-      <Grid container sx={{ mt: 1 }}>
+      <Grid
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        sx={{ mt: 1 }}
+      >
         {addView}
       </Grid>
       <Grid container>

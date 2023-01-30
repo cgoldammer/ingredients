@@ -16,12 +16,12 @@ import Typography from "@mui/material/Typography";
 
 export function AboutView() {
   return (
-    <div>
+    <Grid container justifyContent="center" alignItems="center">
       <Typography>
         Thanks to <a href={"https://www.thecocktaildb.com/"}>The Cocktail DB</a>{" "}
         for their data!
       </Typography>
-    </div>
+    </Grid>
   );
 }
 
@@ -30,23 +30,27 @@ export function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline>
-        <Container justifyContent="center" alignItems="center">
+        <Container maxWidth="md">
           <Grid container justifyContent="center" alignItems="center">
-            <TopMenu />
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <div>
-                    <IngredientsView />
-                    <RecipesPossibleView />
-                  </div>
-                }
-              />
-              <Route path="/about" element={<AboutView />} />
-              <Route path="/profile" element={<UserView />} />
-              <Route path="/register" element={<LoginView />} />
-            </Routes>
+            <Grid container xs={12}>
+              <TopMenu />
+            </Grid>
+            <Grid container justifyContent="center" alignItems="center" xs={12}>
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <Grid container xs={12}>
+                      <IngredientsView />
+                      <RecipesPossibleView />
+                    </Grid>
+                  }
+                />
+                <Route path="/about" element={<AboutView />} />
+                <Route path="/profile" element={<UserView />} />
+                <Route path="/register" element={<LoginView />} />
+              </Routes>
+            </Grid>
           </Grid>
         </Container>
       </CssBaseline>
