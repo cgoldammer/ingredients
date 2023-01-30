@@ -34,6 +34,9 @@ import doobie.implicits.toConnectionIOOps
 
 import scala.io.Source
 
+trait UniqueElement[A, S]:
+  def getUniquePart(): S
+  
 case class StoredElement[T](id: Int, element: T)
 
 case class Ingredient(name: String, uuid: String)

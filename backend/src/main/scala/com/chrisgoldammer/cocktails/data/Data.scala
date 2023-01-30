@@ -54,26 +54,8 @@ def getFullRecipesIO(): ConnectionIO[List[FullRecipe]] =
     .to[List]
     .map(createFullRecipes)
 
-def getRecipeByName(
-    sRecipes: List[StoredElement[Recipe]],
-    name: String
-): StoredElement[Recipe] =
-  sRecipes.groupBy(_.element.name).transform((k, v) => v.head)(name)
-def getTagByName(
-    sTags: List[StoredElement[Tag]],
-    name: String
-): StoredElement[Tag] =
-  sTags.groupBy(_.element.name).transform((k, v) => v.head)(name)
-def getIngredientByName(
-    sIngredients: List[StoredElement[Ingredient]],
-    name: String
-): StoredElement[Ingredient] =
-  sIngredients.groupBy(_.element.name).transform((k, v) => v.head)(name)
-def getSetByName(
-    sIngredientSets: List[StoredElement[IngredientSet]],
-    name: String
-): StoredElement[IngredientSet] =
-  sIngredientSets.groupBy(_.element.name).transform((k, v) => v.head)(name)
+def getByProperty[T, S](storedList: List[StoredElement[T]], getProperty: (T) => S): S => StoredElement[T] =
+  uniqueVal => storedList.groupBy(se => getProperty(se.element)).transform((k, v) => v.head)(uniqueVal)
 
 def getRecipesForIngredientsIO(
     ingredientUids: List[String]
@@ -148,16 +130,18 @@ def insertFromSetupDataIO(
     .flatMap(_.IngredientTagNames)
     .distinct
     .traverse(insertTag)
+  tagGetter = getByProperty(mTags.toList, _.name)
   mIngredients <- sd.ingredientData.traverse(ingredient =>
     insertIngredient(ingredient.name)
   )
+  ingredientGetter = getByProperty(mIngredients, _.name)
   ids = for {
     ingredient <- sd.ingredientData
     tagName <- ingredient.IngredientTagNames
   } yield {
-    val tagId = getTagByName(mTags.toList, tagName).id
+    val tagId = tagGetter(tagName).id
     val ingredientId: Int =
-      getIngredientByName(mIngredients, ingredient.name).id
+      ingredientGetter(ingredient.name).id
     (ingredientId, tagId)
   }
 
@@ -171,14 +155,16 @@ def insertFromSetupDataIO(
   mRecipes <- sd.recipeData.traverse((rd: RecipeData) =>
     insertRecipe(rd.name, rd.description)
   )
+  recipeGetter = getByProperty(mRecipes.toList, _.name)
+
 
   ids: List[(Int, Int)] = for {
     rd <- sd.recipeData
     recipeIngredientName <- rd.ingredients
   } yield {
-    val recipeId = getRecipeByName(mRecipes.toList, rd.name).id
+    val recipeId = recipeGetter(rd.name).id
     val ingredientId =
-      getIngredientByName(mIngredients, recipeIngredientName).id
+      ingredientGetter(recipeIngredientName).id
     (recipeId, ingredientId)
   }
 
@@ -192,15 +178,15 @@ def insertFromSetupDataIO(
   mIngredientSets <- sd.ingredientSets.keys.toList.traverse(s =>
     insertIngredientSet(s, users.head.get.id)
   )
+  setGetter = getByProperty(mIngredientSets, _.name)
 
   ids = for {
     (setName, setIngredientNames) <- sd.ingredientSets.toList
     ingredientName <- setIngredientNames
-  } yield {
-    val setId = getSetByName(mIngredientSets.toList, setName).id
-    val ingredientId = getIngredientByName(mIngredients, ingredientName).id
+  } yield
+    val setId = setGetter(setName).id
+    val ingredientId = ingredientGetter(ingredientName).id
     (setId, ingredientId)
-  }
   mIngredientSetIngredients <- ids.traverse((setId: Int, ingredientId: Int) =>
     insertIngredientSetIngredient(setId, ingredientId)
   )
