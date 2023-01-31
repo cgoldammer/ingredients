@@ -124,19 +124,19 @@ def getLetterData(letter: Char): List[CocktailStored] = {
 val excludedLetters = List('u', 'x')
 val letters = ('a' to 'z').toList.filter(l => !excludedLetters.contains(l))
 
-val resultList: List[CocktailStored] = letters.map(getLetterData).flatten
+val resultList: List[CocktailStored] = letters.flatMap(getLetterData)
 
 def cleanUpClass(cs: CocktailStored): RecipeData = {
   val ingList: List[String] = List(cs.strIngredient1, cs.strIngredient2,
     cs.strIngredient3, cs.strIngredient4, cs.strIngredient5,
     cs.strIngredient6, cs.strIngredient7, cs.strIngredient8, cs.strIngredient9).flatten
-  return RecipeData(name=cs.strDrink,
+  RecipeData(name=cs.strDrink,
     description=cs.strInstructions,
     ingredients=ingList)
 }
 
 val resultsDB: List[RecipeData] = resultList.map(cleanUpClass)
-val ingredientsAll: List[String] = resultsDB.map(r => r.ingredients).flatten
+val ingredientsAll: List[String] = resultsDB.flatMap(r => r.ingredients)
 val ingredientsMap = ingredientsAll.map(i => i -> i).toMap.transform((k, v) => v.capitalize)
 
 def cleanUpIngredients(cd: RecipeData): RecipeData = {
@@ -157,7 +157,7 @@ def toIngredientData(i: String): IngredientDataRaw = {
   IngredientDataRaw(i, tagData.getOrElse(i, List()))
 }
 val resultsCleanedDB: List[RecipeData] = resultsDB.map(cleanUpIngredients)
-val ingredientDataDB: List[IngredientDataRaw] = resultsCleanedDB.map(r => r.ingredients.map(toIngredientData)).flatten.distinct
+val ingredientDataDB: List[IngredientDataRaw] = resultsCleanedDB.flatMap(r => r.ingredients.map(toIngredientData)).distinct
 val setupDataDB = SetupData(ingredientDataDB, resultsCleanedDB, Map(), List())
 
 

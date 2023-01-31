@@ -18,7 +18,6 @@ import doobie.postgres.implicits.*
 
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.types.*
-
 import fs2.Stream
 
 
@@ -74,7 +73,7 @@ def insertIngredientSet(
     name: String,
     userId: Int
 ): ConnectionIO[StoredElement[IngredientSet]] = {
-  val uuid = getUuid()
+  val uuid = getUuid
   sql"INSERT INTO ingredient_sets (name, uuid, user_id) values ($name, $uuid, $userId)".update
     .withUniqueGeneratedKeys("id", "name", "uuid")
 }
@@ -145,7 +144,7 @@ def insertTag(name: String): ConnectionIO[StoredElement[Tag]] = {
 }
 
 def insertIngredient(name: String): ConnectionIO[StoredElement[Ingredient]] = {
-  val uuid = getUuid()
+  val uuid = getUuid
   sql"INSERT INTO ingredients (name, uuid) values ($name, $uuid)".update
     .withUniqueGeneratedKeys("id", "name", "uuid")
 }
@@ -162,7 +161,7 @@ def insertRecipe(
     name: String,
     description: String
 ): ConnectionIO[StoredElement[Recipe]] = {
-  val uuid = getUuid()
+  val uuid = getUuid
   sql"INSERT INTO recipes (name, uuid, description) values ($name, $uuid, $description)".update
     .withUniqueGeneratedKeys("id", "name", "uuid", "description")
 }

@@ -1,9 +1,7 @@
 package com.chrisgoldammer.cocktails
 
-import java.util.concurrent.Executors
-
+import java.util.concurrent.{ExecutorService, Executors}
 import scala.util.Random
-
 import _root_.io.circe.*
 import _root_.io.circe.Decoder
 import _root_.io.circe.Encoder
@@ -40,32 +38,29 @@ import org.http4s.dsl.io.POST
 import org.http4s.headers.*
 import org.http4s.implicits.uri
 import org.typelevel.ci.*
-
 import com.chrisgoldammer.cocktails.cryptocore.*
 import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
 import com.chrisgoldammer.cocktails.data.queries.*
-
 import junit.framework.TestSuite
 import munit.CatsEffectSuite
 import munit.FunSuite
 import sun.net.www.http.HttpClient
 
-def resetDB(dbSetup: DBSetup) = {
+def resetDB(dbSetup: DBSetup): Unit = {
   val dt = DataTools(dbSetup)
   val p = dropTables >> createTables
   p.transact(dt.xa).unsafeRunSync()
 }
 
-def insertDB(dbSetup: DBSetup) = {
+def insertDB(dbSetup: DBSetup): Unit = {
   val dt = DataTools(dbSetup)
   val p = insertFromSetupDataIO(setupDataSimple, doobieBackingStore())
   p.transact(dt.xa).unsafeRunSync()
 }
 
-def getRandom(): String = Random.alphanumeric.take(20).mkString("")
-def getRandomUser(): BasicCredentials =
-  BasicCredentials(getRandom(), getRandom())
+def getRandom: String = Random.alphanumeric.take(20).mkString("")
+def getRandomUser: BasicCredentials = BasicCredentials(getRandom, getRandom)
 
 def getHeaderFromToken(token: String): Headers = {
   val tokenCleaned =
@@ -73,9 +68,9 @@ def getHeaderFromToken(token: String): Headers = {
   Headers(Authorization(Credentials.Token(AuthScheme.Bearer, tokenCleaned)))
 }
 
-def getAppForTesting(): Http4sApp = {
-  val dbSetup = Settings.TestLocal.getSetup()
-  return jsonApp(AppParams(dbSetup, AuthBackend.Doobie))
+def getAppForTesting: Http4sApp = {
+  val dbSetup = Settings.TestLocal.getSetup
+  jsonApp(AppParams(dbSetup, AuthBackend.Doobie))
 }
 
 def parseResponse(r: IO[Response[IO]]): Option[String] = {
@@ -88,7 +83,7 @@ def parseResponse(r: IO[Response[IO]]): Option[String] = {
 
 def getToken(
     app: Http4sApp,
-    user: BasicCredentials = getRandomUser(),
+    user: BasicCredentials = getRandomUser,
     isLogin: Boolean
 ): Option[String] = {
   val url = if (isLogin) uri"/login" else uri"/register"
@@ -97,13 +92,10 @@ def getToken(
     Request[IO](Method.POST, url, headers = Headers(authHeader))
   val registerIO = app.run(registerRequest)
   try {
-    val token = parseResponse(registerIO)
-    return token
-  } catch {
-    case e: org.http4s.MalformedMessageBodyFailure => {
-      return None
-    }
-  }
+    parseResponse(registerIO)
+  } catch
+      case e: org.http4s.MalformedMessageBodyFailure =>
+        return None
 }
 
 def check[A](
@@ -119,7 +111,7 @@ def check[A](
   if ((expectedStatus != Status.Ok) && checkBodyOnlyForOk) {
     return statusCheck
   }
-  val hasBody = !actualResp.body.compile.toVector.unsafeRunSync().isEmpty
+  val hasBody = actualResp.body.compile.toVector.unsafeRunSync().nonEmpty
   val responseBody = Option.when(hasBody)(actualResp.as[A].unsafeRunSync())
   val bodyCheck = responseBody match
     case None    => false
@@ -129,18 +121,17 @@ def check[A](
 }
 
 class DataTestAuth extends CatsEffectSuite:
-  val dbSetup = Settings.TestLocal.getSetup()
-  val blockingPool = Executors.newFixedThreadPool(5)
+  val dbSetup: DBSetup = Settings.TestLocal.getSetup
+  val blockingPool: ExecutorService = Executors.newFixedThreadPool(5)
   val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
 
   test("I can insert ingredient sets by uuid list") {
     resetDB(dbSetup)
     insertDB(dbSetup)
     val dt = DataTools(dbSetup)
-    val app = getAppForTesting()
+    val app = getAppForTesting
 
     val user = user0
-    val userName = user.username
     val tokenOption = getToken(app, user, isLogin = true)
     assert(tokenOption.nonEmpty)
     val headers = tokenOption.fold(Headers.empty)(getHeaderFromToken)
@@ -148,7 +139,7 @@ class DataTestAuth extends CatsEffectSuite:
     val countIng = getCount("ingredient_set_ingredients")
     val countSet = getCount("ingredient_sets")
 
-    def getCounts(): (Int, Int) = {
+    def getCounts: (Int, Int) = {
       val q = for {
         set <- countSet
         ing <- countIng
@@ -156,7 +147,7 @@ class DataTestAuth extends CatsEffectSuite:
       q.transact(dt.xa).unsafeRunSync()
     }
 
-    val (setBefore, ingBefore) = getCounts()
+    val (setBefore, ingBefore) = getCounts
     val ingredientIds: List[String] = sql"""SELECT uuid FROM ingredients"""
       .query[String]
       .to[List]
@@ -166,7 +157,7 @@ class DataTestAuth extends CatsEffectSuite:
     val req =
       POST(addIngredientSetData.asJson, uri"/add_ingredient_set", headers)
     val res: Int = app.run(req).flatMap(_.as[Int]).unsafeRunSync()
-    val (setAfter, ingAfter) = getCounts()
+    val (setAfter, ingAfter) = getCounts
 
     assert(setBefore + 1 == setAfter)
     assert(ingBefore + ingredientIds.size == ingAfter)
@@ -174,10 +165,10 @@ class DataTestAuth extends CatsEffectSuite:
 
 class HandlerTests extends CatsEffectSuite:
 
-  val dbSetup = Settings.TestLocal.getSetup()
-  val blockingPool = Executors.newFixedThreadPool(5)
+  val dbSetup: DBSetup = Settings.TestLocal.getSetup
+  val blockingPool: ExecutorService = Executors.newFixedThreadPool(5)
   val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
-  val dt = DataTools(dbSetup)
+  val dt: DataTools = DataTools(dbSetup)
 
   test("getCount works with existing table") {
     resetDB(dbSetup)
@@ -188,18 +179,18 @@ class HandlerTests extends CatsEffectSuite:
 
 class DataTests extends CatsEffectSuite:
 
-  val dbSetup = Settings.TestLocal.getSetup()
-  val blockingPool = Executors.newFixedThreadPool(5)
+  val dbSetup: DBSetup = Settings.TestLocal.getSetup
+  val blockingPool: ExecutorService = Executors.newFixedThreadPool(5)
   val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
 
   test("I can get ingredients") {
     resetDB(dbSetup)
     insertDB(dbSetup)
-    val app = getAppForTesting()
-    var ingredientsRequest: Request[IO] =
+    val app = getAppForTesting
+    val ingredientsRequest: Request[IO] =
       Request[IO](Method.GET, uri"/ingredients")
     val request = app.run(ingredientsRequest)
-    def bodyCondition(a: Results[Ingredient]): Boolean = a.data.size > 0
+    def bodyCondition(a: Results[Ingredient]): Boolean = a.data.nonEmpty
 
     assert(check[Results[Ingredient]](request, Status.Ok, bodyCondition))
   }
@@ -207,10 +198,10 @@ class DataTests extends CatsEffectSuite:
   test("I can get possible recipes") {
     resetDB(dbSetup)
     insertDB(dbSetup)
-    val app = getAppForTesting()
+    val app = getAppForTesting
     val request = app.run(Request[IO](Method.GET, uri"/ingredients"))
     val ingredients = request.flatMap(_.as[Results[Ingredient]]).unsafeRunSync()
-    assert(ingredients.data.size > 0)
+    assert(ingredients.data.nonEmpty)
 
     val possibleInput: Results[String] =
       Results(data = ingredients.data.map(i => i.uuid), name = "ingredients")
@@ -219,14 +210,14 @@ class DataTests extends CatsEffectSuite:
       app.run(POST(possibleInput.asJson, uri"/recipes_possible"))
     val recipesPossible =
       requestPossible.flatMap(_.as[Results[FullRecipe]]).unsafeRunSync()
-    assert(recipesPossible.data.size > 0)
+    assert(recipesPossible.data.nonEmpty)
 
   }
 
   test("Ingredient sets require login") {
     resetDB(dbSetup)
     insertDB(dbSetup)
-    val app = getAppForTesting()
+    val app = getAppForTesting
     assert(ingredientSetsCheck(app, Status.Unauthorized, Headers.empty))
 
     val userFromFixturesWithSet = user0
@@ -238,16 +229,16 @@ class DataTests extends CatsEffectSuite:
   test("Ingredient sets with logged-in non-owner are empty") {
     resetDB(dbSetup)
     insertDB(dbSetup)
-    val app = getAppForTesting()
+    val app = getAppForTesting
 
-    val user = getRandomUser()
+    val user = getRandomUser
     val tokenOption = getToken(app, user, isLogin = false)
     val headers = tokenOption.fold(Headers.empty)(getHeaderFromToken)
 
-    var ingredientsRequest: Request[IO] =
+    val ingredientsRequest: Request[IO] =
       Request[IO](Method.GET, uri"/ingredient_sets", headers = headers)
     val request = app.run(ingredientsRequest)
-    def bodyCondition(a: Results[FullIngredientSet]): Boolean = a.data.size == 0
+    def bodyCondition(a: Results[FullIngredientSet]): Boolean = a.data.isEmpty
     assert(check[Results[FullIngredientSet]](request, Status.Ok, bodyCondition))
   }
 
@@ -256,11 +247,11 @@ class DataTests extends CatsEffectSuite:
       status: Status,
       headers: Headers
   ): Boolean = {
-    var ingredientsRequest: Request[IO] =
+    val ingredientsRequest: Request[IO] =
       Request[IO](Method.GET, uri"/ingredient_sets", headers = headers)
     val request = app.run(ingredientsRequest)
 
-    def bodyCondition(a: Results[FullIngredientSet]): Boolean = a.data.size > 0
+    def bodyCondition(a: Results[FullIngredientSet]): Boolean = a.data.nonEmpty
 
     check[Results[FullIngredientSet]](request, status, bodyCondition)
   }
@@ -272,7 +263,7 @@ def getLoginRequest(isLogin: Boolean, user: BasicCredentials): Request[IO] = {
 }
 
 def getUserResponseFromToken(token: String, app: Http4sApp): Option[AuthUser] = {
-  var getUserRequest: Request[IO] = Request[IO](
+  val getUserRequest: Request[IO] = Request[IO](
     Method.GET,
     uri"/get_user",
     headers = getHeaderFromToken(token)
@@ -289,82 +280,82 @@ def getUserResponseFromToken(token: String, app: Http4sApp): Option[AuthUser] = 
 
 class AuthTests extends CatsEffectSuite:
 
-  val dbSetup = Settings.TestLocal.getSetup()
-  val blockingPool = Executors.newFixedThreadPool(5)
+  val dbSetup: DBSetup = Settings.TestLocal.getSetup
+  val blockingPool: ExecutorService = Executors.newFixedThreadPool(5)
   val httpClient: Client[IO] = JavaNetClientBuilder[IO].create
 
   def registerAndThenLoginToken(user: BasicCredentials, app: Http4sApp): Option[String] = {
-    val user = getRandomUser()
+    val user = getRandomUser
     val registerRequest: Request[IO] = getLoginRequest(false, user)
     app.run(registerRequest).unsafeRunSync()
     getToken(app, user, true)
   }
 
-  def hasLoginToken(app: Http4sApp, user: BasicCredentials) = getToken(app, user, isLogin = true).nonEmpty
+  def hasLoginToken(app: Http4sApp, user: BasicCredentials): Boolean = getToken(app, user, isLogin = true).nonEmpty
 
   test("A user cannot login without registering first") {
-    val app = getAppForTesting()
-    val user = getRandomUser()
+    val app = getAppForTesting
+    val user = getRandomUser
     assert(!hasLoginToken(app, user))
   }
 
   test("A user can login after registering first") {
-    val app = getAppForTesting()
-    val user = getRandomUser()
+    val app = getAppForTesting
+    val user = getRandomUser
     val registerRequest: Request[IO] = getLoginRequest(isLogin=false, user)
     app.run(registerRequest).unsafeRunSync()
     assert(hasLoginToken(app, user))
   }
 
   test("User credentials stay valid when app is reloaded") {
-    val app = getAppForTesting()
-    val user = getRandomUser()
+    val app = getAppForTesting
+    val user = getRandomUser
     val registerRequest: Request[IO] = getLoginRequest(false, user)
     app.run(registerRequest).unsafeRunSync()
 
-    val app2 = getAppForTesting()
+    val app2 = getAppForTesting
     assert(hasLoginToken(app2, user))
   }
 
   test("After registering, we can get user data from just token") {
-    val app = getAppForTesting()
-    val user = getRandomUser()
+    val app = getAppForTesting
+    val user = getRandomUser
     val tokenOption = getToken(app, user, isLogin = false)
     assert(true)
-    val userNameOption = tokenOption.map(token => getUserResponseFromToken(token, app)).flatten.map(_.name)
-    assert(userNameOption == Some(user.username))
+    val userNameOption = tokenOption.flatMap(token => getUserResponseFromToken(token, app)).map(_.name)
+    assert(userNameOption.contains(user.username))
   }
 
   test("After using the fixtures, the fixture user login creates a token") {
     resetDB(dbSetup)
     insertDB(dbSetup)
-    val app = getAppForTesting()
+    val app = getAppForTesting
     val userFromFixturesWithSet = user0
     assert(hasLoginToken(app, userFromFixturesWithSet))
   }
 
   test("Resetting DB prevents login") {
     resetDB(dbSetup)
-    val app = getAppForTesting()
-    val user = getRandomUser()
+    val app = getAppForTesting
+    val user = getRandomUser
     val registerRequest: Request[IO] = getLoginRequest(false, user)
     app.run(registerRequest).unsafeRunSync()
 
     resetDB(dbSetup)
-    val app2 = getAppForTesting()
+    val app2 = getAppForTesting
     assert(!hasLoginToken(app2, user))
   }
 
   test("Token authentication works after logging in, but not after logging out") {
-    val app = getAppForTesting()
-    val user = getRandomUser()
+    val app = getAppForTesting
+    val user = getRandomUser
 
     val tokenOption = registerAndThenLoginToken(user, app)
     tokenOption match {
       case None => assert(false)
-      case Some(token) => {
+      case Some(token) =>
         val user: Option[AuthUser] = getUserResponseFromToken(token, app)
-      }
+
     }
   }
 
@@ -373,30 +364,30 @@ class AuthTests extends CatsEffectSuite:
 
   test("Resetting DB prevents a user from logging in") {
     resetDB(dbSetup)
-    val app = getAppForTesting()
-    val user = getRandomUser()
+    val app = getAppForTesting
+    val user = getRandomUser
     val registerRequest: Request[IO] = getLoginRequest(false, user)
     app.run(registerRequest).unsafeRunSync()
 
     resetDB(dbSetup)
-    val app2 = getAppForTesting()
+    val app2 = getAppForTesting
     val tokenOption = getToken(app2, user, isLogin = true)
     assert(tokenOption.isEmpty)
   }
 
   test("A logout prevents cookie authentication") {
-    val app = getAppForTesting()
-    val user = getRandomUser()
+    val app = getAppForTesting
+    val user = getRandomUser
     val tokenOption = registerAndThenLoginToken(user, app)
     tokenOption match {
       case None => assert(false)
-      case Some(token) => {
+      case Some(token) =>
         val authHeader = Authorization(user)
         val logoutRequest = Request[IO](Method.POST, uri"/logout", headers = getHeaderFromToken(token))
         app.run(logoutRequest).unsafeRunSync()
         println(getUserResponseFromToken(token, app))
         assert(getUserResponseFromToken(token, app).isEmpty)
-      }
+
     }
   }
 

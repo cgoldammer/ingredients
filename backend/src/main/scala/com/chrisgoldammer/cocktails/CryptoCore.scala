@@ -50,21 +50,20 @@ case class CryptoBits(key: PrivateKey) {
 
   def validateSignedToken(token: String): Option[(Long, String)] = {
     token.split("-") match {
-      case Array(signature, nonce, expirationTimeString, message) => {
+      case Array(signature, nonce, expirationTimeString, message) =>
         val expirationTimeOpt = toLongSafe(expirationTimeString)
         expirationTimeOpt match {
           case None => None
-          case Some(expirationTime) => {
+          case Some(expirationTime) =>
             val signed = sign(nonce + "-" + expirationTimeString + "-" + message)
             if (constantTimeEquals(signature, signed)) Some((expirationTime, message)) else None
-          }
+
         }
-      }
       case _ => None
     }
   }
 
-  def constantTimeEquals(a: String, b: String): Boolean = {
+  private def constantTimeEquals(a: String, b: String): Boolean = {
     var equal = 0
     for (i <- 0 until (a.length min b.length)) {
       equal |= a(i) ^ b(i)
@@ -79,7 +78,7 @@ case class CryptoBits(key: PrivateKey) {
 
 val user = AuthUser(id = "fff", name = "TestUser")
 
-def getUuid() = randomUUID().toString
+def getUuid = randomUUID().toString
 
 case class CreatedUserData(id: Int, uuid: String, name: String, hash: String) {}
 
@@ -106,7 +105,7 @@ trait BackingStore {
 enum AuthBackend:
   case Doobie
 
-  def getBackingStore(): BackingStore = {
+  def getBackingStore: BackingStore = {
     this match
       case AuthBackend.Doobie => doobieBackingStore()
   }
@@ -117,22 +116,14 @@ object AuthHelpers {
 }
 
 def doobieBackingStore(): BackingStore = {
-  val bStore = new BackingStore {
+  val bStore: BackingStore = new BackingStore {
     val storageMap = mutable.HashMap.empty[String, CreatedUserData]
-
-    def getRandom(): String = Random.alphanumeric.take(20).mkString("")
-
     def asString(): String = storageMap.toString()
-//    def getCreated(c: BasicCredentials): CreatedUserData = CreatedUserData(
-//      getRandom(),
-//      c.username,
-//      AuthHelpers.hashPassword(c.password)
-//    )
 
     def put(elem: BasicCredentials): ConnectionIO[Option[CreatedUserData]] = {
       val hash = AuthHelpers.hashPassword(elem.password)
       val name = elem.username
-      val uuid = getUuid()
+      val uuid = getUuid
       for {
         p <-
           sql"insert into users (name, uuid, hash, is_admin) values ($name, $uuid, $hash, false)".update
@@ -153,13 +144,15 @@ def doobieBackingStore(): BackingStore = {
           .map(_.headOption)
       } yield p
     }
-//
+
+    //
     def update(v: CreatedUserData): ConnectionIO[CreatedUserData] = ???
-//          IO({
-//          storageMap.update(v.name, v)
-//          v
-//        })
-//
+
+    //          IO({
+    //          storageMap.update(v.name, v)
+    //          v
+    //        })
+    //
     def delete(id: String): ConnectionIO[Boolean] = ???
     //      storageMap.remove(id) match {
     //        case Some(_) => IO(true)

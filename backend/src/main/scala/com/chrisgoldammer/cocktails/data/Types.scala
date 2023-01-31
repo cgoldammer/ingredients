@@ -191,8 +191,8 @@ case class DBSetup(
 enum Settings:
   case TestLocal, DevLocal, DevDocker, Prod
 
-  def toStringLower: String = camel2underscores(this.toString())
-  def toDBName: String = this.toStringLower.split('_')(0)
+  private def toStringLower: String = camel2underscores(this.toString())
+  private def toDBName: String = this.toStringLower.split('_')(0)
 
   def getSetup: DBSetup = {
     val dbName = "ingredients_" + this.toDBName

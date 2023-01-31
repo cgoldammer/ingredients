@@ -46,48 +46,48 @@ val clock = java.time.Clock.systemUTC
 val defaultTokenError = "Token not valid"
 
 case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
-  val backend = ab.getBackingStore()
+  private val backend: BackingStore = ab.getBackingStore
   val xa: Transactor[IO] = getTransactor(dbSetup)
 
-  def verifyUserExists(c: BasicCredentials): IO[Option[AuthUser]] = for {
+  private def verifyUserExists(c: BasicCredentials): IO[Option[AuthUser]] = for {
     storedUser <- backend.get(c.username).transact(xa)
-  } yield storedUser.map(checkUser(c.password)).flatten.headOption
+  } yield storedUser.flatMap(checkUser(c.password))
 
-  def verifyUserNameDoesNotExist(
+  private def verifyUserNameDoesNotExist(
                                   c: BasicCredentials
                                 ): IO[Option[BasicCredentials]] = for {
     res <- backend.get(c.username).transact(xa)
-  } yield Option.when(!res.isDefined)(c)
+  } yield Option.when(res.isEmpty)(c)
 
-  def verifyLogin(request: Request[IO]): IO[Option[AuthUser]] = for {
+  private def verifyLogin(request: Request[IO]): IO[Option[AuthUser]] = for {
     res <- getCredentials(request) match
       case None => IO.pure(None)
       case Some(c) => verifyUserExists(c)
   } yield res
 
-  def registerUser(user: BasicCredentials): IO[Response[IO]] = for {
-    s <- backend.put(user).transact(xa)
-    resp <- Ok(getBearer(user.username.toString))
+  private def registerUser(user: BasicCredentials): IO[Response[IO]] = for {
+    _ <- backend.put(user).transact(xa)
+    resp <- Ok(getBearer(user.username))
   } yield resp
 
   val register: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
-    verifyRegister(request: Request[IO]).flatMap(_ match {
+    verifyRegister(request: Request[IO]).flatMap({
       case None =>
         Forbidden(jsonParseString("Registration failed"))
       case Some(user) => registerUser(user)
     })
   })
 
-  def getUser(id: String): IO[Option[AuthUser]] = for {
+  private def getUser(id: String): IO[Option[AuthUser]] = for {
     res <- backend.get(id).transact(xa)
   } yield res.map(toAuthUser)
 
-  def retrieveUser: Kleisli[IO, String, Option[AuthUser]] = Kleisli(getUser)
+  private def retrieveUser: Kleisli[IO, String, Option[AuthUser]] = Kleisli(getUser)
 
-  def jsonParseString(s: String): Json =
+  private def jsonParseString(s: String): Json =
     jsonParse(raw""""$s"""").getOrElse(Json.Null)
 
-  def getBearer(user: String, expirationSeconds: Int = 1000): Json = jsonParseString(
+  private def getBearer(user: String, expirationSeconds: Int = 1000): Json = jsonParseString(
     "Bearer " + crypto.signUser(user, expirationSeconds, clock.millis.toString)
   )
 
@@ -102,28 +102,27 @@ case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
   })
 
   val logIn: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
-    verifyLogin(request: Request[IO]).flatMap(_ match {
+    verifyLogin(request: Request[IO]).flatMap({
       case None =>
         Forbidden(jsonParseString("Bad User Credentials"))
-      case Some(user) => {
-        val message = getBearer(user.name.toString)
+      case Some(user) =>
+        val message = getBearer(user.name)
         Ok(message)
-      }
     })
   })
 
-  def verifyRegister(request: Request[IO]): IO[Option[BasicCredentials]] = for {
+  private def verifyRegister(request: Request[IO]): IO[Option[BasicCredentials]] = for {
     res <- getCredentials(request) match
       case None =>
         IO.pure({
           None
         })
-      case Some(c) => {
+      case Some(c) =>
         verifyUserNameDoesNotExist(c)
-      }
+
   } yield res
 
-  def getCredentials(request: Request[IO]): Option[BasicCredentials] = {
+  private def getCredentials(request: Request[IO]): Option[BasicCredentials] = {
 
     val header = request.headers.get[Authorization].toList.headOption
     for {
@@ -132,19 +131,19 @@ case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
     } yield s
   }
 
-  def checkUser(pass: String)(storedUser: CreatedUserData): Option[AuthUser] = {
+  private def checkUser(pass: String)(storedUser: CreatedUserData): Option[AuthUser] = {
     val isMatch = SCryptUtil.check(pass.getBytes(), storedUser.hash)
     Option.when(isMatch)(AuthUser(storedUser.uuid, storedUser.name))
   }
 
-  def isInDisallowList(token: String): IO[Boolean] = inDisallowListCount(token).transact(xa).map(c => c == Some(1))
+  private def isInDisallowList(token: String): IO[Boolean] = inDisallowListCount(token).transact(xa).map(_.contains(1))
 
-  def handleToken(token: String): IO[Either[String, AuthUser]] = {
+  private def handleToken(token: String): IO[Either[String, AuthUser]] = {
     val disallowed: IO[Boolean] = isInDisallowList(token)
     val userMatch: IO[Either[String, AuthUser]] = crypto.validateSignedToken(token) match
-      case None => {
+      case None =>
         IO(Left(defaultTokenError))
-      }
+
       case Some((expirationTimeLong, userId)) => handleUserToken(expirationTimeLong, userId)
 
     for {
@@ -153,7 +152,7 @@ case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
     } yield if (isDisallowed) Left(defaultTokenError) else userMatchResult
   }
 
-  def handleUserTokenRequest(request: Request[IO]): IO[Either[String, AuthUser]] = {
+  private def handleUserTokenRequest(request: Request[IO]): IO[Either[String, AuthUser]] = {
     val res = request.headers.get[Authorization].toList.headOption match
       case None => IO(Left(defaultTokenError))
       case Some(h) => for {
@@ -165,7 +164,7 @@ case class AuthFunctions(ab: AuthBackend, dbSetup: DBSetup) {
   val authorizeUserFromToken: Kleisli[IO, Request[IO], Either[String, AuthUser]] = Kleisli(handleUserTokenRequest)
 
 
-  def handleUserToken(expirationTime: Long, userId: String): IO[Either[String, AuthUser]] = {
+  private def handleUserToken(expirationTime: Long, userId: String): IO[Either[String, AuthUser]] = {
     val currentTime = clock.millis
     if (currentTime <= expirationTime) {
       retrieveUser.run(userId).map(a => toEither(a, "no user found"))

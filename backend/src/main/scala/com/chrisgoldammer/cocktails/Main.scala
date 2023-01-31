@@ -9,9 +9,9 @@ import com.chrisgoldammer.cocktails.data.*
 import com.chrisgoldammer.cocktails.data.types.*
 
 object Main extends IOApp.Simple:
-  val settings = getSettings
-  val dbSetup = settings.getOrElse(Settings.DevLocal).getSetup
-  val ap = AppParams(dbSetup)
+  val settings: Option[Settings] = getSettings
+  val dbSetup: DBSetup = settings.getOrElse(Settings.DevLocal).getSetup
+  val ap: AppParams = AppParams(dbSetup)
   def run: IO[Unit] = server(ap).use(_ => IO.never).as(ExitCode.Success)
 
 object DataSetupDevMain extends IOApp.Simple:
