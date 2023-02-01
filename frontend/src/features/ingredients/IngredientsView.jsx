@@ -153,14 +153,15 @@ export function IngredientsView() {
       </Grid>
 
       <Grid
-        display="flex"
+        container
+        xs={12}
         justifyContent="center"
         alignItems="center"
         sx={{ mt: 1 }}
       >
         {addView}
       </Grid>
-      <Grid container>
+      <Grid container xs={12} justifyContent="center" alignItems="center">
         <IngredientsSelectedView />
       </Grid>
     </Grid>

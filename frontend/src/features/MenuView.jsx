@@ -17,7 +17,7 @@ import { setToken } from "../userReducer";
 
 import Link from "@mui/material/Link";
 import { Link as RouterLink } from "react-router-dom";
-import { useLogoutMutation } from "./api/apiSlice";
+import { useLogoutMutation, util } from "./api/apiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { userSelector } from "../store";
 
@@ -84,6 +84,7 @@ export function TopMenu() {
         onClick={() => {
           logout().then(() => {
             dispatch(setToken(undefined));
+            dispatch(util.invalidateTags(["User", "IngredientSet"]));
           });
           handleCloseUserMenu();
         }}

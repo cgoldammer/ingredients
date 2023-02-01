@@ -11,11 +11,10 @@ import {
   FormControl,
   Radio,
 } from "@mui/material";
-import { useRegisterUserMutation, useGetUserQuery } from "./api/apiSlice";
+import { useRegisterUserMutation, useGetUserQuery, util } from "./api/apiSlice";
 import { setToken } from "../userReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { hasUserTokenSelector, userSelector } from "../store";
-import { apiSlice } from "./api/apiSlice";
 import { useNavigate } from "react-router-dom";
 
 export function UserView() {
@@ -33,22 +32,25 @@ export function LoginView(props) {
   const [isLogin, setIsLogin] = useState(true);
   const dispatch = useDispatch();
   const hasUserToken = useSelector(hasUserTokenSelector);
+
+  const navigate = useNavigate();
+  const { refetch: refetchUser } = useGetUserQuery(undefined, {
+    skip: !hasUserToken,
+  });
+  const [registerUser, { error: registerError }] = useRegisterUserMutation();
   const registerAction = (data) =>
     new Promise((resolve, reject) => {
-      registerUser({ username, password, isLogin }).then((data) => {
-        dispatch(setToken(data.data));
-        resolve();
-      });
+      registerUser({ username, password, isLogin })
+        .unwrap()
+        .then((data) => {
+          console.log("in then branch");
+          console.log(data);
+          dispatch(setToken(data));
+          dispatch(util.invalidateTags(["User", "IngredientSet"]));
+          resolve();
+        })
+        .catch((rejected) => console.error(rejected));
     });
-  const navigate = useNavigate();
-  const {
-    data: userData,
-    isFetching: isFetchingUser,
-    error: userError,
-    refetch: refetchUser,
-  } = useGetUserQuery(undefined, { skip: !hasUserToken });
-  const [registerUser, { error: registerError }] = useRegisterUserMutation();
-
   const passwordReset = !isLogin ? (
     <span />
   ) : (
@@ -102,10 +104,12 @@ export function LoginView(props) {
           color="primary"
           variant="contained"
           onClick={() =>
-            registerAction({ username, password, isLogin }).then(() => {
-              console.log("Invalidating");
+            registerAction({ username, password, isLogin }).then((data) => {
+              console.log("Invalidating / " + username + ": " + password);
+              console.log("Data");
+              console.log(data);
               navigate("/");
-              refetchUser();
+              // refetchUser();
             })
           }
         >
@@ -114,9 +118,9 @@ export function LoginView(props) {
         {passwordReset}
       </Grid>
 
-      <div>
-        <div>{userError != undefined ? userError.status : ""}</div>
-      </div>
+      {/*<div>*/}
+      {/*  <div>{userError != undefined ? userError.status : ""}</div>*/}
+      {/*</div>*/}
     </Grid>
   );
 }

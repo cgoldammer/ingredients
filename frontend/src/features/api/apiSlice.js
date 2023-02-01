@@ -70,7 +70,7 @@ export const apiSlice = createApi({
       },
     }),
     logout: builder.mutation({
-      invalidatesTags: ["User", "IngredientSet"],
+      // invalidatesTags: ["User", "IngredientSet"],
       query: (data) => {
         return {
           url: "/logout",
@@ -105,4 +105,5 @@ export const {
   useLogoutMutation,
   useGetUserQuery,
   useAddIngredientSetMutation,
+  util,
 } = apiSlice;

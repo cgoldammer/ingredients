@@ -40,7 +40,7 @@ export function IngredientAdditionView(props) {
   };
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box>
       <InputLabel id="demo-multiple-chip-label">{tagName}</InputLabel>
       <Select
         labelId="demo-multiple-chip-label"
