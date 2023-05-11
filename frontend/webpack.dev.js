@@ -23,9 +23,8 @@ const modeVal = process.env.NODE_ENV;
 const getUrl = modeVal => {
   if (modeVal == "devMock") return "/fakeApi"
   if (modeVal == "devLocal") return "http://127.0.0.1:8080/"
-  if (modeVal == "devServer") return "http://127.0.0.1:8200/"
-  if (modeVal == "devDocker") return "http://127.0.0.1:8300/"
-  if (modeVal == "prod") return "http://52.22.180.212:8080/"
+  if (modeVal == "devDocker") return "http://127.0.0.1:8080/"
+  if (modeVal == "prod") return "http://52.22.180.212:8081/"
 }
 
 const getFeatures = modeVal => {

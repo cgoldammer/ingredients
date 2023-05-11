@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-nginx
+    profiles: ["prod", "all"]
     ports:
       - "80:80"
     depends_on:
@@ -16,6 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-app
+    profiles: ["dev", "all"]
     ports:
       - "8082:8082"
     command: npm run devDocker
@@ -25,27 +27,29 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-scala
+    profiles: ["prod", "all"]
+    depends_on:
+      - postgres2
+    ports:
+      - "8081:8080"
+    command: bash -c "export SETTINGS=prod; sbt 'runMain com.chrisgoldammer.cocktails.DataSetupProdInitialize'; sbt 'assembly'; java -cp target/scala-3.2.1/cocktails-assembly-0.0.2.jar com.chrisgoldammer.cocktails.Main"
+
+  scala_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile-scala
+    profiles: ["dev", "all"]
     depends_on:
       - postgres2
     ports:
       - "8080:8080"
-    command: bash -c "export SETTINGS=prod; sbt 'runMain com.chrisgoldammer.cocktails.DataSetupProdInitialize'; sbt 'assembly'; java -cp target/scala-3.2.1/cocktails-assembly-0.0.2.jar com.chrisgoldammer.cocktails.Main"
+    command: bash -c "export SETTINGS=devDocker; sbt 'runMain com.chrisgoldammer.cocktails.DataSetupDevMain'; sbt 'runMain com.chrisgoldammer.cocktails.Main'"
 
   postgres2:
     build: 
       context: .
       dockerfile: Dockerfile-postgres
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
-      POSTGRES_USER: postgres
-      POSTGRES_DB: ingredients_dev
-    ports:
-      - "5433:5432"
-
-  postgres2:
-    build: 
-      context: .
-      dockerfile: Dockerfile-postgres
+    profiles: ["dev"]
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_USER: postgres

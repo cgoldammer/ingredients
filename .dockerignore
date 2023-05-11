@@ -3,3 +3,4 @@ frontend/package-lock.json
 backend/project/target
 backend/target
 .git
+backup/

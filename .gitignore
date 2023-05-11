@@ -28,3 +28,5 @@ backend/src/main/resources/cocktails
 backend/src/main/resources/ingredient_tags.yaml
 backend/src/main/resources/secrets.yaml
 docker-compose-backup.yml
+backup/
+notes_personal.md

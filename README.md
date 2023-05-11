@@ -6,24 +6,30 @@ For now, it's focused on cocktails. So I can ask: "What are the cocktails I can 
 
 # Build modes
 
+
 There are the following build modes:
 
-1. `devLocal`: Running dev server on laptop, data served from fakeApi in frontend
-2. `devDocker`: Running dev server on docker image on laptop, database is served from docker image on laptop.
+- Local
+  1. Compile backend
+  2. Run `run_backend_local` alias
+  3. Run `run_frontend_local`
+- Docker (all commands runnable via `run_{type}` from `scripts/aliases.sh`:
+  1. Local: `devDocker`: Dev environment on local docker. Frontend on localhost:8082, backend on localhost:8080
+  2. Server - note that this requires running `./deploy.sh` first: 
+    a. `devServer`: Dev environment on server. Same ports as `devDocker` (port-forwarded)
+    b. `prod`: Prod environment on server. Available on bizpersonal:80, backend on bizpersonal:8081
+
+# Todo
+
+- Improve way for deploying to prod with or without wiping the database and resetting with simple data
 
 # Build process
 
+Run 
 ```
-cd dockerfiles
-docker build . -f sbt_scala --build-arg SCALA_VERSION="3.1.2" -t scalabase]
-cd ..
-docker build . -f Dockerfile-scala --target backend-step2-built2 --tag backend-step2-built2
-
+./scripts/build_docker.sh # to create intermediate docker containers.
 docker-compose build
-docker-compose up
 ```
-
-
 
 # Setup for EC2 server
 
