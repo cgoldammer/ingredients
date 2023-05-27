@@ -34,3 +34,7 @@ docker-compose build
 # Setup for EC2 server
 
 See [build_server script](./scripts/build_server.sh).
+
+# SSL
+
+I'm roughly following this [tutorial](https://mindsers.blog/post/https-using-nginx-certbot-docker/) and use the `cocktails.chrisgoldammer.com` which is forwarded through Route53.
