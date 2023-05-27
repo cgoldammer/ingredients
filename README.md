@@ -33,29 +33,4 @@ docker-compose build
 
 # Setup for EC2 server
 
-```angular2html
-sudo yum update -y
-sudo yum install tmux -y
-sudo yum install docker -y
-```
-
-// https://www.cyberciti.biz/faq/how-to-install-docker-on-amazon-linux-2/
-```angular2html
-sudo usermod -a -G docker ec2-user
-id ec2-user
-newgrp docker
-sudo yum install python3-pip
-pip3 install --user docker-compose
-
-sudo systemctl enable docker.service
-sudo systemctl start docker.service
-```
-
-
-To run server:
-```angular2html
-./deploy.sh
-tunnel_cocktails_frontend &
-tunnel_cocktails_backend &
-run_from_server
-```
+See [build_server script](./scripts/build_server.sh).

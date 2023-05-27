@@ -4,3 +4,4 @@ backend/project/target
 backend/target
 .git
 backup/
+nosync

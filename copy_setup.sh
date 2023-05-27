@@ -16,5 +16,6 @@ echo "nginx: $nginx | app: $app"
 docker cp "$app:/frontend/serve_content" code/temp/serve_content
 docker cp code/temp/serve_content/. "$nginx:/usr/share/nginx/html"
 docker cp code/temp/serve_content/index_prod.html "$nginx:/usr/share/nginx/html/index.html"
+# docker cp code/support/nginx.conf "$nginx:/etc/nginx/nginx.conf"
 echo "COPYING COMPLETED"
 cd $STARTDIR

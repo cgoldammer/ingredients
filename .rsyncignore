@@ -11,3 +11,5 @@ code/temp/
 .husky
 .rsyncignore
 .dockerignore
+nosync
+support/logs

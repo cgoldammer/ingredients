@@ -30,3 +30,5 @@ backend/src/main/resources/secrets.yaml
 docker-compose-backup.yml
 backup/
 notes_personal.md
+nosync
+support/logs
