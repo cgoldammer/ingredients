@@ -12,6 +12,7 @@ alias db="psql -U postgres"
 alias run_dev_docker="docker compose --profile dev up"
 alias run_dev_server="~/run.sh dev"
 alias run_prod="~/run.sh prod"
+alias certbot='ssh bizpersonal "docker compose run --rm  certbot certonly --webroot --webroot-path /var/www/certbot/ --dry-run -d cocktails.chrisgoldammer.com"'
 
 
 # function run_local () {

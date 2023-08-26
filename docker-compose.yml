@@ -17,15 +17,15 @@ services:
       - ./support/nginx.conf:/etc/nginx/nginx.conf
       - ./frontend/serve_content:/etc/nginx/html
       - ./support/logs:/etc/nginx/logs
-      - ./certbot/www:/var/www/certbot/:ro
-      - ./certbot/conf/:/etc/nginx/ssl/:ro
-    # This gets re-enabled when I want ssl
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    links:
+      - scala_prod
+
   certbot:
     image: certbot/certbot:latest
     profiles: ["prod", "all"]
     volumes:
-      - ./certbot/www/:/var/www/certbot/:rw
-      - ./certbot/conf/:/etc/letsencrypt/:rw
 
   app_dev:
     build:
@@ -47,6 +47,7 @@ services:
     ports:
       - "8081:8080"
     command: bash -c "export SETTINGS=prod; sbt 'runMain com.chrisgoldammer.cocktails.DataSetupProdInitialize'; sbt 'assembly'; java -cp target/scala-3.2.1/cocktails-assembly-0.0.2.jar com.chrisgoldammer.cocktails.Main"
+    expose: "8080"
 
   scala_dev:
     build:
